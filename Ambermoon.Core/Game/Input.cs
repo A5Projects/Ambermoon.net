@@ -558,10 +558,26 @@ partial class GameCore
             return;
         }
 
+        bool wasPressed = keys[(int)key];
+        bool movementHeld = KeyboardMovementHeld;
         keys[(int)key] = true;
 
+        if (key == Key.CapsLock)
+        {
+            if (!wasPressed && !WindowActive && !layout.PopupActive && !CoreConfiguration.IsMobile)
+                ToggleKeyboardMovementSpeed();
+            return;
+        }
+
         if (!WindowActive && !layout.PopupActive)
-            Move(tapped);
+        {
+            // OS key repeat must not add extra steps on top of the game timer.
+            if (IsMovementKey(key) && !wasPressed && !movementHeld)
+            {
+                Move(tapped);
+                lastMoveTicksReset = CurrentTicks;
+            }
+        }
         else if (currentWindow.Window == Window.BattlePositions && battlePositionDragging)
             return;
         else if (trapMouseArea != null && (currentWindow.Window == Window.Merchant ||
@@ -682,6 +698,8 @@ partial class GameCore
             case Key.Num8:
             case Key.Num9:
             {
+                if (wasPressed && !WindowActive && !layout.PopupActive && layout.ButtonGridPage == 0)
+                    break;
                 if (layout.PopupDisableButtons || layout.IsDragging || layout.InventoryMessageWaitsForClick)
                     break;
 
@@ -710,11 +728,14 @@ partial class GameCore
                 break;
         }
 
-        lastMoveTicksReset = CurrentTicks;
+        if (!IsMovementKey(key) && !movementHeld)
+            lastMoveTicksReset = CurrentTicks;
     }
 
     public virtual void OnKeyUp(Key key, KeyModifiers modifiers)
     {
+        // Clear even if a popup or world map opened between key-down and key-up.
+        keys[(int)key] = false;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnKeyUp(key);
@@ -732,8 +753,6 @@ partial class GameCore
             if (layout.TextWaitsForClick) // allow only if there is no text active which waits for a click
                 return;
         }
-
-        keys[(int)key] = false;
 
         switch (key)
         {

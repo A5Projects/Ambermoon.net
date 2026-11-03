@@ -38,6 +38,10 @@ namespace Ambermoon
         public const int Map3DViewY = 49;
         public const int Map3DViewWidth = 144;
         public const int Map3DViewHeight = 144;
+        // Leave a narrow stone edge and the existing location-name strip.
+        public static Rect GetMap3DViewArea(bool expanded) => expanded
+            ? new Rect(4, 49, 196, 148)
+            : new Rect(Map3DViewX, Map3DViewY, Map3DViewWidth, Map3DViewHeight);
         public const int ButtonGridX = 208;
         public const int ButtonGridY = 143;
         public const int InventoryX = 109;

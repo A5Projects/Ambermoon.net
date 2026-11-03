@@ -780,38 +780,35 @@ namespace Ambermoon.Render
         /// </summary>
         class SkySprite
         {
-            ILayerSprite? leftSprite;
-            ILayerSprite? rightSprite;
+            readonly List<ILayerSprite> sprites = [];
+            readonly Rect viewArea;
+            public int TileWidth => sprites[0].Width;
 
-            public SkySprite(int y, Func<int, int, ILayerSprite> creator)
+            public SkySprite(Rect viewArea, int y, Func<int, int, ILayerSprite> creator)
             {
-                leftSprite = creator(Global.Map3DViewX, Global.Map3DViewY + y);
-                rightSprite = creator(Global.Map3DViewX + leftSprite.Width, Global.Map3DViewY + y);
-                leftSprite.Visible = true;
-                rightSprite.Visible = true;
+                this.viewArea = viewArea;
+                var first = creator(viewArea.X, viewArea.Y + y);
+                sprites.Add(first);
+                int count = (int)Math.Ceiling((double)viewArea.Width / first.Width) + 1;
+                for (int i = 1; i < count; ++i)
+                    sprites.Add(creator(viewArea.X + i * first.Width, viewArea.Y + y));
+                sprites.ForEach(sprite => sprite.Visible = true);
             }
 
             public void Destroy()
             {
-                leftSprite?.Delete();
-                rightSprite?.Delete();
-
-                leftSprite = null;
-                rightSprite = null;
+                sprites.ForEach(sprite => sprite.Delete());
+                sprites.Clear();
             }
 
             public void ScrollTo(int x)
             {
-                if (leftSprite == null || rightSprite == null)
+                if (sprites.Count == 0)
                     return;
 
-                while (x <= -Global.Map3DViewWidth)
-                    x += Global.Map3DViewWidth;
-                while (x > 0)
-                    x -= Global.Map3DViewWidth;
-
-                leftSprite.X = Global.Map3DViewX + x;
-                rightSprite.X = leftSprite.X + leftSprite.Width;
+                x = ((x % TileWidth) - TileWidth) % TileWidth;
+                for (int i = 0; i < sprites.Count; ++i)
+                    sprites[i].X = viewArea.X + x + i * TileWidth;
             }
         }
 
@@ -824,6 +821,9 @@ namespace Ambermoon.Render
         // Each of the 8 subobjects is sorted in Z (the first has an extrude of 5% of the block size, the rest is lower).
         const float ExtrudeStep = 0.05f * Global.DistancePerBlock * 0.125f;
         readonly GameCore game;
+        Rect ViewArea => game.Map3DViewArea;
+        float BackgroundScale => ViewArea.Height / (float)Global.Map3DViewHeight;
+        int HorizonTileWidth => Util.Round(Global.Map3DViewWidth * BackgroundScale);
         readonly ICamera3D? camera = null;
         readonly IMapManager? mapManager = null;
         readonly IGameRenderView? renderView = null;
@@ -908,7 +908,7 @@ namespace Ambermoon.Render
             var starLayer = renderView.GetLayer(Layer.Map3DBackground);
             int x = 0;
             var random = new Random();
-            const int starAreaWidth = 8 * Global.Map3DViewWidth;
+            int starAreaWidth = 8 * HorizonTileWidth;
             for (int y = 4; y < 36; ++y)
             {
                 x %= starAreaWidth;
@@ -916,12 +916,12 @@ namespace Ambermoon.Render
                 while (x < starAreaWidth)
                 {
                     var star = renderView.ColoredRectFactory.Create(1, 1, Color.White, 2);
-                    star.X = Global.Map3DViewX + x;
-                    star.Y = Global.Map3DViewY + y;
+                    star.X = ViewArea.X + x;
+                    star.Y = ViewArea.Y + Util.Round(y * BackgroundScale);
                     star.Layer = starLayer;
-                    star.ClipArea = GameCore.Map3DViewArea;
+                    star.ClipArea = ViewArea;
                     star.Visible = false;
-                    stars.Add(KeyValuePair.Create(new Position(x, y), star));
+                    stars.Add(KeyValuePair.Create(new Position(x, Util.Round(y * BackgroundScale)), star));
                     x += starAreaWidth * 2 / 3 + (int)(random.Next() % (starAreaWidth / 3));
                 }
             }
@@ -939,7 +939,7 @@ namespace Ambermoon.Render
             while (angle >= 360.0f)
                 angle -= 360.0f;
 
-            int scrollX = Util.Round(8.0f * -144.0f * angle / 360.0f);
+            int scrollX = Util.Round(-8.0f * HorizonTileWidth * angle / 360.0f);
 
             if (horizonSprite != null)
                 horizonSprite.ScrollTo(scrollX);
@@ -949,27 +949,29 @@ namespace Ambermoon.Render
 
         void SetupBackground()
         {
-            floorColor = renderView!.ColoredRectFactory.Create(Global.Map3DViewWidth + 1, Global.Map3DViewHeight / 2,
+            floorColor = renderView!.ColoredRectFactory.Create(ViewArea.Width + 1, ViewArea.Height / 2,
                 game.GetPaletteColor((byte)Map!.PaletteIndex, labdata!.FloorColorIndex), 0);
-            ceilingColor = renderView.ColoredRectFactory.Create(Global.Map3DViewWidth + 1, Global.Map3DViewHeight / 2 + 1,
+            ceilingColor = renderView.ColoredRectFactory.Create(ViewArea.Width + 1, ViewArea.Height / 2 + 1,
                 game.GetPaletteColor((byte)Map.PaletteIndex, labdata.CeilingColorIndex), 0);
             baseFloorColor = new Color(floorColor.Color);
             baseCeilingColor = new Color(ceilingColor.Color);
 
-            floorColor.X = Global.Map3DViewX;
-            floorColor.Y = Global.Map3DViewY + ceilingColor.Height;
-            ceilingColor.X = Global.Map3DViewX;
-            ceilingColor.Y = Global.Map3DViewY - 1;
+            floorColor.X = ViewArea.X;
+            floorColor.Y = ViewArea.Y + ceilingColor.Height;
+            ceilingColor.X = ViewArea.X;
+            ceilingColor.Y = ViewArea.Y - 1;
 
             floorColor.Layer = ceilingColor.Layer = renderView.GetLayer(Layer.Map3DBackground);
             floorColor.Visible = ceilingColor.Visible = true;
 
             if (Map.Flags.HasFlag(MapFlags.Outdoor))
             {
-                var clipArea = GameCore.Map3DViewArea.CreateModified(0, 0, 1, 0);
-                horizonSprite = new SkySprite(ceilingColor.Height - 20, (x, y) =>
+                var clipArea = ViewArea.CreateModified(0, 0, 1, 0);
+                int horizonHeight = Util.Round(20 * BackgroundScale);
+                horizonSprite = new SkySprite(ViewArea, ceilingColor.Height - horizonHeight, (x, y) =>
                 {
-                    var sprite = (renderView.SpriteFactory.Create(144, 20, true, 2) as ILayerSprite)!;
+                    var sprite = (renderView.SpriteFactory.Create(HorizonTileWidth, horizonHeight, true, 2) as ILayerSprite)!;
+                    sprite.TextureSize = new Size(144, 20);
                     sprite.TextureAtlasOffset = HorizonTextureOffset;
                     sprite.ClipArea = clipArea;
                     sprite.PaletteIndex = (byte)(Map.PaletteIndex - 1);
@@ -978,10 +980,10 @@ namespace Ambermoon.Render
                     sprite.Y = y;
                     return sprite;
                 });
-                horizonFog = renderView.ColoredRectFactory.Create(144, 21, Color.Transparent, 50);
+                horizonFog = renderView.ColoredRectFactory.Create(ViewArea.Width + 1, horizonHeight + 1, Color.Transparent, 50);
                 horizonFog.Layer = renderView.GetLayer(Layer.Map3DBackgroundFog);
-                horizonFog.X = Global.Map3DViewX;
-                horizonFog.Y = Global.Map3DViewY + ceilingColor.Height - 21;
+                horizonFog.X = ViewArea.X;
+                horizonFog.Y = ViewArea.Y + ceilingColor.Height - horizonHeight - 1;
                 horizonFog.Visible = false;
             }
         }
@@ -1039,7 +1041,7 @@ namespace Ambermoon.Render
 
                 SetCameraHeight(race);
 
-                renderView!.AspectProcessor?.Invoke(ReferenceWallHeight / labdata.WallHeight);
+                renderView!.AspectProcessor?.Invoke((float)ViewArea.Width / ViewArea.Height * ReferenceWallHeight / labdata.WallHeight);
 
                 MapChanged?.Invoke(map);
             }
@@ -1866,14 +1868,16 @@ namespace Ambermoon.Render
             {
                 skyColors = skyParts.Select(part =>
                 {
-                    var skyColor = renderView.ColoredRectFactory.Create(Global.Map3DViewWidth + 1, part.Height, new Color(part.Color), 1);
-                    skyColor.X = Global.Map3DViewX;
-                    skyColor.Y = Global.Map3DViewY - 1 + part.Y;
+                    int top = Util.Round(part.Y * BackgroundScale);
+                    int bottom = Util.Round((part.Y + part.Height) * BackgroundScale);
+                    var skyColor = renderView.ColoredRectFactory.Create(ViewArea.Width + 1, bottom - top, new Color(part.Color), 1);
+                    skyColor.X = ViewArea.X;
+                    skyColor.Y = ViewArea.Y - 1 + top;
                     skyColor.Layer = ceilingColor!.Layer;
                     skyColor.Visible = true;
                     return skyColor;
                 }).ToList();
-                UpdateStars(Util.Round(8.0f * -144.0f * camera!.Angle / 360.0f));
+                UpdateStars(Util.Round(-8.0f * HorizonTileWidth * camera!.Angle / 360.0f));
                 renderView.SetSkyColorReplacement(labdata!.CeilingColorIndex, skyColors.Last().Color);
             }
             stars.ForEach(s => s.Value.Visible = canSee && (time.Hour >= 19 || time.Hour < 7));            
@@ -1884,7 +1888,7 @@ namespace Ambermoon.Render
             if (Map == null)
                 return;
 
-            const int starAreaWidth = 8 * Global.Map3DViewWidth;
+            int starAreaWidth = 8 * HorizonTileWidth;
             bool showStars = game.GameTime!.Hour >= 19 || game.GameTime.Hour < 7;
             var starColor = !showStars ? null
                 : game.GameTime.Hour < 5 || game.GameTime.Hour >= 21 ? game.GetPaletteColor((int)Map.PaletteIndex, 31)
@@ -1894,12 +1898,7 @@ namespace Ambermoon.Render
 
             stars.ForEach(s =>
             {
-                s.Value.X = s.Key.X + scrollX;
-
-                if (s.Value.X < Global.Map3DViewX - (starAreaWidth - Global.Map3DViewWidth))
-                    s.Value.X += starAreaWidth;
-                else if (s.Value.X >= Global.Map3DViewX + (starAreaWidth - Global.Map3DViewWidth))
-                    s.Value.X -= starAreaWidth;
+                s.Value.X = ViewArea.X + ((s.Key.X + scrollX) % starAreaWidth + starAreaWidth) % starAreaWidth;
 
                 if (starColor is not null)
                     s.Value.Color = starColor;

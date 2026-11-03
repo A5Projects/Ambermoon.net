@@ -483,6 +483,7 @@ namespace Ambermoon.UI
         public LayoutType Type { get; private set; }
         readonly GameCore game;
         readonly ILayerSprite sprite;
+        readonly List<ILayerSprite> expandedMapFrame = [];
         readonly ITextureAtlas textureAtlas;
         readonly IRenderLayer renderLayer;
         readonly IRenderLayer textLayer;
@@ -738,9 +739,41 @@ namespace Ambermoon.UI
                 sprite.Visible = true;
             }
 
+            bool expanded = layoutType == LayoutType.Map3D && game.CoreConfiguration.Expanded3DView;
+            if (expanded && expandedMapFrame.Count == 0)
+                CreateExpandedMapFrame();
+            sprite.ClipArea = expanded
+                ? new Rect(204, Global.LayoutY, 116, 163)
+                : new Rect(Global.LayoutX, Global.LayoutY, 320, 163);
+            foreach (var part in expandedMapFrame)
+                part.Visible = expanded;
+
             buttonGrid.Visible = layoutType != LayoutType.None && layoutType != LayoutType.Event && layoutType != LayoutType.Automap;
 
             UpdateLayoutButtons(ticksPerMovement);
+        }
+
+        void CreateExpandedMapFrame()
+        {
+            // Reuse narrow strips of the original stone artwork. The right panel
+            // remains the original layout; only the left frame is reconstructed.
+            var offset = textureAtlas.GetOffset(Graphics.LayoutOffset + (uint)(LayoutType.Map3D - 1));
+            void AddPart(Rect source, Rect destination)
+            {
+                var part = (ILayerSprite)RenderView.SpriteFactory.Create(destination.Width, destination.Height, true, 1);
+                part.Layer = renderLayer;
+                part.PaletteIndex = sprite.PaletteIndex;
+                part.TextureAtlasOffset = offset + source.Position;
+                part.TextureSize = source.Size;
+                part.X = destination.X;
+                part.Y = destination.Y;
+                expandedMapFrame.Add(part);
+            }
+
+            AddPart(new Rect(0, 0, 204, 12), new Rect(0, 37, 204, 12));
+            AddPart(new Rect(28, 12, 4, 144), new Rect(0, 49, 4, 148));
+            AddPart(new Rect(176, 12, 4, 144), new Rect(200, 49, 4, 148));
+            AddPart(new Rect(28, 156, 152, 3), new Rect(0, 197, 204, 3));
         }
 
         public void OpenOptionMenu()
@@ -751,11 +784,14 @@ namespace Ambermoon.UI
             var area = Type switch
             {
                 LayoutType.Map2D => GameCore.Map2DViewArea,
-                LayoutType.Map3D => GameCore.Map3DViewArea,
+                LayoutType.Map3D => game.Map3DViewArea,
                 LayoutType.Battle => Global.CombatBackgroundArea,
                 _ => throw new AmbermoonException(ExceptionScope.Application, "Open option menu from the current window is not supported.")
             };
-            AddSprite(area, Graphics.GetCustomUIGraphicIndex(UICustomGraphic.MapDisableOverlay), game.UIPaletteIndex, 1);
+            var overlay = AddSprite(area, Graphics.GetCustomUIGraphicIndex(UICustomGraphic.MapDisableOverlay), game.UIPaletteIndex, 1);
+            // This atlas graphic is 320x144. Stretch its height for the larger view
+            // instead of sampling the neighboring graphics below it.
+            overlay.TextureSize = new Size(area.Width, Math.Min(area.Height, 144));
             string versionString = game.GetFullVersion();
             Rect boxArea;
             Rect textArea;
@@ -2098,6 +2134,8 @@ namespace Ambermoon.UI
         {
             buttonGrid.PaletteIndex = palette;
             sprite.PaletteIndex = palette;
+            foreach (var part in expandedMapFrame)
+                part.PaletteIndex = palette;
 
             foreach (var specialItemSprite in specialItemSprites)
                 specialItemSprite.Value.PaletteIndex = palette;
@@ -2229,7 +2267,8 @@ namespace Ambermoon.UI
 
                 if (Type == LayoutType.Map2D)
                 {
-                    if (game.CurrentTicks - lastButtonMoveTicks < moveDelay)
+                    double repeatDelay = game.NumpadMovementHeld ? moveDelay / game.KeyboardMovementFactor : moveDelay;
+                    if (game.CurrentTicks - lastButtonMoveTicks < repeatDelay)
                         return;
 
                     for (int i = 0; i < 9; ++i)
@@ -2291,15 +2330,18 @@ namespace Ambermoon.UI
                     }
                     else if (ButtonGridPage == 0)
                     {
-                        buttonGrid.SetButton(0, ButtonType.MoveUpLeft, false, () => HandleButtonMove(CursorType.ArrowUpLeft), true, null, null, moveDelay);
-                        buttonGrid.SetButton(1, ButtonType.MoveUp, false, () => HandleButtonMove(CursorType.ArrowUp), true, null, null, moveDelay);
-                        buttonGrid.SetButton(2, ButtonType.MoveUpRight, false, () => HandleButtonMove(CursorType.ArrowUpRight), true, null, null, moveDelay);
-                        buttonGrid.SetButton(3, ButtonType.MoveLeft, false, () => HandleButtonMove(CursorType.ArrowLeft), true, null, null, moveDelay);
+                        // HandleButtonMove controls the cadence for both mouse and keyboard.
+                        // Poll each tick so a slower keyboard interval is not rounded to a
+                        // whole multiple of the normal mouse interval.
+                        buttonGrid.SetButton(0, ButtonType.MoveUpLeft, false, () => HandleButtonMove(CursorType.ArrowUpLeft), true, null, null, 1);
+                        buttonGrid.SetButton(1, ButtonType.MoveUp, false, () => HandleButtonMove(CursorType.ArrowUp), true, null, null, 1);
+                        buttonGrid.SetButton(2, ButtonType.MoveUpRight, false, () => HandleButtonMove(CursorType.ArrowUpRight), true, null, null, 1);
+                        buttonGrid.SetButton(3, ButtonType.MoveLeft, false, () => HandleButtonMove(CursorType.ArrowLeft), true, null, null, 1);
                         buttonGrid.SetButton(4, ButtonType.Wait, false, OpenWaitPopup, false, GetTooltip(Button.TooltipType.Wait));
-                        buttonGrid.SetButton(5, ButtonType.MoveRight, false, () => HandleButtonMove(CursorType.ArrowRight), true, null, null, moveDelay);
-                        buttonGrid.SetButton(6, ButtonType.MoveDownLeft, false, () => HandleButtonMove(CursorType.ArrowDownLeft), true, null, null, moveDelay);
-                        buttonGrid.SetButton(7, ButtonType.MoveDown, false, () => HandleButtonMove(CursorType.ArrowDown), true, null, null, moveDelay);
-                        buttonGrid.SetButton(8, ButtonType.MoveDownRight, false, () => HandleButtonMove(CursorType.ArrowDownRight), true, null, null, moveDelay);
+                        buttonGrid.SetButton(5, ButtonType.MoveRight, false, () => HandleButtonMove(CursorType.ArrowRight), true, null, null, 1);
+                        buttonGrid.SetButton(6, ButtonType.MoveDownLeft, false, () => HandleButtonMove(CursorType.ArrowDownLeft), true, null, null, 1);
+                        buttonGrid.SetButton(7, ButtonType.MoveDown, false, () => HandleButtonMove(CursorType.ArrowDown), true, null, null, 1);
+                        buttonGrid.SetButton(8, ButtonType.MoveDownRight, false, () => HandleButtonMove(CursorType.ArrowDownRight), true, null, null, 1);
                     }
                     else
                     {
@@ -3868,6 +3910,8 @@ namespace Ambermoon.UI
         public void Destroy()
         {
             Util.SafeCall(() => sprite?.Delete());
+            expandedMapFrame.ForEach(part => part.Delete());
+            expandedMapFrame.Clear();
             Util.SafeCall(() =>
             {
                 foreach (var portraitBackground in portraitBackgrounds)

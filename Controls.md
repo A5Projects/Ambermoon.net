@@ -33,6 +33,8 @@ NumPad 1 to 9 | Action buttons in lower right corner (see below)
 
 You can toggle the action buttons on the lower right with either a right click on them or the return key. Num pad enter key will work as well.
 
+On desktop, **Caps Lock** toggles keyboard movement between the configured slower speed (60% by default) and full speed. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the selected percentage. The setting is remembered between sessions; mouse movement keeps its normal behavior. In 2D, slowing movement increases the time between tile steps.
+
 #### 2D Maps
 
 You can right click on the map to transform the cursor into a crosshair cursor. Using it will perform any suitable interaction of the following type: Eye, Hand or Mouth.

@@ -80,6 +80,7 @@ public interface IGameRenderView : IRenderView
     IFowFactory FowFactory { get; }
     ITextProcessor TextProcessor { get; }
     ICamera3D Camera3D { get; }
+    Rect Map3DViewArea { get; set; }
     Action<float> AspectProcessor { get; }
     void SetLight(float light);
     void Set3DFade(float fade);

@@ -65,6 +65,9 @@ namespace AmbermoonAndroid
 		public SaveOption SaveOption { get; set; } = SaveOption.ProgramFolder;
         public int GameVersionIndex { get; set; } = -1;
         public bool LegacyMode { get; set; } = false;
+        public bool Expanded3DView { get; set; } = false;
+        public bool SlowKeyboardMovement { get; set; } = false;
+        public int KeyboardMovementSpeed { get; set; } = 60;
         public bool Music { get; set; } = true;
         public int Volume { get; set; } = 100;
         [JsonIgnore] // not needed/supported on Android

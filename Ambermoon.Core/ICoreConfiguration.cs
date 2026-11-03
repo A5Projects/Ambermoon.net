@@ -139,6 +139,9 @@ public interface ICoreConfiguration
     GameLanguage Language { get; set; }
     bool ShowCompletedQuests { get; set; }
     bool LegacyMode { get; set; }
+    bool Expanded3DView { get; set; }
+    bool SlowKeyboardMovement { get; set; }
+    int KeyboardMovementSpeed { get; set; }
     bool ExtendedSavegameSlots { get; set; }
     bool ShowAdvancedLogo { get; set; }
     [Obsolete("Now the fantasy intro is shown instead.")]

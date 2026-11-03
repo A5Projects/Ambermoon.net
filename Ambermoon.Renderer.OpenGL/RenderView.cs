@@ -608,7 +608,7 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                         // Setup 3D stuff
                         (camera3D as Camera3D).Activate();
                         State.RestoreProjectionMatrix(State.ProjectionMatrix3D);
-                        var mapViewArea = new Rect(Global.Map3DViewX, Global.Map3DViewY, Global.Map3DViewWidth + 1, Global.Map3DViewHeight + 1);
+                        var mapViewArea = ((IGameRenderView)this).Map3DViewArea.CreateModified(0, 0, 1, 1);
                         mapViewArea.Position = PositionTransformation(mapViewArea.Position).Round();
                         mapViewArea.Size = SizeTransformation(mapViewArea.Size).ToSize();
                         var viewport = RenderScreenArea;
@@ -1008,6 +1008,7 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
     public IRenderTextFactory RenderTextFactory => renderTextFactory;
     public IFowFactory FowFactory => fowFactory;
     public ICamera3D Camera3D => camera3D;
+    public Rect Map3DViewArea { get; set; } = Global.GetMap3DViewArea(false);
     public IGameData GameData { get; }
     public IGraphicInfoProvider GraphicInfoProvider { get; }
     public IFontProvider FontProvider { get; }

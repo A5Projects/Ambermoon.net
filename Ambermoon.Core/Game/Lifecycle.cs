@@ -174,7 +174,13 @@ partial class GameCore
 
                 var moveTicks = CurrentTicks >= lastMoveTicksReset ? CurrentTicks - lastMoveTicksReset : (uint)((long)CurrentTicks + uint.MaxValue - lastMoveTicksReset);
 
-                if (moveTicks >= movement.MovementTicks(is3D, Map?.UseTravelTypes ?? false, TravelType))
+                // 2D movement advances whole tiles, so slow keyboard repeat cadence.
+                // 3D keeps its update cadence and scales distance/turn angle instead.
+                double moveInterval = movement.MovementTicks(is3D, Map?.UseTravelTypes ?? false, TravelType);
+                if (!is3D && !clickMoveActive)
+                    moveInterval /= KeyboardMovementFactor;
+
+                if (moveTicks >= moveInterval)
                 {
                     lastMoveTicksReset = CurrentTicks;
 

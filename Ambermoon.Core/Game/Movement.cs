@@ -12,6 +12,35 @@ partial class GameCore
     readonly Func<List<Key>> pressedKeyProvider;
     uint lastMoveTicksReset = 0;
     readonly Movement movement;
+    internal float KeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement
+        ? 1.0f : Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, 100) / 100.0f;
+    internal bool NumpadMovementHeld => Enumerable.Range((int)Key.Num1, 9).Any(index => keys[index]);
+    static bool IsMovementKey(Key key) => key is Key.Left or Key.Right or Key.Up or Key.Down
+        or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E;
+    bool KeyboardMovementHeld => keys.Where((pressed, index) => pressed && IsMovementKey((Key)index)).Any();
+
+    void ToggleKeyboardMovementSpeed()
+    {
+        CoreConfiguration.SlowKeyboardMovement = !CoreConfiguration.SlowKeyboardMovement;
+        CoreConfiguration.RequestSave();
+        int percent = (int)Math.Round(KeyboardMovementFactor * 100);
+        string label = GameLanguage switch
+        {
+            GameLanguage.German => "Tastaturtempo",
+            GameLanguage.French => "Vitesse clavier",
+            GameLanguage.Polish => "Szybkosc klawiatury",
+            GameLanguage.Czech => "Rychlost klavesnice",
+            _ => "Keyboard speed"
+        };
+        // A speed toggle should not pause movement or open a modal popup.
+        var message = ProcessText($"{label}: {percent}%");
+        windowTitle!.Text = message;
+        AddTimedEvent(TimeSpan.FromSeconds(1.5), () =>
+        {
+            if (Ingame && !WindowActive && ReferenceEquals(windowTitle.Text, message))
+                UpdateMapName();
+        });
+    }
 
     internal void ResetMoveKeys(bool forceDisable = false)
     {
@@ -47,6 +76,8 @@ partial class GameCore
 
     internal void Move(bool fromNumpadButton, float speedFactor3D, params CursorType[] cursorTypes)
     {
+        float keyboardSpeed = fromNumpadButton && NumpadMovementHeld ? KeyboardMovementFactor : 1.0f;
+        speedFactor3D *= keyboardSpeed;
         if (Is3D)
         {
             bool moveForward = cursorTypes.Contains(CursorType.ArrowForward);
@@ -103,7 +134,7 @@ partial class GameCore
                     {
                         turnAction?.Invoke();
                         CurrentSavegame!.CharacterDirection = player!.Direction = player3D!.Direction;
-                    }, 65);
+                    }, Util.Round(65.0f / keyboardSpeed));
                 }
 
                 if (cursorTypes.Contains(CursorType.ArrowTurnLeft))
@@ -234,6 +265,8 @@ partial class GameCore
         if (DisallowMoving())
             return;
 
+        float speed = KeyboardMovementFactor;
+
         bool left = ((!is3D || !CoreConfiguration.TurnWithArrowKeys) && keys[(int)Key.Left]) || ((!is3D || CoreConfiguration.Movement3D == Movement3D.WASDQE) && keys[(int)Key.A]);
         bool right = ((!is3D || !CoreConfiguration.TurnWithArrowKeys) && keys[(int)Key.Right]) || ((!is3D || CoreConfiguration.Movement3D == Movement3D.WASDQE) && keys[(int)Key.D]);
         bool up = keys[(int)Key.Up] || keys[(int)Key.W];
@@ -251,7 +284,7 @@ partial class GameCore
             }
             else if (CanPartyMove())
             {
-                player3D!.MoveLeft(movement.MoveSpeed3D * Global.DistancePerBlock, CurrentTicks);
+                player3D!.MoveLeft(movement.MoveSpeed3D * Global.DistancePerBlock * speed, CurrentTicks);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
             }
         }
@@ -265,7 +298,7 @@ partial class GameCore
             }
             else if (CanPartyMove())
             {
-                player3D!.MoveRight(movement.MoveSpeed3D * Global.DistancePerBlock, CurrentTicks);
+                player3D!.MoveRight(movement.MoveSpeed3D * Global.DistancePerBlock * speed, CurrentTicks);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
             }
         }
@@ -275,14 +308,14 @@ partial class GameCore
             {
                 int turns = tapped ? 6 : 1;
 
-                player3D!.TurnLeft(movement.TurnSpeed3D * turns);
+                player3D!.TurnLeft(movement.TurnSpeed3D * turns * speed);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
             }
             else if (!turnLeft && turnRight)
             {
                 int turns = tapped ? 6 : 1;
 
-                player3D!.TurnRight(movement.TurnSpeed3D * turns);
+                player3D!.TurnRight(movement.TurnSpeed3D * turns * speed);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
             }
         }
@@ -296,7 +329,7 @@ partial class GameCore
             }
             else if (CanPartyMove())
             {
-                bool moved = player3D!.MoveForward(movement.MoveSpeed3D * Global.DistancePerBlock, CurrentTicks);
+                bool moved = player3D!.MoveForward(movement.MoveSpeed3D * Global.DistancePerBlock * speed, CurrentTicks);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
 
                 if (tapped && moved)
@@ -304,7 +337,7 @@ partial class GameCore
                     // Tapping in 3D will move 6 times to make some distance
                     for (int i = 0; i < 5; i++)
                     {
-                        moved = player3D.MoveForward(movement.MoveSpeed3D * Global.DistancePerBlock, CurrentTicks);
+                        moved = player3D.MoveForward(movement.MoveSpeed3D * Global.DistancePerBlock * speed, CurrentTicks);
                         CurrentSavegame.CharacterDirection = player.Direction = player3D.Direction;
 
                         if (!moved)
@@ -323,7 +356,7 @@ partial class GameCore
             }
             else if (CanPartyMove())
             {
-                player3D!.MoveBackward(movement.MoveSpeed3D * Global.DistancePerBlock, CurrentTicks);
+                player3D!.MoveBackward(movement.MoveSpeed3D * Global.DistancePerBlock * speed, CurrentTicks);
                 CurrentSavegame!.CharacterDirection = player!.Direction = player3D.Direction;
             }
         }

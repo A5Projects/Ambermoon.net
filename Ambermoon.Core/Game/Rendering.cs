@@ -305,8 +305,7 @@ partial class GameCore
 
     internal static readonly Rect Map2DViewArea = new(Global.Map2DViewX, Global.Map2DViewY,
         Global.Map2DViewWidth, Global.Map2DViewHeight);
-    internal static readonly Rect Map3DViewArea = new(Global.Map3DViewX, Global.Map3DViewY,
-        Global.Map3DViewWidth, Global.Map3DViewHeight);
+    internal Rect Map3DViewArea => renderView.Map3DViewArea;
 
     RenderMap2D? renderMap2D = null;    
     RenderMap3D? renderMap3D = null;

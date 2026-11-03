@@ -67,6 +67,9 @@ internal class Configuration : IConfiguration
     public SaveOption SaveOption { get; set; } = SaveOption.ProgramFolder;
     public int GameVersionIndex { get; set; } = -1;
     public bool LegacyMode { get; set; } = false;
+    public bool Expanded3DView { get; set; } = true;
+    public bool SlowKeyboardMovement { get; set; } = true;
+    public int KeyboardMovementSpeed { get; set; } = 60;
     public bool Music { get; set; } = true;
     public int Volume { get; set; } = 100;
     public bool ExternalMusic { get; set; } = false;
