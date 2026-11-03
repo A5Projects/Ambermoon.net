@@ -287,13 +287,19 @@ internal class ShaderProgram : IDisposable
 
     public void SetInputColorArray(string name, byte[] array)
     {
+        if (array.Length % 4 != 0)
+            throw new ArgumentException("Color data must contain complete RGBA colors.", nameof(array));
+
         var location = GetLocation(name);
         var normalizedArray = array.Select(i => i / 255.0f).ToArray();
+        // OpenGL counts vec4 elements, not individual components. Passing the
+        // component count lets the driver read beyond the normalized array.
+        uint colorCount = (uint)(normalizedArray.Length / 4);
 
         CallUniform
         (
-            () => state.Gl.Uniform4((int)location, (uint)array.Length, normalizedArray),
-            () => state.Gl.ProgramUniform4(ProgramIndex, (int)location, (uint)array.Length, normalizedArray)
+            () => state.Gl.Uniform4((int)location, colorCount, normalizedArray),
+            () => state.Gl.ProgramUniform4(ProgramIndex, (int)location, colorCount, normalizedArray)
         );
     }
 
