@@ -770,7 +770,12 @@ namespace Ambermoon.UI
                 expandedMapFrame.Add(part);
             }
 
-            AddPart(new Rect(0, 0, 204, 12), new Rect(0, 37, 204, 12));
+            // The original header includes empty margins outside its stone frame.
+            // Join its stone edges to the relocated side borders and stretch only
+            // the artwork between them. The location text keeps its normal size.
+            AddPart(new Rect(28, 0, 4, 12), new Rect(0, 37, 4, 12));
+            AddPart(new Rect(32, 0, 144, 12), new Rect(4, 37, 196, 12));
+            AddPart(new Rect(176, 0, 4, 12), new Rect(200, 37, 4, 12));
             AddPart(new Rect(28, 12, 4, 144), new Rect(0, 49, 4, 148));
             AddPart(new Rect(176, 12, 4, 144), new Rect(200, 49, 4, 148));
             AddPart(new Rect(28, 156, 152, 3), new Rect(0, 197, 204, 3));
