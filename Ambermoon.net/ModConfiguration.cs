@@ -64,6 +64,9 @@ internal class ModConfiguration(IConfiguration configuration, ModOptions modOpti
     public bool ShowCompletedQuests { get => configuration.ShowCompletedQuests; set => configuration.ShowCompletedQuests = value; }
     public GameLanguage Language { get => configuration.Language; set => configuration.Language = value; }
     public bool LegacyMode { get => configuration.LegacyMode; set => configuration.LegacyMode = value; }
+    public bool Expanded3DView { get => configuration.Expanded3DView; set => configuration.Expanded3DView = value; }
+    public bool SlowKeyboardMovement { get => configuration.SlowKeyboardMovement; set => configuration.SlowKeyboardMovement = value; }
+    public int KeyboardMovementSpeed { get => configuration.KeyboardMovementSpeed; set => configuration.KeyboardMovementSpeed = value; }
     public bool ExtendedSavegameSlots { get => configuration.ExtendedSavegameSlots; set => configuration.ExtendedSavegameSlots = value; }
     public bool ShowAdvancedLogo { get => configuration.ShowAdvancedLogo; set => configuration.ShowAdvancedLogo = value; }
     public bool ShowFantasyIntro { get => configuration.ShowFantasyIntro; set => configuration.ShowFantasyIntro = value; }
