@@ -368,7 +368,7 @@ partial class GameCore
 
         Ingame = true;
         CurrentSavegame = savegame;
-        GameTime = new SavegameTime(savegame);
+        GameTime = new SavegameTime(savegame) { PreventTiredness = PreventTiredness };
         lastSwimDamageHour = GameTime.Hour;
         lastSwimDamageMinute = GameTime.Minute;
         GameTime.GotTired += GameTime_GotTired;
@@ -487,6 +487,8 @@ partial class GameCore
 
         ShowMap(true);
         layout.ShowPortraitArea(true);
+        if (PreventTiredness)
+            ClearPartyExhaustion();
         UpdateLight(true);
 
         if (is3D)

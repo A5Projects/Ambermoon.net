@@ -1111,18 +1111,23 @@ partial class GameCore
                 break;
         }
 
-        if (crippleAttributes && hitPoints > 0)
+        if (crippleAttributes)
         {
+            // The first exhaustion warning can be dismissed after a cheat
+            // removes exhaustion. Keep restoration values even when its pending
+            // damage would be lethal and the visible stats are not halved.
             foreach (var attribute in EnumHelper.GetValues<Attribute>())
             {
                 partyMember.Attributes[attribute].StoredValue = partyMember.Attributes[attribute].CurrentValue;
-                partyMember.Attributes[attribute].CurrentValue >>= 1;
+                if (hitPoints > 0)
+                    partyMember.Attributes[attribute].CurrentValue >>= 1;
             }
 
             foreach (var skill in EnumHelper.GetValues<Skill>())
             {
                 partyMember.Skills[skill].StoredValue = partyMember.Skills[skill].CurrentValue;
-                partyMember.Skills[skill].CurrentValue >>= 1;
+                if (hitPoints > 0)
+                    partyMember.Skills[skill].CurrentValue >>= 1;
             }
         }
 

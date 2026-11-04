@@ -149,6 +149,7 @@ namespace Ambermoon
         DateTime lastTickTime = DateTime.Now;
         DateTime? pauseTime = null;
         uint currentMoveTicks = 0;
+        bool preventTiredness;
 
         public uint Year => savegame.Year;
         public uint Month => savegame.Month;
@@ -159,7 +160,19 @@ namespace Ambermoon
         public uint HoursWithoutSleep
         {
             get => savegame.HoursWithoutSleep;
-            set => savegame.HoursWithoutSleep = value;
+            set => savegame.HoursWithoutSleep = PreventTiredness ? Math.Min(value, 23u) : value;
+        }
+        public bool PreventTiredness
+        {
+            get => preventTiredness;
+            set
+            {
+                preventTiredness = value;
+                // Keep enough elapsed wake time to allow ordinary camping for
+                // HP/SP recovery, but stay below the first tiredness warning.
+                if (value)
+                    savegame.HoursWithoutSleep = Math.Min(savegame.HoursWithoutSleep, 23u);
+            }
         }
 
         public SavegameTime(Savegame savegame)
@@ -206,7 +219,7 @@ namespace Ambermoon
             {
                 savegame.Minute = 0;
                 ++savegame.Hour;
-                ++savegame.HoursWithoutSleep;
+                ++HoursWithoutSleep;
                 PostIncreaseUpdate();
             }
 
@@ -225,7 +238,7 @@ namespace Ambermoon
             {
                 savegame.Minute -= 60;
                 ++savegame.Hour;
-                ++savegame.HoursWithoutSleep;
+                ++HoursWithoutSleep;
                 ++hours;
             }
 
@@ -284,7 +297,7 @@ namespace Ambermoon
 
         public void Wait(uint hours)
         {
-            savegame.HoursWithoutSleep += hours;
+            HoursWithoutSleep += hours;
             savegame.Hour += hours;
             HandleTimePassed(hours, 0);
             MinuteChanged?.Invoke(hours * 60);
@@ -294,6 +307,9 @@ namespace Ambermoon
 
         void PostIncreaseUpdate(uint hours = 1)
         {
+            if (PreventTiredness)
+                savegame.HoursWithoutSleep = Math.Min(savegame.HoursWithoutSleep, 23u);
+
             bool dayPassed = false;
             bool yearPassed = false;
 

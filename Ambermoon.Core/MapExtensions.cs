@@ -21,6 +21,7 @@
 
 using Ambermoon.Data;
 using System;
+using System.Collections.Generic;
 
 namespace Ambermoon
 {
@@ -93,6 +94,9 @@ namespace Ambermoon
             if (filter != null && !filter(@event))
                 return false;
 
+            if (trigger == EventTrigger.Move && game.DisableRandomEncounters && IsRandomEncounterChain(@event, map.Events))
+                return false;
+
             if (trigger == EventTrigger.Move && LastMapEventIndexMap == map.Index && LastMapEventIndex == mapEventId)
             {
                 var ev = @event;
@@ -163,6 +167,56 @@ namespace Ambermoon
             LastMapEventIndexMap = map.Index;
             LastMapEventIndex = 0;
             LastMapEventPosition = null;
+        }
+
+        internal static bool IsRandomEncounterChain(Event firstEvent, List<Event> events)
+        {
+            // Random encounters are data-driven dice/condition chains, sometimes
+            // with encounter messages/music. Inspect both branches so a mixed quest
+            // chain is never skipped merely because one path can start a fight.
+            var results = new Dictionary<(Event Event, bool Randomized), bool>();
+            var visiting = new HashSet<(Event Event, bool Randomized)>();
+            bool hasBattle = false;
+
+            bool VisitBranch(uint index, bool randomized) => index == 0xffff ||
+                (index < events.Count && Visit(events[(int)index], randomized));
+
+            bool Visit(Event? current, bool randomized)
+            {
+                if (current == null)
+                    return true;
+
+                var key = (current, randomized);
+                if (results.TryGetValue(key, out bool result))
+                    return result;
+                if (!visiting.Add(key))
+                    return false;
+
+                result = current switch
+                {
+                    StartBattleEvent => randomized,
+                    Dice100RollEvent dice when dice.Chance == 0 =>
+                        VisitBranch(dice.ContinueIfFalseWithMapEventIndex, randomized),
+                    Dice100RollEvent dice when dice.Chance >= 100 => Visit(dice.Next, randomized),
+                    Dice100RollEvent dice => Visit(dice.Next, true) &&
+                        VisitBranch(dice.ContinueIfFalseWithMapEventIndex, true),
+                    ConditionEvent condition when condition.TypeOfCondition is not
+                        (ConditionEvent.ConditionType.SayWord or ConditionEvent.ConditionType.EnterNumber)
+                        => Visit(condition.Next, randomized) &&
+                            VisitBranch(condition.ContinueIfFalseWithMapEventIndex, randomized),
+                    PopupTextEvent text when randomized => Visit(text.Next, true),
+                    ChangeMusicEvent music when randomized => Visit(music.Next, true),
+                    _ => false
+                };
+
+                if (current is StartBattleEvent && result)
+                    hasBattle = true;
+                visiting.Remove(key);
+                results[key] = result;
+                return result;
+            }
+
+            return Visit(firstEvent, false) && hasBattle;
         }
     }
 }
