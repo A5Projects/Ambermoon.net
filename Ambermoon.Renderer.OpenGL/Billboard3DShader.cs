@@ -98,6 +98,7 @@ internal class Billboard3DShader : Texture3DShader
         $"uniform uvec2 {DefaultAtlasSizeName};",
         $"uniform mat4 {DefaultProjectionMatrixName};",
         $"uniform mat4 {DefaultModelViewMatrixName};",
+        $"uniform vec2 {DefaultFogDepthName};",
         $"out vec2 varTexCoord;",
         $"out float dist;",
         $"out float drawY;",
@@ -124,7 +125,7 @@ internal class Billboard3DShader : Texture3DShader
         $"    varTextureEndCoord = atlasFactor * vec2({DefaultTexEndCoordName}.x, {DefaultTexEndCoordName}.y);",
         $"    varTextureSize = atlasFactor * vec2({DefaultTexSizeName}.x, {DefaultTexSizeName}.y);",
         $"    gl_Position = {DefaultProjectionMatrixName} * localPos;",
-        $"    dist = gl_Position.z;",
+        $"    dist = dot({DefaultFogDepthName}, localPos.zw);",
         $"    drawY = localPos.y;",
         $"}}"
     };

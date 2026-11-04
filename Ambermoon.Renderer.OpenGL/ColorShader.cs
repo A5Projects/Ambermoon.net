@@ -93,7 +93,7 @@ internal class ColorShader
         $"}}"
     ];
 
-    public void UpdateMatrices(State state)
+    public virtual void UpdateMatrices(State state)
     {
         shaderProgram.SetInputMatrix(DefaultModelViewMatrixName, state.CurrentModelViewMatrix.ToArray(), true);
         shaderProgram.SetInputMatrix(DefaultProjectionMatrixName, state.CurrentProjectionMatrix.ToArray(), true);

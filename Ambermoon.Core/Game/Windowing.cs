@@ -39,6 +39,7 @@ partial class GameCore
             ? DataNameProvider.GetWorldName(map.World)
             : map.Name;
         windowTitle!.Text = ProcessText(mapName);
+        windowTitle.Place(layout.GetTextRect(8, 38, 192, 10), TextAlign.Center);
         windowTitle.PaletteIndex = UIPaletteIndex;
         windowTitle.TextColor = TextColor.BrightGray;
     }
@@ -150,6 +151,7 @@ partial class GameCore
             SetActivePartyMember(SlotFromPartyMember(CurrentPartyMember!)!.Value, false);
 
             windowTitle!.Text = renderView.TextProcessor.CreateText(DataNameProvider.InventoryTitleString);
+            windowTitle.Place(layout.GetTextRect(8, 40, 192, 10), TextAlign.Center);
             windowTitle.PaletteIndex = UIPaletteIndex;
             windowTitle.TextColor = TextColor.White;
             windowTitle.Visible = true;

@@ -12,11 +12,11 @@ internal partial class Layout
         Global.VirtualScreenHeight - 3 * Button.Height - 2 * ExplorationActionsPadding,
         3 * Button.Width + 2 * ExplorationActionsPadding,
         3 * Button.Height + 2 * ExplorationActionsPadding);
-    public static readonly Rect ExplorationMenuButtonArea = new(282, 39, 36, 12);
+    public static readonly Rect ExplorationMenuButtonArea = new(282, 37, 36, 12);
     public bool IsExplorationLayout => Type is LayoutType.Map2D or LayoutType.Map3D;
     public bool ExplorationActionsOpen { get; private set; }
     IColoredRect? explorationActionBackground;
-    IColoredRect? explorationMenuBorder;
+    IColoredRect[]? explorationMenuBorder;
     IColoredRect? explorationMenuBackground;
     IColoredRect? explorationTitleBackground;
     UIText? explorationMenuLabel;
@@ -36,12 +36,20 @@ internal partial class Layout
     {
         if (explorationMenuLabel != null)
             return;
-        explorationActionBackground = CreateExplorationArea(ExplorationActionsArea, new Color(24, 21, 16, 235), 1);
-        explorationMenuBorder = CreateExplorationArea(ExplorationMenuButtonArea, new Color(139, 125, 94, 220), 1);
-        explorationMenuBackground = CreateExplorationArea(new Rect(283, 40, 34, 10), new Color(24, 21, 16, 230), 2);
-        explorationTitleBackground = CreateExplorationArea(new Rect(4, 39, 200, 10), new Color(16, 15, 12, 180), 1);
+        explorationActionBackground = CreateExplorationArea(ExplorationActionsArea, new Color(24, 21, 16, 120), 1);
+        // Draw only the outline so its opacity does not accumulate beneath the fill.
+        var borderColor = new Color(139, 125, 94, 150);
+        explorationMenuBorder =
+        [
+            CreateExplorationArea(new Rect(282, 37, 36, 1), borderColor, 1),
+            CreateExplorationArea(new Rect(282, 48, 36, 1), borderColor, 1),
+            CreateExplorationArea(new Rect(282, 38, 1, 10), borderColor, 1),
+            CreateExplorationArea(new Rect(317, 38, 1, 10), borderColor, 1)
+        ];
+        explorationMenuBackground = CreateExplorationArea(new Rect(283, 38, 34, 10), new Color(24, 21, 16, 95), 2);
+        explorationTitleBackground = CreateExplorationArea(new Rect(4, 37, 200, 10), new Color(16, 15, 12, 95), 1);
         explorationMenuLabel = new UIText(RenderView, game.UIPaletteIndex,
-            RenderView.TextProcessor.CreateText("MENU"), new Rect(284, 41, 32, 8), 4,
+            RenderView.TextProcessor.CreateText("MENU"), new Rect(284, 39, 32, 8), 4,
             TextColor.BrightGray, true, TextAlign.Center);
     }
 
@@ -74,7 +82,8 @@ internal partial class Layout
         {
             explorationMenuLabel.Visible = chrome;
             explorationMenuLabel.PaletteIndex = game.UIPaletteIndex;
-            explorationMenuBorder!.Visible = chrome;
+            foreach (var edge in explorationMenuBorder!)
+                edge.Visible = chrome;
             explorationMenuBackground!.Visible = chrome;
             explorationTitleBackground!.Visible = chrome;
             explorationActionBackground!.Visible = exploring && !PopupActive && (ExplorationActionsOpen || OptionMenuOpen);
@@ -137,11 +146,14 @@ internal partial class Layout
         ExplorationActionsOpen = false;
         ButtonGridPage = 0;
         explorationActionBackground?.Delete();
-        explorationMenuBorder?.Delete();
+        if (explorationMenuBorder != null)
+            foreach (var edge in explorationMenuBorder)
+                edge.Delete();
         explorationMenuBackground?.Delete();
         explorationTitleBackground?.Delete();
         explorationMenuLabel?.Destroy();
-        explorationActionBackground = explorationMenuBorder = explorationMenuBackground = explorationTitleBackground = null;
+        explorationActionBackground = explorationMenuBackground = explorationTitleBackground = null;
+        explorationMenuBorder = null;
         explorationMenuLabel = null;
         // Retain a pending mouse-up after an action opens a legacy window.
         // It must not click through into that new window.

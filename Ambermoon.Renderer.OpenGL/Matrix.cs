@@ -54,7 +54,7 @@ public class Matrix4
         ]);
     }
 
-    public static Matrix4 CreatePerspective(float fovY, float aspect, float near, float far)
+    public static Matrix4 CreatePerspective(float fovY, float aspect, float near, float far, float? clipNearDistance = null)
     {
         if (fovY <= 0.0f || fovY >= 180.0f)
             throw new ArgumentException("The field of view y-angle was outside the valid range of 0 < fovAngle < 180.");
@@ -70,6 +70,9 @@ public class Matrix4
 
         if (far - near <= float.Epsilon)
             throw new ArgumentException("Near z value equals far z value or far is smaller than near which is not allowed.");
+
+        if (clipNearDistance.HasValue && (clipNearDistance.Value <= float.Epsilon || clipNearDistance.Value >= 4.0f * far / 3.0f + near))
+            throw new ArgumentOutOfRangeException(nameof(clipNearDistance), "The near clipping distance must be positive and smaller than the far clipping distance.");
 
         float scale = near * (float)Math.Tan(0.5 * fovY);
 
@@ -91,11 +94,27 @@ public class Matrix4
         // near/(near+distance) in the projection matrix.
         // This projection matrix exactly scales x and y by
         // 256/(256+distance) with the given FOV applied.
+        float depthScale = -(2.0f * near + far) / (far - near);
+        float depthOffset = -(2.0f * near * (far + near)) / (far - near) - near;
+
+        if (clipNearDistance.HasValue)
+        {
+            // The last row puts the projection eye at z = near, behind the
+            // physical camera. Keep that offset (and therefore x/y projection)
+            // unchanged, but measure clipping from this projection eye. The old
+            // near plane can slice nearby side walls in a wide viewport.
+            // Its far plane is at physical z = -4*far/3; retain that distance.
+            float clipFarDistance = 4.0f * far / 3.0f + near;
+            float clipNear = clipNearDistance.Value;
+            depthScale = -(clipFarDistance + clipNear) / (clipFarDistance - clipNear);
+            depthOffset = -near * depthScale - 2.0f * clipFarDistance * clipNear / (clipFarDistance - clipNear);
+        }
+
         return new Matrix4(
         [
             2.0f * near / w,    0.0f,               (r + l) / w,                    0.0f,
             0.0f,               2.0f * near / h,    (t + b) / h,                    0.0f,
-            0.0f,               0.0f,               -(2.0f*near+far)/(far-near),    -(2.0f*near*(far+near))/(far-near)-near,
+            0.0f,               0.0f,               depthScale,                     depthOffset,
             0.0f,               0.0f,               -1.0f,                          near
         ]);
     }

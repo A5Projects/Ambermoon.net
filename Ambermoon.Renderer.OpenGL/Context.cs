@@ -73,7 +73,17 @@ public class Context
     {
         aspect ??= this.aspect;
 
-        State.ProjectionMatrix3D = Matrix4.CreatePerspective(FovY3D, aspect.Value, 0.1f, 40.0f * Global.DistancePerBlock); // Max 3D map dimension is 41
+        var fogProjection = Matrix4.CreatePerspective(FovY3D, aspect.Value, 0.1f, 40.0f * Global.DistancePerBlock).ToArray();
+        State.FogDepth3D = (fogProjection[10], fogProjection[11]);
+
+        // Keep Ambermoon's projection offset while clipping close to its shifted
+        // projection eye, so the wider view does not cut through nearby walls.
+        // Retain depth precision at ordinary aspects, while limiting the near
+        // plane's horizontal half-width to 0.05 blocks in very wide/low rooms.
+        float clipNearDistance = 0.05f * Global.DistancePerBlock /
+            Math.Max(1.0f, Math.Abs(aspect.Value) * (float)Math.Tan(0.5f * FovY3D));
+        State.ProjectionMatrix3D = Matrix4.CreatePerspective(FovY3D, aspect.Value, 0.1f, 40.0f * Global.DistancePerBlock,
+            clipNearDistance: clipNearDistance); // Max 3D map dimension is 41
 
         State.ClearMatrices();
         State.PushModelViewMatrix(Matrix4.Identity);

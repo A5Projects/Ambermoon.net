@@ -43,6 +43,7 @@ internal class Texture3DShader : ColorShader
     internal static readonly string DefaultPaletteCountName = TextureShader.DefaultPaletteCountName;
     internal static readonly string DefaultFogColorName = "fogColor";
     internal static readonly string DefaultFogDistanceName = "fogDist";
+    internal static readonly string DefaultFogDepthName = "fogDepth";
     internal static readonly string DefaultFadeName = "fade";
 
     // The palette has a size of 32xNumPalettes pixels.
@@ -118,6 +119,7 @@ internal class Texture3DShader : ColorShader
         $"uniform uvec2 {DefaultAtlasSizeName};",
         $"uniform mat4 {DefaultProjectionMatrixName};",
         $"uniform mat4 {DefaultModelViewMatrixName};",
+        $"uniform vec2 {DefaultFogDepthName};",
         $"out vec2 varTexCoord;",
         $"out float dist;",
         $"flat out float palIndex;",
@@ -133,8 +135,9 @@ internal class Texture3DShader : ColorShader
         $"    varTextureEndCoord = atlasFactor * vec2({DefaultTexEndCoordName}.x, {DefaultTexEndCoordName}.y);",
         $"    varTextureSize = atlasFactor * vec2({DefaultTexSizeName}.x, {DefaultTexSizeName}.y);",
         $"    alphaEnabled = float({DefaultAlphaName});",
-        $"    gl_Position = {DefaultProjectionMatrixName} * {DefaultModelViewMatrixName} * vec4({DefaultPositionName}, 1.0f);",
-        $"    dist = gl_Position.z;",
+        $"    vec4 viewPosition = {DefaultModelViewMatrixName} * vec4({DefaultPositionName}, 1.0f);",
+        $"    gl_Position = {DefaultProjectionMatrixName} * viewPosition;",
+        $"    dist = dot({DefaultFogDepthName}, viewPosition.zw);",
         $"}}"
     ];
 
@@ -148,6 +151,12 @@ internal class Texture3DShader : ColorShader
         : base(state, fragmentShaderLines, vertexShaderLines)
     {
 
+    }
+
+    public override void UpdateMatrices(State state)
+    {
+        base.UpdateMatrices(state);
+        shaderProgram.SetInputVector2(DefaultFogDepthName, state.FogDepth3D.Scale, state.FogDepth3D.Offset);
     }
 
     public void UsePalette(bool use)
