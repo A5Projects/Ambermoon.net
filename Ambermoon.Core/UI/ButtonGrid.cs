@@ -59,6 +59,19 @@ namespace Ambermoon.UI
 
         public Action? GetButtonAction(int index) => buttons[index].LeftClickAction;
 
+        public void SetPosition(int x, int y)
+        {
+            if (area.X == x && area.Y == y)
+                return;
+
+            area.Position.X = x;
+            area.Position.Y = y;
+            rightMouseDown = false;
+
+            for (int i = 0; i < buttons.Length; ++i)
+                buttons[i].SetPosition(x + (i % 3) * Button.Width, y + (i / 3) * Button.Height);
+        }
+
         public bool IsButtonPressed(int index) => buttons[index].Pressed;
 
         public CursorType? PressButton(int index, uint currentTicks)

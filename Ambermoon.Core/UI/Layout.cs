@@ -793,21 +793,7 @@ namespace Ambermoon.UI
             // This atlas graphic is 320x144. Stretch its height for the larger view
             // instead of sampling the neighboring graphics below it.
             overlay.TextureSize = new Size(area.Width, Math.Min(area.Height, 144));
-            string versionString = game.GetFullVersion();
-            Rect boxArea;
-            Rect textArea;
-            if (Type == LayoutType.Battle)
-            {
-                boxArea = new Rect(88, 64, 144, 40);
-                textArea = new Rect(88, 67, 144, 40);
-            }
-            else
-            {
-                boxArea = new Rect(32, 90, 144, 40);
-                textArea = new Rect(32, 93, 144, 40);
-            }
-            AddSprite(boxArea, Graphics.GetCustomUIGraphicIndex(UICustomGraphic.BiggerInfoBox), game.UIPaletteIndex, 2);
-            AddText(textArea, versionString, TextColor.BrightGray, TextAlign.Center, 3);
+            AddOptionMenuInfo();
 
             buttonGrid.SetButton(0, ButtonType.Quit, false, game.Quit, false, Button.GetTooltip(game.GameLanguage, Button.TooltipType.Quit));
             buttonGrid.SetButton(1, ButtonType.Empty, false, null, false);
@@ -822,6 +808,7 @@ namespace Ambermoon.UI
             if (game.BattleActive)
                 game.HideAutoBattleRounds();
             UpdateExplorationActionsVisibility();
+            UpdateExplorationHudVisibility();
         }
 
         void CloseOptionMenu()
@@ -831,7 +818,7 @@ namespace Ambermoon.UI
             additionalSprites.Remove(additionalSprites.Last());
             additionalSprites.Last()?.Delete(); // map disable overlay
             additionalSprites.Remove(additionalSprites.Last());
-            texts.Last()?.Destroy(); // version string
+            texts.Last()?.Destroy(); // version and control hints
             texts.Remove(texts.Last());
             ButtonGridPage = 0;
             UpdateLayoutButtons(ticksPerMovement);
@@ -843,6 +830,7 @@ namespace Ambermoon.UI
             if (!game.BattleActive)
                 game.ShowMobileTouchPadHandler();
             UpdateExplorationActionsVisibility();
+            UpdateExplorationHudVisibility();
         }
 
         public void ShowButtons(bool show)
@@ -1247,7 +1235,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 24;
+        const int OptionCount = 25;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1283,7 +1271,8 @@ namespace Ambermoon.UI
                     // Page 4
                     "Info beim Speichern/Laden",
                     "Cheats aktivieren",
-                    "Auto-Kampf"
+                    "Auto-Kampf",
+                    "Maussteuerung 3D"
                 }
             },
             {
@@ -1317,7 +1306,8 @@ namespace Ambermoon.UI
                     // Page 4
                     "Show save/load info",
                     "Enable cheats",
-                    "Auto-Battle"
+                    "Auto-Battle",
+                    "3D mouse"
                 }
             },
             {
@@ -1351,7 +1341,8 @@ namespace Ambermoon.UI
                     // Page 4
                     "Messages de sauvegarde",
                     "Activer les cheats",
-                    "Combat automatique"
+                    "Combat automatique",
+                    "Souris 3D"
                 }
             },
             {
@@ -1385,7 +1376,8 @@ namespace Ambermoon.UI
                     // Page 4
                     "Pokaż inf. zapis/odczyt",
                     "Włącz cheaty",
-                    "Automatyczna walka"
+                    "Automatyczna walka",
+                    "Mysz 3D"
                 }
             },
             {
@@ -1419,7 +1411,8 @@ namespace Ambermoon.UI
                     // Page 4
                     "Info o uložení/nahrání",
                     "Povolit cheaty",
-                    "Automatický boj"
+                    "Automatický boj",
+                    "Myš ve 3D"
                 }
             }
         }.ToImmutableDictionary();
@@ -1560,6 +1553,15 @@ namespace Ambermoon.UI
             }
         }.ToImmutableDictionary();
 
+        static readonly ImmutableDictionary<GameLanguage, string[]> MouseLook3DValues = new Dictionary<GameLanguage, string[]>
+        {
+            { GameLanguage.German, ["Pfeile", "Mausblick"] },
+            { GameLanguage.English, ["Arrows", "Mouse view"] },
+            { GameLanguage.French, ["Flèches", "Vue souris"] },
+            { GameLanguage.Polish, ["Strzałki", "Rozglądanie"] },
+            { GameLanguage.Czech, ["Šipky", "Rozhlížení"] }
+        }.ToImmutableDictionary();
+
         static readonly ImmutableDictionary<GameLanguage, string[]> AutoBattleOptions = new Dictionary<GameLanguage, string[]>
         {
             {
@@ -1676,6 +1678,7 @@ namespace Ambermoon.UI
             AddOption((index, _) => ToggleSaveLoadInfo());
             AddOption((index, _) => ToggleCheats());
             AddOption((index, _) => ToggleAutoBattle());
+            AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleMouseLook3D());
 
             void UpdateFullscreenOption()
             {
@@ -1760,6 +1763,7 @@ namespace Ambermoon.UI
             void SetSaveLoadInfo() => SetOptionString(21, game.CoreConfiguration.ShowSaveLoadMessage ? on : off);
             void SetCheats() => SetOptionString(22, cheatsEnabled ? on : off);
             void SetAutoBattle() => SetOptionString(23, AutoBattleOptions[game.GameLanguage][Util.Limit(0, game.CoreConfiguration.AutoBattleRounds / 5, 3)]);
+            void SetMouseLook3D() => SetOptionString(24, MouseLook3DValues[game.GameLanguage][game.CoreConfiguration.MouseLook3D ? 1 : 0]);
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1799,6 +1803,7 @@ namespace Ambermoon.UI
                         SetSaveLoadInfo();
                         SetCheats();
                         SetAutoBattle();
+                        SetMouseLook3D();
                         break;
                 }
             }
@@ -1896,6 +1901,12 @@ namespace Ambermoon.UI
             {
                 game.CoreConfiguration.ShowButtonTooltips = !game.CoreConfiguration.ShowButtonTooltips;
                 SetTooltips();
+                changedConfiguration = true;
+            }
+            void ToggleMouseLook3D()
+            {
+                game.SetMouseLook3D(!game.CoreConfiguration.MouseLook3D);
+                SetMouseLook3D();
                 changedConfiguration = true;
             }
             void TogglePlayerStatsTooltips()

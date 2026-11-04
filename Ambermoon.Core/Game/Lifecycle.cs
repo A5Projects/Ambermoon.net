@@ -111,6 +111,7 @@ partial class GameCore
 
     public void Update(double deltaTime)
     {
+        UpdateMouseLookCapture();
         if (worldMapViewer != null)
         {
             worldMapViewer.Update();
@@ -312,6 +313,7 @@ partial class GameCore
             renderView.DrugColorComponent = null;
             drugOverlay!.Visible = false;
         }
+        UpdateMouseLookCapture();
     }
 
     // savegames of older game data versions may lack new party members, chests or merchants
@@ -785,6 +787,7 @@ partial class GameCore
 
     public void Destroy()
     {
+        ReleaseMouseLookCapture();
         drugOverlay?.Delete();
         ouchSprite?.Delete();
         questLogIcon?.Delete();

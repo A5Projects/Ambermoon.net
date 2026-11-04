@@ -6,7 +6,12 @@ namespace Ambermoon.UI;
 
 internal partial class Layout
 {
-    public static readonly Rect ExplorationActionsArea = new(204, 139, 104, 60);
+    const int ExplorationActionsPadding = 4;
+    public static readonly Rect ExplorationActionsArea = new(
+        Global.VirtualScreenWidth - 3 * Button.Width - 2 * ExplorationActionsPadding,
+        Global.VirtualScreenHeight - 3 * Button.Height - 2 * ExplorationActionsPadding,
+        3 * Button.Width + 2 * ExplorationActionsPadding,
+        3 * Button.Height + 2 * ExplorationActionsPadding);
     public static readonly Rect ExplorationMenuButtonArea = new(282, 39, 36, 12);
     public bool IsExplorationLayout => Type is LayoutType.Map2D or LayoutType.Map3D;
     public bool ExplorationActionsOpen { get; private set; }
@@ -59,6 +64,8 @@ internal partial class Layout
 
     public void UpdateExplorationActionsVisibility()
     {
+        buttonGrid.SetPosition(IsExplorationLayout ? ExplorationActionsArea.X + ExplorationActionsPadding : Global.ButtonGridX,
+            IsExplorationLayout ? ExplorationActionsArea.Y + ExplorationActionsPadding : Global.ButtonGridY);
         if (IsExplorationLayout)
             EnsureExplorationActions();
         bool exploring = IsExplorationLayout && !game.WindowActive;

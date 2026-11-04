@@ -473,6 +473,12 @@ partial class GameCore
         {
             cursor.UpdatePosition(cursorPosition, this);
 
+            if (MouseLookActive)
+            {
+                CursorType = CursorType.None;
+                return;
+            }
+
             if (cursor.Type == CursorType.VideoWait)
                 return; // Delay event is active, don't change cursor
 

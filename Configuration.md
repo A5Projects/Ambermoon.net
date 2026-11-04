@@ -48,6 +48,8 @@ MonitorIndex | Index of the monitor the application is on | 0 to the number of m
 Expanded3DView | Retained for configuration compatibility; this experimental branch always uses the full exploration viewport in both 2D and 3D. Use the separate stable build for the framed layout. | true or false | true
 SlowKeyboardMovement | Enables slower keyboard movement; Caps Lock toggles this while exploring | true or false | true
 KeyboardMovementSpeed | Keyboard movement and turning speed while slower movement is enabled, as a percentage of full speed. In 2D this controls tile-step frequency. Mouse movement is unaffected. | Integer from 10 to 100 (values outside this range are clamped) | 60
+MouseLook3D | Enables horizontal mouse-look during 3D exploration. Middle-click or the 3D mouse setting toggles it; menus, dialogs, 2D maps, and focus loss release the pointer. | true or false | false
+MouseLookSensitivity | Mouse-look turning sensitivity as a percentage of the base 0.15 degrees per window pixel. Independent of keyboard movement speed; configuration-only. | Integer from 25 to 300 (values outside this range are clamped) | 100
 
 There are also some technical or more advanced settings which should only be changed by advanced users:
 

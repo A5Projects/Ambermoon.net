@@ -12,12 +12,13 @@ F7 | Change battle speed (use Ctrl, Shift or Alt to change backwards)
 F8 | Change graphic filter (use Ctrl, Shift or Alt to change backwards)
 F9 | Change graphic overlay (use Ctrl, Shift or Alt to change backwards)
 F10 | Change color effect (use Ctrl, Shift or Alt to change backwards)
+F11 | Cycle windowed, full-size window, and fullscreen modes
 PrintScreen | Take screenshot (stored in folder Screenshots)
 Ctrl + P | Take screenshot (stored in folder Screenshots)
 Ctrl + M | Toggle music
 Ctrl + , | Lower volume
 Ctrl + . | Increase volume
-Escape | Generally aborts or closes things
+Escape | Close the current window/popup first; toggle the action overlay during exploration
 Return | Generally submits or closes things; toggle the action overlay in map view
 Tab | Toggle the action overlay in map view
 Space | Generally closes things, in 3D you can active events or NPCs with it
@@ -34,7 +35,7 @@ NumPad 1 to 9 | Move while the exploration overlay is closed; select the corresp
 
 ## Map
 
-Press **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape or a right click inside the overlay closes it. The overlay provides interactions, spells, resting, the automap, battle positions, and options (including save/load). Opening it does not resize or recenter the world.
+Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape closes an existing window or popup first. A right click inside the overlay also closes it. The overlay sits against the bottom-right corner and provides interactions, spells, resting, the automap, battle positions, and options (including save/load). Opening it does not resize or recenter the world.
 
 Use the arrow keys, WASD, or the numpad to move without opening any controls. In 3D, Q/E and numpad 7/9 turn, while numpad 1/3 turn around. Numpad 5 opens the wait popup. With the overlay open, numpad keys select its buttons instead of moving. Mouse movement and the existing right-click interactions remain available.
 
@@ -49,6 +50,12 @@ You can right click on the map to transform the cursor into a crosshair cursor. 
 Hovering over the player the cursor becomes Zzz. Left clicking will wait for 5 minutes.
 
 #### 3D Maps
+
+**Middle-click (mouse wheel button)** switches between the original mouse arrows and horizontal mouse-look while exploring. The same saved option is available as **3D mouse** on settings page 4. Mouse-look hides and captures the pointer; moving the mouse left/right turns your view. Vertical movement does not tilt the camera. Opening the action overlay, a dialog, or another game window releases the pointer; returning to 3D exploration resumes mouse-look. Switching to 2D or away from the game window also releases it.
+
+For first-person controls, select the **WASDQE** keyboard setting: W/S move, A/D strafe, and Q/E still turn. **Space** continues to interact with what is directly in front of you. Left/right mouse buttons do not start arrow movement or switch to the old interaction cursor while mouse-look is active. The default mouse mode remains arrows; changing it is remembered. `MouseLookSensitivity` in the configuration adjusts turning sensitivity independently of the Caps Lock keyboard-speed setting.
+
+In the original **arrows** mouse mode:
 
 Hovering over the map view will change the cursor to movement arrows or Zzz in the center.
 

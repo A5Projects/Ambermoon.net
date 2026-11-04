@@ -117,6 +117,7 @@ partial class GameCore
             {
                 ResetMoveKeys(true);
                 CurrentMobileAction = MobileAction.None;
+                ReleaseMouseLookCapture();
             }
         }
     }
@@ -139,6 +140,7 @@ partial class GameCore
 
     internal void TrapMouse(Rect area)
     {
+        ReleaseMouseLookCapture();
         if (clickMoveActive)
             trappedAfterClickMoveActivation = true;
 
@@ -191,6 +193,9 @@ partial class GameCore
 
     public virtual void OnMouseMove(Position position, MouseButtons buttons)
     {
+        UpdateMouseLookCapture();
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnMouseMove(position, buttons);
@@ -569,8 +574,8 @@ partial class GameCore
             return;
         }
 
-        if (!WindowActive && !layout.PopupActive && InputEnable &&
-            (key is Key.Tab or Key.Return || (key == Key.Escape && layout.ExplorationActionsOpen)))
+        if (!WindowActive && !layout.PopupActive && InputEnable && nextClickHandler == null &&
+            (key is Key.Tab or Key.Return or Key.Escape))
         {
             if (!wasPressed)
             {
@@ -579,6 +584,7 @@ partial class GameCore
                 ResetMoveKeys(true);
                 layout.ToggleExplorationActions();
                 CursorType = CursorType.Sword;
+                UpdateMouseLookCapture();
             }
             return;
         }
@@ -1040,6 +1046,16 @@ partial class GameCore
 
     public virtual void OnMouseUp(Position cursorPosition, MouseButtons buttons)
     {
+        if (buttons.HasFlag(MouseButtons.Middle))
+        {
+            bool toggledMouseLook = mouseLookToggleHeld;
+            mouseLookToggleHeld = false;
+            if (toggledMouseLook)
+                return;
+        }
+        UpdateMouseLookCapture();
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             layout.CancelExplorationUiPress();
@@ -1112,6 +1128,18 @@ partial class GameCore
 
     public virtual void OnMouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers = KeyModifiers.None)
     {
+        UpdateMouseLookCapture();
+        if (buttons.HasFlag(MouseButtons.Middle) && CanUseMouseLook)
+        {
+            if (!mouseLookToggleHeld)
+            {
+                mouseLookToggleHeld = true;
+                SetMouseLook3D(!CoreConfiguration.MouseLook3D);
+            }
+            return;
+        }
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnMouseDown(position, buttons);

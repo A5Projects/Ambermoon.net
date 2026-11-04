@@ -506,6 +506,20 @@ namespace Ambermoon.UI
             tooltip.Visible = false;
         }
 
+        public void SetPosition(int x, int y)
+        {
+            if (Area.X == x && Area.Y == y)
+                return;
+
+            Area.Position.X = x;
+            Area.Position.Y = y;
+            frameSprite.X = disableOverlay.X = iconSprite.X = x;
+            frameSprite.Y = y;
+            disableOverlay.Y = y + 3;
+            iconSprite.Y = y + (Pressed ? 4 : 2);
+            HideTooltip();
+        }
+
         public string? Tooltip
         {
             get => tooltipText;
@@ -543,8 +557,12 @@ namespace Ambermoon.UI
                 tooltip.Text = renderView.TextProcessor.CreateText(text);
                 tooltip.TextColor = TooltipColor;
                 int width = tooltip.Text.MaxLineSize * Global.GlyphWidth;
-                tooltip.X = Math.Min(Global.VirtualScreenWidth - width, offset.X + Area.Center.X - width / 2);
-                tooltip.Y = offset.Y + Area.Top - tooltip.Text.LineCount * Global.GlyphLineHeight + 1 + tooltipYOffset;
+                int height = tooltip.Text.LineCount * Global.GlyphLineHeight;
+                // Leave room for the one-pixel text shadow at the screen edges.
+                tooltip.X = Math.Clamp(offset.X + Area.Center.X - width / 2, 0,
+                    Math.Max(0, Global.VirtualScreenWidth - width - 1));
+                tooltip.Y = Math.Clamp(offset.Y + Area.Top - height + 1 + tooltipYOffset, 0,
+                    Math.Max(0, Global.VirtualScreenHeight - height - 1));
             }
 
             tooltip.Visible = visible;

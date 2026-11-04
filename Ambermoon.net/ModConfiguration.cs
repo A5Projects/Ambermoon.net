@@ -39,6 +39,8 @@ internal class ModConfiguration(IConfiguration configuration, ModOptions modOpti
     // All other options
     public bool FirstStart { get => configuration.FirstStart; set => configuration.FirstStart = value; }
     public bool IsMobile => configuration.IsMobile;
+    public bool MouseLook3D { get => configuration.MouseLook3D; set => configuration.MouseLook3D = value; }
+    public int MouseLookSensitivity { get => configuration.MouseLookSensitivity; set => configuration.MouseLookSensitivity = value; }
     public int? Width { get => configuration.Width; set => configuration.Width = value; }
     public int? Height { get => configuration.Height; set => configuration.Height = value; }
     public int? FullscreenWidth { get => configuration.FullscreenWidth; set => configuration.FullscreenWidth = value; }
