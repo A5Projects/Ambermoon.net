@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Character2D.cs - Basic 2D character implementation
  *
  * Copyright (C) 2020-2021  Robert Schneckenhaus <robert.schneckenhaus@web.de>
@@ -136,8 +136,8 @@ namespace Ambermoon.Render
                 topSprite.Layer = layer;
                 topSprite.PaletteIndex = (byte)paletteIndexProvider();
                 topSprite.ClipArea = GameCore.Map2DViewArea;
-                topSprite.X = Global.Map2DViewX + (startPosition.X - (int)map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
-                topSprite.Y = Global.Map2DViewY + (startPosition.Y - (int)map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y +
+                topSprite.X = map.RenderOriginX + (startPosition.X - (int)map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
+                topSprite.Y = map.RenderOriginY + (startPosition.Y - (int)map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y +
                     RenderMap2D.TILE_HEIGHT - currentAnimationInfo.FrameHeight;
                 sprite.X = topSprite.X;
                 sprite.Y = topSprite.Y + topSprite.Height;
@@ -147,8 +147,8 @@ namespace Ambermoon.Render
                 sprite = spriteFactory.CreateAnimated(currentAnimationInfo.FrameWidth, currentAnimationInfo.FrameHeight,
                     textureAtlas.Texture.Width, currentAnimationInfo.NumStandFrames);
                 sprite.TextureAtlasOffset = textureOffset;
-                sprite.X = Global.Map2DViewX + (startPosition.X - (int)map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
-                sprite.Y = Global.Map2DViewY + (startPosition.Y - (int)map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y;
+                sprite.X = map.RenderOriginX + (startPosition.X - (int)map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
+                sprite.Y = map.RenderOriginY + (startPosition.Y - (int)map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y;
             }            
             sprite.Layer = layer;
             sprite.PaletteIndex = (byte)paletteIndexProvider();
@@ -357,13 +357,13 @@ namespace Ambermoon.Render
                 sprite.PaletteIndex = (byte)paletteIndexProvider();
                 if (topSprite == null)
                 {
-                    sprite.X = Global.Map2DViewX + (Position.X - (int)Map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
-                    sprite.Y = Global.Map2DViewY + (Position.Y - (int)Map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y;
+                    sprite.X = Map.RenderOriginX + (Position.X - (int)Map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
+                    sprite.Y = Map.RenderOriginY + (Position.Y - (int)Map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y;
                 }
                 else
                 {
-                    topSprite.X = Global.Map2DViewX + (Position.X - (int)Map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
-                    topSprite.Y = Global.Map2DViewY + (Position.Y - (int)Map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y +
+                    topSprite.X = Map.RenderOriginX + (Position.X - (int)Map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X;
+                    topSprite.Y = Map.RenderOriginY + (Position.Y - (int)Map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y +
                         RenderMap2D.TILE_HEIGHT - animationInfo.FrameHeight;
                     sprite.X = topSprite.X;
                     sprite.Y = topSprite.Y + topSprite.Height;
@@ -384,7 +384,7 @@ namespace Ambermoon.Render
                 if (this is Player2D)
                     Map.CheckIfMonstersSeePlayer(x, y);
                 else if (this is MapCharacter2D monster && monster.IsMonster)
-                    Map.CheckIfMonsterSeesPlayer(monster, sprite.Visible);
+                    Map.CheckIfMonsterSeesPlayer(monster, Map.IsWithinOriginalMonsterView(DisplayArea));
             }
         }
 

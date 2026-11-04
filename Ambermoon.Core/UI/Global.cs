@@ -30,18 +30,18 @@ namespace Ambermoon
     {
         public const int LayoutX = 0;
         public const int LayoutY = 37;
-        public const int Map2DViewX = 16;
-        public const int Map2DViewY = 49;
-        public const int Map2DViewWidth = RenderMap2D.NUM_VISIBLE_TILES_X * RenderMap2D.TILE_WIDTH;
-        public const int Map2DViewHeight = RenderMap2D.NUM_VISIBLE_TILES_Y * RenderMap2D.TILE_HEIGHT;
+        public const int Map2DViewX = 0;
+        public const int Map2DViewY = 37;
+        public const int Map2DViewWidth = 320;
+        public const int Map2DViewHeight = 163;
         public const int Map3DViewX = 32;
         public const int Map3DViewY = 49;
         public const int Map3DViewWidth = 144;
         public const int Map3DViewHeight = 144;
-        // Leave a narrow stone edge and the existing location-name strip.
-        public static Rect GetMap3DViewArea(bool expanded) => expanded
-            ? new Rect(4, 49, 196, 148)
-            : new Rect(Map3DViewX, Map3DViewY, Map3DViewWidth, Map3DViewHeight);
+        // This experimental layout keeps the world fixed beneath the portraits;
+        // menus and the exploration HUD overlay it without changing the camera.
+        public static Rect GetMap3DViewArea(bool expanded) =>
+            new Rect(Map2DViewX, Map2DViewY, Map2DViewWidth, Map2DViewHeight);
         public const int ButtonGridX = 208;
         public const int ButtonGridY = 143;
         public const int InventoryX = 109;

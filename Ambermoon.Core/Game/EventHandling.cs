@@ -109,6 +109,8 @@ partial class GameCore
         else // 2D
         {
             var tilePosition = renderMap2D!.PositionToTile(position);
+            if (tilePosition == null)
+                return false;
 
             if (CoreConfiguration.IsMobile)
             {
@@ -431,7 +433,6 @@ partial class GameCore
             if (mapChange && !WindowActive)
             {
                 // Color of the filled upper right area may need update cause of palette change.
-                mapViewRightFillArea!.Color = GetUIColor(28);
             }
 
             if (!mapChange) // Otherwise the map change handler takes care of this

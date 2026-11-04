@@ -658,8 +658,8 @@ partial class GameCore
         }
         else
         {
-            xOffset = Util.Limit(0, xOffset, map.Width - RenderMap2D.NUM_VISIBLE_TILES_X);
-            yOffset = Util.Limit(0, yOffset, map.Height - RenderMap2D.NUM_VISIBLE_TILES_Y);
+            xOffset = Util.Limit(0, xOffset, RenderMap2D.MaxScrollX(map));
+            yOffset = Util.Limit(0, yOffset, RenderMap2D.MaxScrollY(map));
         }
 
         if (renderMap2D!.Map != map)

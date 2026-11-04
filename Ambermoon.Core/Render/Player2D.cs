@@ -174,15 +174,18 @@ namespace Ambermoon.Render
                 var newDirection = CharacterDirection.Down;
                 var lastPlayerPosition = new Position(player.Position);
 
-                if (x > 0 && (map.IsWorldMap || (newX >= 6 && Map.ScrollX < Map.Map!.Width - RenderMap2D.NUM_VISIBLE_TILES_X)))
-                    scrollX = 1;
-                else if (x < 0 && (map.IsWorldMap || (newX <= map.Width - 7 && Map.ScrollX > 0)))
-                    scrollX = -1;
-
-                if (y > 0 && (map.IsWorldMap || (newY >= 5 && Map.ScrollY < Map.Map!.Height - RenderMap2D.NUM_VISIBLE_TILES_Y)))
-                    scrollY = 1;
-                else if (y < 0 && (map.IsWorldMap || (newY <= map.Height - 6 && Map.ScrollY > 0)))
-                    scrollY = -1;
+                if (map.IsWorldMap)
+                {
+                    scrollX = x;
+                    scrollY = y;
+                }
+                else
+                {
+                    int targetScrollX = Math.Clamp(newX - RenderMap2D.NUM_VISIBLE_TILES_X / 2, 0, RenderMap2D.MaxScrollX(map));
+                    int targetScrollY = Math.Clamp(newY - RenderMap2D.NUM_VISIBLE_TILES_Y / 2, 0, RenderMap2D.MaxScrollY(map));
+                    scrollX = targetScrollX - (int)Map.ScrollX;
+                    scrollY = targetScrollY - (int)Map.ScrollY;
+                }
 
                 if (y > 0)
                     newDirection = CharacterDirection.Down;

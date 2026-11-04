@@ -27,6 +27,11 @@ namespace Ambermoon.Geometry
 {
     static class Raycast2D
     {
+        // Preserve the original sight cutoff independently of the exploration viewport.
+        // These limits intentionally retain the existing comparison against tile coordinates.
+        const int MaxSightDistanceX = 11 * RenderMap2D.TILE_WIDTH;
+        const int MaxSightDistanceY = 9 * RenderMap2D.TILE_HEIGHT;
+
         // Swap the values of A and B
         static void Swap<T>(ref T a, ref T b)
         {
@@ -45,8 +50,8 @@ namespace Ambermoon.Geometry
         /// </summary>
         public static bool TestRay(Map map, int startX, int startY, int endX, int endY, Func<Map.Tile, bool> collisionTester)
         {
-            if (Math.Abs(endX - startX) >= RenderMap2D.NUM_VISIBLE_TILES_X * RenderMap2D.TILE_WIDTH ||
-                Math.Abs(endY - startY) >= RenderMap2D.NUM_VISIBLE_TILES_Y * RenderMap2D.TILE_HEIGHT)
+            if (Math.Abs(endX - startX) >= MaxSightDistanceX ||
+                Math.Abs(endY - startY) >= MaxSightDistanceY)
                 return true; // As we use this to check sight we handle an out-off-screen distance as "collision" -> "sight blocking".
 
             if (startX == endX)

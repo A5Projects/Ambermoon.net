@@ -16,7 +16,8 @@ partial class GameCore
         ? 1.0f : Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, 100) / 100.0f;
     internal bool NumpadMovementHeld => Enumerable.Range((int)Key.Num1, 9).Any(index => keys[index]);
     static bool IsMovementKey(Key key) => key is Key.Left or Key.Right or Key.Up or Key.Down
-        or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E;
+        or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E
+        or Key.Num1 or Key.Num2 or Key.Num3 or Key.Num4 or Key.Num6 or Key.Num7 or Key.Num8 or Key.Num9;
     bool KeyboardMovementHeld => keys.Where((pressed, index) => pressed && IsMovementKey((Key)index)).Any();
 
     void ToggleKeyboardMovementSpeed()
@@ -58,6 +59,8 @@ partial class GameCore
         ResetKey(Key.D);
         ResetKey(Key.Q);
         ResetKey(Key.E);
+        for (var key = Key.Num1; key <= Key.Num9; ++key)
+            ResetKey(key);
 
         if (!WindowActive && !layout.PopupActive && layout.ButtonGridPage == 0)
         {
@@ -273,6 +276,18 @@ partial class GameCore
         bool down = keys[(int)Key.Down] || keys[(int)Key.S];
         bool turnLeft = (CoreConfiguration.TurnWithArrowKeys && keys[(int)Key.Left]) || (CoreConfiguration.Movement3D == Movement3D.WASDQE ? keys[(int)Key.Q] : keys[(int)Key.A]);
         bool turnRight = (CoreConfiguration.TurnWithArrowKeys && keys[(int)Key.Right]) || (CoreConfiguration.Movement3D == Movement3D.WASDQE ? keys[(int)Key.E] : keys[(int)Key.D]);
+
+        // Keypad movement is independent of the hidden on-screen arrow buttons.
+        // When the actions overlay is open, keypad numbers select its buttons.
+        if (!layout.ExplorationActionsOpen)
+        {
+            left |= keys[(int)Key.Num4] || (!is3D && (keys[(int)Key.Num7] || keys[(int)Key.Num1]));
+            right |= keys[(int)Key.Num6] || (!is3D && (keys[(int)Key.Num9] || keys[(int)Key.Num3]));
+            up |= keys[(int)Key.Num8] || (!is3D && (keys[(int)Key.Num7] || keys[(int)Key.Num9]));
+            down |= keys[(int)Key.Num2] || (!is3D && (keys[(int)Key.Num1] || keys[(int)Key.Num3]));
+            turnLeft |= is3D && keys[(int)Key.Num7];
+            turnRight |= is3D && keys[(int)Key.Num9];
+        }
 
         if (left && !right)
         {

@@ -569,10 +569,25 @@ partial class GameCore
             return;
         }
 
+        if (!WindowActive && !layout.PopupActive && InputEnable &&
+            (key is Key.Tab or Key.Return || (key == Key.Escape && layout.ExplorationActionsOpen)))
+        {
+            if (!wasPressed)
+            {
+                clickMoveActive = false;
+                UntrapMouse();
+                ResetMoveKeys(true);
+                layout.ToggleExplorationActions();
+                CursorType = CursorType.Sword;
+            }
+            return;
+        }
+
         if (!WindowActive && !layout.PopupActive)
         {
             // OS key repeat must not add extra steps on top of the game timer.
-            if (IsMovementKey(key) && !wasPressed && !movementHeld)
+            if (IsMovementKey(key) && !wasPressed && !movementHeld &&
+                !(layout.ExplorationActionsOpen && key >= Key.Num1 && key <= Key.Num9))
             {
                 Move(tapped);
                 lastMoveTicksReset = CurrentTicks;
@@ -698,6 +713,14 @@ partial class GameCore
             case Key.Num8:
             case Key.Num9:
             {
+                if (!WindowActive && !layout.PopupActive && !layout.OptionMenuOpen && !layout.ExplorationActionsOpen)
+                {
+                    if (!wasPressed && key == Key.Num5)
+                        layout.WaitFromKeyboard();
+                    else if (!wasPressed && is3D && key is Key.Num1 or Key.Num3)
+                        Move(true, 1.0f, key == Key.Num1 ? CursorType.ArrowRotateLeft : CursorType.ArrowRotateRight);
+                    break;
+                }
                 if (wasPressed && !WindowActive && !layout.PopupActive && layout.ButtonGridPage == 0)
                     break;
                 if (layout.PopupDisableButtons || layout.IsDragging || layout.InventoryMessageWaitsForClick)
@@ -709,7 +732,14 @@ partial class GameCore
                 var newCursorType = layout.PressButton(column + row * 3, CurrentTicks);
 
                 if (newCursorType != null)
+                {
                     CursorType = newCursorType.Value;
+                    if (layout.ExplorationActionsOpen)
+                    {
+                        ResetMoveKeys(true);
+                        layout.SetExplorationActions(false);
+                    }
+                }
 
                 break;
             }
@@ -1012,6 +1042,7 @@ partial class GameCore
     {
         if (worldMapViewer != null)
         {
+            layout.CancelExplorationUiPress();
             worldMapViewer.OnMouseUp(buttons);
             return;
         }
@@ -1020,11 +1051,21 @@ partial class GameCore
 
         if (allInputDisabled)
         {
+            layout.CancelExplorationUiPress();
             layout.ClearLeftUpIgnoring();
             return;
         }
 
         var position = renderView.ScreenToGame(GetMousePosition(cursorPosition));
+
+        if (layout.ExplorationUiMouseUp(position, buttons, CurrentTicks, out var explorationCursor))
+        {
+            if (explorationCursor != null)
+                CursorType = explorationCursor.Value;
+            else
+                UpdateCursor(GetMousePosition(lastMousePosition), MouseButtons.None);
+            return;
+        }
 
         if (currentBattle != null && buttons == MouseButtons.Right)
         {
@@ -1104,6 +1145,17 @@ partial class GameCore
         if (Ingame)
         {
             var relativePosition = renderView.ScreenToGame(position);
+
+            if (!WindowActive && !layout.PopupActive && InputEnable && !pickingNewLeader &&
+                !pickingTargetPlayer && !pickingTargetInventory &&
+                layout.ExplorationUiMouseDown(relativePosition, buttons, CurrentTicks, out var explorationCursor))
+            {
+                clickMoveActive = false;
+                UntrapMouse();
+                ResetMoveKeys(true);
+                CursorType = explorationCursor ?? CursorType.Sword;
+                return;
+            }
 
             if (!WindowActive && !layout.PopupActive && InputEnable && !pickingNewLeader &&
                 !pickingTargetPlayer && !pickingTargetInventory && mapViewArea.Contains(relativePosition))

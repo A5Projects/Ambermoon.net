@@ -45,7 +45,7 @@ Setting | Description | Possible values | Default value
 WindowX | X coordinate of the window in screen coordinates | Any positive integer | A value so the window is centered
 WindowY | Y coordinate of the window in screen coordinates | Any positive integer | A value so the window is centered
 MonitorIndex | Index of the monitor the application is on | 0 to the number of monitors minus 1 | 0 (main monitor)
-Expanded3DView | Enlarges the 3D viewport with a slim frame and location title; restart the game after changing this. The 2D layout is unchanged. | true or false | true
+Expanded3DView | Retained for configuration compatibility; this experimental branch always uses the full exploration viewport in both 2D and 3D. Use the separate stable build for the framed layout. | true or false | true
 SlowKeyboardMovement | Enables slower keyboard movement; Caps Lock toggles this while exploring | true or false | true
 KeyboardMovementSpeed | Keyboard movement and turning speed while slower movement is enabled, as a percentage of full speed. In 2D this controls tile-step frequency. Mouse movement is unaffected. | Integer from 10 to 100 (values outside this range are clamped) | 60
 

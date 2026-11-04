@@ -276,7 +276,7 @@ namespace Ambermoon.UI
         Both = 5 // Only used by blink
     }
 
-    internal class Layout
+    internal partial class Layout
     {
         // There are a few possibilities:
         // 1. Move item from a player inventory directly to another player via his portrait.
@@ -635,16 +635,7 @@ namespace Ambermoon.UI
 
         public void ToggleButtonGridPage()
         {
-            if (Type == LayoutType.Map2D ||
-                Type == LayoutType.Map3D)
-            {
-                if (game.InputEnable)
-                {
-                    ButtonGridPage = 1 - ButtonGridPage;
-                    SetLayout(Type, ticksPerMovement);
-                    buttonGrid?.HideTooltips();
-                }
-            }
+            ToggleExplorationActions();
         }
 
         void ButtonGrid_RightMouseClicked()
@@ -739,18 +730,22 @@ namespace Ambermoon.UI
                 sprite.Visible = true;
             }
 
-            bool expanded = layoutType == LayoutType.Map3D && game.CoreConfiguration.Expanded3DView;
-            if (expanded && expandedMapFrame.Count == 0)
-                CreateExpandedMapFrame();
-            sprite.ClipArea = expanded
-                ? new Rect(204, Global.LayoutY, 116, 163)
-                : new Rect(Global.LayoutX, Global.LayoutY, 320, 163);
+            // Exploration uses the whole area under the portraits. Existing
+            // full-screen layouts remain in use for conversations, inventory, etc.
+            sprite.Visible = layoutType != LayoutType.None && !IsExplorationLayout;
+            sprite.ClipArea = new Rect(Global.LayoutX, Global.LayoutY, 320, 163);
             foreach (var part in expandedMapFrame)
-                part.Visible = expanded;
+                part.Visible = false;
+
+            if (!IsExplorationLayout)
+                ExplorationActionsOpen = false;
+            ButtonGridPage = ExplorationActionsOpen ? 1 : 0;
 
             buttonGrid.Visible = layoutType != LayoutType.None && layoutType != LayoutType.Event && layoutType != LayoutType.Automap;
 
             UpdateLayoutButtons(ticksPerMovement);
+            UpdateExplorationActionsVisibility();
+            UpdateExplorationHudVisibility();
         }
 
         void CreateExpandedMapFrame()
@@ -783,6 +778,7 @@ namespace Ambermoon.UI
 
         public void OpenOptionMenu()
         {
+            ExplorationActionsOpen = false;
             OptionMenuOpen = true;
             game.InputEnable = false;
             game.Pause();
@@ -825,6 +821,7 @@ namespace Ambermoon.UI
 
             if (game.BattleActive)
                 game.HideAutoBattleRounds();
+            UpdateExplorationActionsVisibility();
         }
 
         void CloseOptionMenu()
@@ -836,6 +833,7 @@ namespace Ambermoon.UI
             additionalSprites.Remove(additionalSprites.Last());
             texts.Last()?.Destroy(); // version string
             texts.Remove(texts.Last());
+            ButtonGridPage = 0;
             UpdateLayoutButtons(ticksPerMovement);
             if (game.BattleActive)
                 game.SetupBattleButtons();
@@ -844,11 +842,12 @@ namespace Ambermoon.UI
 
             if (!game.BattleActive)
                 game.ShowMobileTouchPadHandler();
+            UpdateExplorationActionsVisibility();
         }
 
         public void ShowButtons(bool show)
         {
-            buttonGrid.Visible = show;
+            buttonGrid.Visible = show && (!IsExplorationLayout || ExplorationActionsOpen || OptionMenuOpen);
         }
 
         public void EnableButton(int index, bool enable)
@@ -3914,6 +3913,7 @@ namespace Ambermoon.UI
 
         public void Destroy()
         {
+            ResetExplorationActions();
             Util.SafeCall(() => sprite?.Delete());
             expandedMapFrame.ForEach(part => part.Delete());
             expandedMapFrame.Clear();
@@ -3972,6 +3972,8 @@ namespace Ambermoon.UI
 
         public void Reset(bool keepInventoryMessage = false)
         {
+            ResetExplorationActions();
+            ResetExplorationHud();
             OptionMenuOpen = false;
             Util.SafeCall(() =>
             {
@@ -4542,7 +4544,7 @@ namespace Ambermoon.UI
             if (activeSpellSprites.ContainsKey(activeSpellType))
                 return;
 
-            var baseLocation = battle ? new Position(0, 170) : new Position(208, 106);
+            var baseLocation = battle ? new Position(0, 170) : new Position(4, 158);
             int index = (int)activeSpellType;
             uint graphicIndex = Graphics.GetUIGraphicIndex(UIGraphic.Candle + index);
             activeSpellSprites.Add(activeSpellType, AddSprite(new Rect(baseLocation.X + index * 16, baseLocation.Y, 16, 16), graphicIndex, game.UIPaletteIndex));
@@ -4553,6 +4555,7 @@ namespace Ambermoon.UI
                 CreateArea(new Rect(baseLocation.X + 2 + index * 16, baseLocation.Y + 18, 12, 2), game.GetUIColor(31), 3), 12, true);
             activeSpellDurationBars.Add(activeSpellType, durationBar);
             durationBar.Fill(activeSpell.Duration / 200.0f);
+            UpdateExplorationHudVisibility();
         }
 
         public void RemoveAllActiveSpells()
@@ -4631,6 +4634,12 @@ namespace Ambermoon.UI
 
         public void AddSpecialItem(SpecialItemPurpose specialItem)
         {
+            if (IsExplorationLayout)
+            {
+                AddExplorationSpecialItem(specialItem);
+                return;
+            }
+
             switch (specialItem)
             {
             case SpecialItemPurpose.Compass:
@@ -4677,7 +4686,7 @@ namespace Ambermoon.UI
         {
             // Update compass
             if (specialItemTexts.ContainsKey(SpecialItemPurpose.Compass))
-                specialItemTexts[SpecialItemPurpose.Compass].SetText(game.ProcessText(GetCompassString()));
+                specialItemTexts[SpecialItemPurpose.Compass].SetText(game.ProcessText(IsExplorationLayout ? GetCompactCompassString() : GetCompassString()));
 
             // Update monster eye
             if (specialItemSprites.ContainsKey(SpecialItemPurpose.MonsterEye))
@@ -4692,12 +4701,13 @@ namespace Ambermoon.UI
             // Update map location
             if (specialItemTexts.ContainsKey(SpecialItemPurpose.MapLocation))
                 specialItemTexts[SpecialItemPurpose.MapLocation].SetText(
-                    game.ProcessText($"X:{game.PartyPosition.X + 1,3}^Y:{game.PartyPosition.Y + 1,3}"));
+                    game.ProcessText(IsExplorationLayout ? GetCompactMapLocation() : $"X:{game.PartyPosition.X + 1,3}^Y:{game.PartyPosition.Y + 1,3}"));
 
             // Update clock
             if (specialItemTexts.ContainsKey(SpecialItemPurpose.Clock))
                 specialItemTexts[SpecialItemPurpose.Clock].SetText(
                     game.ProcessText($"{game.GameTime!.Hour,2}:{game.GameTime.Minute:00}"));
+            UpdateExplorationHudVisibility();
         }
 
         public ISprite AddMapCharacterSprite(Rect rect, uint textureIndex, int baseLineOffset)
@@ -5162,6 +5172,7 @@ namespace Ambermoon.UI
         public void Update(uint currentTicks)
         {
             buttonGrid.Update(currentTicks);
+            UpdateExplorationActionsVisibility();
             activePopup?.Update(game.CurrentPopupTicks);
 
             for (int i = fadeEffects.Count - 1; i >= 0; --i)

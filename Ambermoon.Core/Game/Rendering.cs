@@ -153,7 +153,6 @@ partial class GameCore
     }
 
     bool weightDisplayBlinking = false;
-    FilledArea? mapViewRightFillArea = null;
     Rect mapViewArea = Map2DViewArea;
     FilledArea? buttonGridBackground;
     readonly Dictionary<CharacterInfo, UIText> characterInfoTexts = [];
@@ -521,6 +520,14 @@ partial class GameCore
             }
 
             var relativePosition = renderView.ScreenToGame(cursorPosition);
+
+            if (!WindowActive && !layout.PopupActive && layout.IsExplorationUiAt(relativePosition))
+            {
+                var uiCursor = CursorType.Sword;
+                layout.Hover(relativePosition, ref uiCursor);
+                CursorType = uiCursor;
+                return;
+            }
 
             if (!WindowActive && !layout.PopupActive && (mapViewArea.Contains(relativePosition) || clickMoveActive))
             {

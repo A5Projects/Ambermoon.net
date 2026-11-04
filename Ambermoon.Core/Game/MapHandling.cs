@@ -80,7 +80,6 @@ partial class GameCore
         if (show)
         {
             layout.Reset();
-            mapViewRightFillArea = layout.FillArea(new Rect(208, 49, 96, 80), GetUIColor(28), false);
             SetWindow(Window.MapView);
 
             foreach (var specialItem in EnumHelper.GetValues<SpecialItemPurpose>())

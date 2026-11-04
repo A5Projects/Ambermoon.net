@@ -1,5 +1,7 @@
 # Controls
 
+This experimental branch uses a full exploration view below the party portraits in both 2D and 3D. Inventory, conversations, shops, and battles keep their original interfaces.
+
 ## General (work everywhere)
 
 Input | Action
@@ -16,12 +18,13 @@ Ctrl + M | Toggle music
 Ctrl + , | Lower volume
 Ctrl + . | Increase volume
 Escape | Generally aborts or closes things
-Return | Generally submits or closes things, toggle the action buttons in map view
+Return | Generally submits or closes things; toggle the action overlay in map view
+Tab | Toggle the action overlay in map view
 Space | Generally closes things, in 3D you can active events or NPCs with it
 Ctrl + 0 to 9 | Quick save in slots 1 to 10 (0 is slot 10)
 Ctrl + Shift + 0 to 9 | Quick load from slots 1 to 10 (0 is slot 10)
 Ctrl + Shift + C | Center the window on the main monitor
-NumPad 1 to 9 | Action buttons in lower right corner (see below)
+NumPad 1 to 9 | Move while the exploration overlay is closed; select the corresponding action while it is open
 
 ![NumPad Example 1](docs/action_buttons_0.png "Move buttons")
 
@@ -31,7 +34,11 @@ NumPad 1 to 9 | Action buttons in lower right corner (see below)
 
 ## Map
 
-You can toggle the action buttons on the lower right with either a right click on them or the return key. Num pad enter key will work as well.
+Press **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape or a right click inside the overlay closes it. The overlay provides interactions, spells, resting, the automap, battle positions, and options (including save/load). Opening it does not resize or recenter the world.
+
+Use the arrow keys, WASD, or the numpad to move without opening any controls. In 3D, Q/E and numpad 7/9 turn, while numpad 1/3 turn around. Numpad 5 opens the wait popup. With the overlay open, numpad keys select its buttons instead of moving. Mouse movement and the existing right-click interactions remain available.
+
+Acquired compass, clock, daylight, monster, wind, and position indicators appear in a compact strip at the bottom left. Active spells appear directly above that strip. These indicators still require the corresponding items or spells.
 
 On desktop, **Caps Lock** toggles keyboard movement between the configured slower speed (60% by default) and full speed. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the selected percentage. The setting is remembered between sessions; mouse movement keeps its normal behavior. In 2D, slowing movement increases the time between tile steps.
 

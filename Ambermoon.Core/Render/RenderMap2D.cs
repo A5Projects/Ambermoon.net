@@ -40,8 +40,12 @@ namespace Ambermoon.Render
 
         public const int TILE_WIDTH = 16;
         public const int TILE_HEIGHT = 16;
-        public const int NUM_VISIBLE_TILES_X = 11; // maps will always be at least 11x11 in size
-        public const int NUM_VISIBLE_TILES_Y = 9; // maps will always be at least 11x11 in size
+        public const int NUM_VISIBLE_TILES_X = (Global.Map2DViewWidth + TILE_WIDTH - 1) / TILE_WIDTH;
+        public const int NUM_VISIBLE_TILES_Y = (Global.Map2DViewHeight + TILE_HEIGHT - 1) / TILE_HEIGHT;
+        public const int NUM_FULL_TILES_X = Global.Map2DViewWidth / TILE_WIDTH;
+        public const int NUM_FULL_TILES_Y = Global.Map2DViewHeight / TILE_HEIGHT;
+        public static int MaxScrollX(Map map) => Math.Max(0, map.Width - NUM_FULL_TILES_X);
+        public static int MaxScrollY(Map map) => Math.Max(0, map.Height - NUM_FULL_TILES_Y);
         const int NUM_TILES = NUM_VISIBLE_TILES_X * NUM_VISIBLE_TILES_Y;
         readonly GameCore game;
         public Map? Map { get; private set; } = null;
@@ -65,6 +69,28 @@ namespace Ambermoon.Render
 
         public uint ScrollX { get; private set; } = 0;
         public uint ScrollY { get; private set; } = 0;
+        // Small interior maps are centered inside the fixed exploration viewport.
+        // World maps continue seamlessly into their neighboring chunks.
+        public int PaddingX => Map is { IsWorldMap: false }
+            ? Math.Max(0, Global.Map2DViewWidth - Map.Width * TILE_WIDTH) / 2 : 0;
+        public int PaddingY => Map is { IsWorldMap: false }
+            ? Math.Max(0, Global.Map2DViewHeight - Map.Height * TILE_HEIGHT) / 2 : 0;
+        public int RenderOriginX => Global.Map2DViewX + PaddingX;
+        public int RenderOriginY => Global.Map2DViewY + PaddingY;
+
+        bool HasRenderTile(uint x, uint y) => worldMap || (x < Map!.Width && y < Map.Height);
+
+        internal bool IsWithinOriginalMonsterView(Rect displayArea)
+        {
+            // One monster sight-update path is gated by on-screen visibility.
+            // Preserve its original 11x9 camera area when widening the view.
+            var player = game.PartyPosition;
+            int legacyScrollX = Math.Clamp(player.X - 5, 0, Math.Max(0, Map!.Width - 11));
+            int legacyScrollY = Math.Clamp(player.Y - 4, 0, Math.Max(0, Map.Height - 9));
+            return new Rect(RenderOriginX + (legacyScrollX - (int)ScrollX) * TILE_WIDTH,
+                RenderOriginY + (legacyScrollY - (int)ScrollY) * TILE_HEIGHT,
+                11 * TILE_WIDTH, 9 * TILE_HEIGHT).IntersectsWith(displayArea);
+        }
 
         public RenderMap2D(GameCore game, Map? map, IMapManager mapManager, IGameRenderView renderView,
             uint initialScrollX = 0, uint initialScrollY = 0)
@@ -89,6 +115,8 @@ namespace Ambermoon.Render
                     foregroundSprite.Visible = false;
                     foregroundSprite.X = Global.Map2DViewX + column * TILE_WIDTH;
                     foregroundSprite.Y = Global.Map2DViewY + row * TILE_HEIGHT;
+                    backgroundSprite.ClipArea = GameCore.Map2DViewArea;
+                    foregroundSprite.ClipArea = GameCore.Map2DViewArea;
 
                     backgroundTileSprites.Add(backgroundSprite);
                     foregroundTileSprites.Add(foregroundSprite);
@@ -112,6 +140,11 @@ namespace Ambermoon.Render
                 {
                     for (int column = 0; column < NUM_VISIBLE_TILES_X; ++column)
                     {
+                        if (!HasRenderTile(ScrollX + (uint)column, ScrollY + (uint)row))
+                        {
+                            ++index;
+                            continue;
+                        }
 						var tile = this[ScrollX + (uint)column, ScrollY + (uint)row];
 
                         if (tile.BackTileIndex != 0)
@@ -282,11 +315,16 @@ namespace Ambermoon.Render
                 position.X >= Global.Map2DViewWidth || position.Y >= Global.Map2DViewHeight)
                 return null;
 
-            return new Position
+            int x = position.X - PaddingX;
+            int y = position.Y - PaddingY;
+            if (x < 0 || y < 0)
+                return null;
+            var tilePosition = new Position
             (
-                (int)ScrollX + position.X / TILE_WIDTH,
-                (int)ScrollY + position.Y / TILE_HEIGHT
+                (int)ScrollX + x / TILE_WIDTH,
+                (int)ScrollY + y / TILE_HEIGHT
             );
+            return HasRenderTile((uint)tilePosition.X, (uint)tilePosition.Y) ? tilePosition : null;
         }
 
         public Position GetCenterPosition()
@@ -419,8 +457,8 @@ namespace Ambermoon.Render
         {
             foreach (var transport in mapTransports)
             {
-                transport.Sprite.X = Global.Map2DViewX + (int)(transport.Position.X - ScrollX) * TILE_WIDTH + transport.Offset.X;
-                transport.Sprite.Y = Global.Map2DViewY + (int)(transport.Position.Y - ScrollY) * TILE_HEIGHT + transport.Offset.Y;
+                transport.Sprite.X = RenderOriginX + (int)(transport.Position.X - ScrollX) * TILE_WIDTH + transport.Offset.X;
+                transport.Sprite.Y = RenderOriginY + (int)(transport.Position.Y - ScrollY) * TILE_HEIGHT + transport.Offset.Y;
             }
         }
 
@@ -464,8 +502,8 @@ namespace Ambermoon.Render
             sprite.BaseLineOffset = TILE_HEIGHT / 2;
             sprite.PaletteIndex = (byte)game.GetPlayerPaletteIndex();
             sprite.TextureAtlasOffset = textureAtlas.GetOffset(Graphics.TransportGraphicOffset + travelType.AsStationaryImageIndex());
-            sprite.X = Global.Map2DViewX + (position.X - (int)ScrollX) * TILE_WIDTH + offset.X;
-            sprite.Y = Global.Map2DViewY + (position.Y - (int)ScrollY) * TILE_HEIGHT + offset.Y;
+            sprite.X = RenderOriginX + (position.X - (int)ScrollX) * TILE_WIDTH + offset.X;
+            sprite.Y = RenderOriginY + (position.Y - (int)ScrollY) * TILE_HEIGHT + offset.Y;
             sprite.Visible = true;
             mapTransports.Add(new Transport { Index = index, Position = position, Sprite = sprite, Offset = offset });
         }
@@ -526,6 +564,15 @@ namespace Ambermoon.Render
             {
                 for (uint column = 0; column < NUM_VISIBLE_TILES_X; ++column)
                 {
+                    backgroundTileSprites[index].X = foregroundTileSprites[index].X = RenderOriginX + (int)column * TILE_WIDTH;
+                    backgroundTileSprites[index].Y = foregroundTileSprites[index].Y = RenderOriginY + (int)row * TILE_HEIGHT;
+                    if (!HasRenderTile(ScrollX + column, ScrollY + row))
+                    {
+                        backgroundTileSprites[index].Visible = false;
+                        foregroundTileSprites[index].Visible = false;
+                        ++index;
+                        continue;
+                    }
                     var tile = this[ScrollX + column, ScrollY + row];
 
                     backgroundTileSprites[index].Layer = backLayer;
@@ -627,8 +674,8 @@ namespace Ambermoon.Render
             }
             else
             {
-                x = (uint)Util.Limit(0, (long)x - NUM_VISIBLE_TILES_X / 2, map.Width - NUM_VISIBLE_TILES_X);
-                y = (uint)Util.Limit(0, (long)y - NUM_VISIBLE_TILES_Y / 2, map.Height - NUM_VISIBLE_TILES_Y);
+                x = (uint)Util.Limit(0, (long)x - NUM_VISIBLE_TILES_X / 2, MaxScrollX(map));
+                y = (uint)Util.Limit(0, (long)y - NUM_VISIBLE_TILES_Y / 2, MaxScrollY(map));
             }
         }
 
@@ -654,8 +701,8 @@ namespace Ambermoon.Render
             }
             else
             {
-                position.X = Util.Limit(0, position.X - NUM_VISIBLE_TILES_X / 2, Map.Width - NUM_VISIBLE_TILES_X);
-                position.Y = Util.Limit(0, position.Y - NUM_VISIBLE_TILES_Y / 2, Map.Height - NUM_VISIBLE_TILES_Y);
+                position.X = Util.Limit(0, position.X - NUM_VISIBLE_TILES_X / 2, MaxScrollX(Map));
+                position.Y = Util.Limit(0, position.Y - NUM_VISIBLE_TILES_Y / 2, MaxScrollY(Map));
             }
         }
 
@@ -841,7 +888,7 @@ namespace Ambermoon.Render
             }
             else
             {
-                if (newScrollX < 0 || newScrollY < 0 || newScrollX > Map!.Width - NUM_VISIBLE_TILES_X || newScrollY > Map.Height - NUM_VISIBLE_TILES_Y)
+                if (newScrollX < 0 || newScrollY < 0 || newScrollX > MaxScrollX(Map!) || newScrollY > MaxScrollY(Map!))
                     return false;
             }
 
@@ -873,9 +920,9 @@ namespace Ambermoon.Render
             if (!worldMap)
             {
                 // check scroll offset for non-world maps
-                if (ScrollX > Map!.Width - NUM_VISIBLE_TILES_X)
+                if (ScrollX > MaxScrollX(Map!))
                     throw new AmbermoonException(ExceptionScope.Render, "Map scroll x position is outside the map bounds.");
-                if (ScrollY > Map.Height - NUM_VISIBLE_TILES_Y)
+                if (ScrollY > MaxScrollY(Map!))
                     throw new AmbermoonException(ExceptionScope.Render, "Map scroll y position is outside the map bounds.");
             }
 
