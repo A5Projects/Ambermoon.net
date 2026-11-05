@@ -1,0 +1,54 @@
+Immersive UI - relaxed balance
+
+Based on the installed Original 1.22 / Advanced 1.33 data, running in the
+Ambermoon.net 1.15.1 immersive branch. No versions.dat or save files are patched.
+
+Advanced party progression
+- Original base HP, SP, spell-learning points (SLP), and training points (TP)
+  are used for future level-ups of the ten original playable companions.
+  Existing randomized 50-100% gains and INT/25 magic bonuses still apply.
+- Original bases, in HP / SP / SLP / TP order:
+  Hero 10/8/5/6; Tar 6/16/10/10; Egil 16/0/0/8; Selena 8/0/0/14;
+  Nelvin 6/16/10/10; Sabine 6/16/10/10; Valdyn 12/6/3/12;
+  Targor 6/16/10/10; Leonaria 6/16/10/10; Gryban 14/6/3/10.
+- Level-up tooltips use these same values. The Advanced stamina HP bonus is
+  disabled. Existing HP, SP, points, attributes, skills, and caps are retained.
+- XP thresholds and attack-per-round progression remain Advanced. In particular,
+  existing levels are not recalculated. Advanced-only characters keep their data.
+- Stored growth fields are retained: only the calculation of future gains uses
+  the original table. XP-exchange services and their anti-farming guard remain.
+
+Spells and other Advanced features
+- Original spells use original learning prices and party casting prices.
+- Advanced-only spells retain their learning and casting prices. Enemy casting
+  prices and elemental altar upgrade pricing rules remain unchanged.
+- Original destruction-spell base damage ranges are restored. Advanced elemental
+  affinities, level/intelligence scaling, status effects, and physical damage
+  calculations remain in place.
+- New quests, locations, items, sages, transports, and other world interactions
+  remain. Individual enemy stats and initial party skill/attribute data remain.
+
+Convenience changes (both editions in this immersive build)
+- Carrying capacity is four kilograms per effective strength point, instead of
+  one. The original 999-gram rounding allowance, inventory slots, stack limits,
+  strength itself, and stat caps are unchanged.
+- Gold weighs one gram per coin instead of five (20% of original weight).
+  Stored weights are recalculated on load, including unrecruited companions.
+  Advanced food and ammunition reductions remain unchanged.
+- Party physical attacks have an 85% baseline skill-check success chance before
+  status penalties. Higher trained/equipment skill still applies. Saved skills
+  are not inflated; enemy accuracy is unchanged. Defense, immunity and parries
+  can still prevent damage, and blindness/drugged penalties still apply.
+- Ordinary weapon catalog entries 181-201 have zero break chance: knife, dagger,
+  short/long sword, scimitar, two-handed/holy sword, staff, club, flail, mace,
+  morning star, hammer, axe/battle axe, trident, whip, sling, short/long bow and
+  crossbow. This also prevents breakage when parrying. Shared definitions cover
+  both sides. Armor, shields, later special weapons and already-broken items
+  are unchanged. No automatic repair is performed.
+
+Compatibility
+- No save format changes, level recalculation, skill reset, point refunds, or
+  retroactive level-up rewards. The existing save files are not rewritten during
+  installation. Future saves use the existing format and store newly earned gains.
+- The Original edition retains its own progression and spell costs while getting
+  the shared carrying, gold, accuracy, and ordinary weapon conveniences.

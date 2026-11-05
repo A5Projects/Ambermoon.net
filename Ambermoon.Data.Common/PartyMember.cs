@@ -16,7 +16,8 @@ namespace Ambermoon.Data
         public List<string> Texts { get; set; }
         public List<Event> Events { get; } = new List<Event>();
         public List<Event> EventList { get; } = new List<Event>();
-        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * 1000;
+        // Keep the sub-kilogram rounding allowance; quadruple the actual capacity.
+        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * 4000;
         public bool Overweight => (TotalWeight / 1000) > (MaxWeight / 1000);
         public uint MaxGoldToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Gold, ((int)MaxWeight - (int)TotalWeight) / Character.GoldWeight));
         public uint MaxFoodToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Food, ((int)MaxWeight - (int)TotalWeight) / Character.FoodWeight));
@@ -273,14 +274,24 @@ namespace Ambermoon.Data
             AddLevelUpEffects(random, features);
         }
 
+        public (uint HP, uint SP, uint SLP, uint TP) GetLevelUpGrowth(Features? features)
+        {
+            var originalGrowth = OriginalPartyGrowth.For(this, features);
+            return (originalGrowth?.HP ?? HitPointsPerLevel, originalGrowth?.SP ?? SpellPointsPerLevel,
+                originalGrowth?.SLP ?? SpellLearningPointsPerLevel, originalGrowth?.TP ?? TrainingPointsPerLevel);
+        }
+
         public void AddLevelUpEffects(Func<int, int, int> random, Features? features)
         {
+            // Use original growth only for future gains. Saved growth fields,
+            // existing stats, experience and the Advanced APR rules stay intact.
+            var growth = GetLevelUpGrowth(features);
             var intelligence = Attributes[Attribute.Intelligence].TotalCurrentValue;
             bool magicClass = Class.IsMagic();
-            uint lpAdd = HitPointsPerLevel * (uint)random(50, 100) / 100;
-            uint spAdd = magicClass ? SpellPointsPerLevel * (uint)random(50, 100) / 100 + intelligence / 25 : 0;
-            uint slpAdd = magicClass ? SpellLearningPointsPerLevel * (uint)random(50, 100) / 100 + intelligence / 25 : 0;
-            uint tpAdd = TrainingPointsPerLevel * (uint)random(50, 100) / 100;
+            uint lpAdd = growth.HP * (uint)random(50, 100) / 100;
+            uint spAdd = magicClass ? growth.SP * (uint)random(50, 100) / 100 + intelligence / 25 : 0;
+            uint slpAdd = magicClass ? growth.SLP * (uint)random(50, 100) / 100 + intelligence / 25 : 0;
+            uint tpAdd = growth.TP * (uint)random(50, 100) / 100;
 
             if (features?.HasFlag(Features.StaminaHPOnLevelUp) == true)
                 lpAdd += Attributes[Attribute.Stamina].TotalCurrentValue / 25;

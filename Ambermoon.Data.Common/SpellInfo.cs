@@ -347,7 +347,10 @@ namespace Ambermoon.Data
 
         public static uint GetSPCost(this IReadOnlyDictionary<Spell, SpellInfo> spellInfos, Features features, Spell spell, Character caster)
         {
-            uint GetBaseSP(Spell spell) => features.HasFlag(Features.AdjustedSPAndSLP) && adjustedSP.TryGetValue(spell, out var sp)
+            // Original spell prices for the party; monster costs and Advanced-only
+            // spells keep their existing rules, including elemental upgrades below.
+            uint GetBaseSP(Spell spell) => !(caster is PartyMember && IsOriginalSpell(spell)) &&
+                features.HasFlag(Features.AdjustedSPAndSLP) && adjustedSP.TryGetValue(spell, out var sp)
                 ? sp : spellInfos[spell].SP;
 
             if (caster is PartyMember)
@@ -374,9 +377,15 @@ namespace Ambermoon.Data
 
         public static uint GetSLPCost(this IReadOnlyDictionary<Spell, SpellInfo> spellInfos, Features features, Spell spell)
         {
-            return features.HasFlag(Features.AdjustedSPAndSLP) && adjustedSLP.TryGetValue(spell, out var slp)
+            return !IsOriginalSpell(spell) && features.HasFlag(Features.AdjustedSPAndSLP) && adjustedSLP.TryGetValue(spell, out var slp)
                 ? slp : spellInfos[spell].SLP;
         }
+
+        static bool IsOriginalSpell(Spell spell) =>
+            (spell >= Spell.HealingHand && spell <= Spell.SPStealer) ||
+            (spell >= Spell.MonsterKnowledge && spell <= Spell.ShowMonsterLP) ||
+            (spell >= Spell.MagicalProjectile && spell <= Spell.Iceshower) ||
+            (spell >= Spell.Lockpicking && spell <= Spell.Drugs);
 
         static SpellInfos()
         {

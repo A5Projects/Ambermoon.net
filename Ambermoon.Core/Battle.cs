@@ -4619,6 +4619,13 @@ namespace Ambermoon
 
             long hitChance = attacker.Skills[Skill.Attack].TotalCurrentValue;
 
+            // A roll is 0..99 and fails only when greater than the skill. 84
+            // therefore gives an 85% baseline. Apply ailments afterwards and
+            // retain trained/equipment accuracy above this floor. Monsters keep
+            // their own skills; no saved character skill is changed.
+            if (attacker is PartyMember)
+                hitChance = Math.Max(hitChance, 84);
+
             if (game.Features.HasFlag(Features.ExtendedCurseEffects))
             {
                 uint hitMalus = 0;

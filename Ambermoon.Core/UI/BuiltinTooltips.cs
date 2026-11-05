@@ -1,4 +1,4 @@
-﻿/*
+/*
  * BuiltinTooltips.cs - Custom tooltip texts
  *
  * Copyright (C) 2021  Robert Schneckenhaus <robert.schneckenhaus@web.de>
@@ -72,14 +72,15 @@ namespace Ambermoon.UI
             void GetLevelUpBaseValues(out string hp, out string spAndSlp, out string tp, out string intBonus)
             {
                 string rangeOperator = SecondaryStatTooltips[gameLanguage][(int)SecondaryStat.RangeOperator];
-                int hpPerLevel = partyMember.HitPointsPerLevel;
+                var growth = partyMember.GetLevelUpGrowth(features);
+                uint hpPerLevel = growth.HP;
                 hp = $"{hpPerLevel/2,2}{rangeOperator}{hpPerLevel}";
                 if (partyMember.Class.IsMagic())
                 {
                     intBonus = string.Format(SecondaryStatTooltips[gameLanguage][(int)SecondaryStat.MagicIntBonus], partyMember.Attributes[Attribute.Intelligence].TotalCurrentValue / 25);
-                    int spPerLevel = partyMember.SpellPointsPerLevel;
+                    uint spPerLevel = growth.SP;
                     string sp = spPerLevel == 0 ? "0" : $"{spPerLevel / 2,2}{rangeOperator}{spPerLevel}";
-                    int slpPerLevel = partyMember.SpellLearningPointsPerLevel;
+                    uint slpPerLevel = growth.SLP;
                     string slp = slpPerLevel == 0 ? "0" : $"{slpPerLevel / 2,2}{rangeOperator}{slpPerLevel}";
                     spAndSlp = string.Format(SecondaryStatTooltips[gameLanguage][(int)SecondaryStat.MagicLevelUpValues], sp, slp);
                 }
@@ -88,7 +89,7 @@ namespace Ambermoon.UI
                     spAndSlp = "^";
                     intBonus = "";
                 }
-                int tpPerLevel = partyMember.TrainingPointsPerLevel;
+                uint tpPerLevel = growth.TP;
                 tp = $"{tpPerLevel / 2,2}{rangeOperator}{tpPerLevel}";
             }
 
@@ -124,7 +125,7 @@ namespace Ambermoon.UI
 
             return attribute switch
             {
-                Attribute.Strength => string.Format(formatString, attributeValue, attributeValue / 25, attributeValue / 50),
+                Attribute.Strength => string.Format(formatString, partyMember.MaxWeight / 1000, attributeValue / 25, attributeValue / 50),
                 Attribute.Intelligence => string.Format(formatString, attributeValue / 25),
                 Attribute.Dexterity => string.Format(formatString, attributeValue, (attributeValue + partyMember.Attributes[Attribute.Luck].TotalCurrentValue) * 100 / 150, attributeValue / 25, attributeValue / 50),
                 Attribute.Speed => string.Format(formatString, 1 + attributeValue / 80),
@@ -143,6 +144,8 @@ namespace Ambermoon.UI
 
             switch (skill)
             {
+                case Skill.Attack:
+                    return string.Format(formatString, System.Math.Min(100, System.Math.Max(85, skillValue + 1)));
                 case Skill.Swim:
                     return string.Format(formatString, skillValue / 2);
                 case Skill.Searching:
@@ -174,11 +177,11 @@ namespace Ambermoon.UI
 
             root[Attribute.Strength] = (Features.AdjustedWeaponDamage, new Dictionary<GameLanguage, string>
             {
-                [GameLanguage.German] = "Stärke^^Erhöht das Maximalgewicht um 1kg pro Punkt.^^Außerdem wird alle 25 Punkte der Nahkampfschaden^um 1 und der Fernkampfschaden alle 50 Punkte^um 1 erhöht.^^Aktuell +{0}kg^        +{1} Nahkampfchaden^        +{2} Fernkampfschaden",
-                [GameLanguage.English] = "Strength^^Increases the max weight by 1kg per point.^^Also increases close-ranged damage by 1 every 25^points and long-ranged damage by 1 every 50 points.^^Currently +{0}kg^          +{1} close-ranged damage^          +{2} long-ranged damage",
-                [GameLanguage.French] = "Force^^Augmente le poids maximum de 1kg par point.^^Augmente également les dégâts au corps à^corps de 1 tous les 25 points et les^dégâts à distance de 1 tous les 50 points.^^Actuellement +{0}kg^             +{1} dégâts au corps à corps^             +{2} dégâts à distance",
-                [GameLanguage.Polish] = "Siła^^Zwiększa maksymalny udźwig o 1 kg na punkt.^^Zwiększa również obrażenia w walce wręcz o 1 co 25^punktów oraz obrażenia dystansowe o 1 co 50 punktów.^^Obecnie +{0} kg^        +{1} obrażeń w walce wręcz^        +{2} obrażeń dystansowych",
-                [GameLanguage.Czech] = "Síla^^Zvyšuje maximální nosnost o 1 kg za bod.^^Také zvyšuje poškození na blízko o 1 každých 25^bodů a poškození na dálku o 1 každých 50 bodů.^^V současné době +{0}kg^                +{1} poškození na blízko^                +{2} poškození na dálku"
+                [GameLanguage.German] = "Stärke^^Erhöht das Maximalgewicht um 4kg pro Punkt.^^Außerdem wird alle 25 Punkte der Nahkampfschaden^um 1 und der Fernkampfschaden alle 50 Punkte^um 1 erhöht.^^Aktuell +{0}kg^        +{1} Nahkampfchaden^        +{2} Fernkampfschaden",
+                [GameLanguage.English] = "Strength^^Increases the max weight by 4kg per point.^^Also increases close-ranged damage by 1 every 25^points and long-ranged damage by 1 every 50 points.^^Currently +{0}kg^          +{1} close-ranged damage^          +{2} long-ranged damage",
+                [GameLanguage.French] = "Force^^Augmente le poids maximum de 4kg par point.^^Augmente également les dégâts au corps à^corps de 1 tous les 25 points et les^dégâts à distance de 1 tous les 50 points.^^Actuellement +{0}kg^             +{1} dégâts au corps à corps^             +{2} dégâts à distance",
+                [GameLanguage.Polish] = "Siła^^Zwiększa maksymalny udźwig o 4 kg na punkt.^^Zwiększa również obrażenia w walce wręcz o 1 co 25^punktów oraz obrażenia dystansowe o 1 co 50 punktów.^^Obecnie +{0} kg^        +{1} obrażeń w walce wręcz^        +{2} obrażeń dystansowych",
+                [GameLanguage.Czech] = "Síla^^Zvyšuje maximální nosnost o 4 kg za bod.^^Také zvyšuje poškození na blízko o 1 každých 25^bodů a poškození na dálku o 1 každých 50 bodů.^^V současné době +{0}kg^                +{1} poškození na blízko^                +{2} poškození na dálku"
             }.ToImmutableDictionary());
 
             // Dexterity
@@ -211,7 +214,7 @@ namespace Ambermoon.UI
             { GameLanguage.German, new string[]
             {
                 // Strength
-                "Stärke^^Erhöht das Maximalgewicht um 1kg pro Punkt.^^Außerdem wird pro 25 Punkte der Schaden um 1 erhöht.^^Aktuell +{0}kg und +{1} Schaden",
+                "Stärke^^Erhöht das Maximalgewicht um 4kg pro Punkt.^^Außerdem wird pro 25 Punkte der Schaden um 1 erhöht.^^Aktuell +{0}kg und +{1} Schaden",
                 // Intelligence
                 "Intelligenz^^Fügt pro 25 Punkte zusätzliche 1 SP und^SLP beim Level-Aufstieg hinzu.^^Aktuell +{0} SP und SLP",
                 // Dexterity
@@ -230,7 +233,7 @@ namespace Ambermoon.UI
             { GameLanguage.English, new string[]
             {
                 // Strength
-                "Strength^^Increases the max weight by 1kg per point.^^Also increases damage by 1 every 25 points.^^Currently +{0}kg and +{1} damage",
+                "Strength^^Increases the max weight by 4kg per point.^^Also increases damage by 1 every 25 points.^^Currently +{0}kg and +{1} damage",
                 // Intelligence
                 "Intelligence^^Adds 1 additional SP and SLP on^level up for every 25 points.^^Currently +{0} SP and SLP",
                 // Dexterity
@@ -249,7 +252,7 @@ namespace Ambermoon.UI
             { GameLanguage.French, new string[]
             {
                 // Strength
-                "Force^^Augmente le poids maximum de 1kg par point.^^Augmente également les dégâts de^1 tous les 25 points.^^Actuellement +{0}kg et +{1} dégâts",
+                "Force^^Augmente le poids maximum de 4kg par point.^^Augmente également les dégâts de^1 tous les 25 points.^^Actuellement +{0}kg et +{1} dégâts",
                 // Intelligence
                 "Intelligence^^Ajoute 1 PS et 1 PAS supplémentaire^au niveau supérieur pour chaque^tranche de 25 points.^^Actuellement +{0} PS et +{0} PAS",
                 // Dexterity
@@ -268,7 +271,7 @@ namespace Ambermoon.UI
             { GameLanguage.Polish, new string[]
             {
                 // Strength
-                "Siła^^Zwiększa maksymalny udźwig o 1 kg na punkt.^^Zwiększa również obrażenia o 1 co 25 punktów.^^Obecnie +{0} kg i +{1} obrażeń.",
+                "Siła^^Zwiększa maksymalny udźwig o 4 kg na punkt.^^Zwiększa również obrażenia o 1 co 25 punktów.^^Obecnie +{0} kg i +{1} obrażeń.",
                 // Intelligence
                 "Inteligencja^^Dodaje 1 dodatkowy PM i PNM^na poziom, za każde 25 punktów.^^Obecnie +{0} PM i PNM",
                 // Dexterity
@@ -287,7 +290,7 @@ namespace Ambermoon.UI
             { GameLanguage.Czech, new string[]
             {
 	            // Strength
-	            "Síla^^Zvyšuje maximální nosnost o 1 kg za bod.^^Také zvyšuje poškození o 1 každých 25 bodů.^^V současné době +{0}kg a +{1} poškození",
+	            "Síla^^Zvyšuje maximální nosnost o 4 kg za bod.^^Také zvyšuje poškození o 1 každých 25 bodů.^^V současné době +{0}kg a +{1} poškození",
 				// Intelligence
 	            "Inteligence^^Přidává 1 další BM a BUK na^úrovni za každých 25 bodů.^^Současně +{0} BM a BUK",
 				// Dexterity

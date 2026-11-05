@@ -48,7 +48,9 @@ public abstract partial class GameCore
         Features features, string gameVersionName, string version, Action<bool, string> keyboardRequest,
         DrawTouchFingerHandler? drawTouchFingerRequest = null, Action<bool>? showMobileTouchPadHandler = null)
     {
-        Features = features;
+        // Restore original numeric spell damage and HP growth. Keep Advanced XP
+        // thresholds, elements, spells, services, conditions and world mechanics.
+        Features = features & ~(Features.AdjustedSpellDamage | Features.StaminaHPOnLevelUp);
 
         Character.FoodWeight = Features.HasFlag(Features.ReducedFoodWeight) ? 25u : 250u;
 
@@ -82,6 +84,14 @@ public abstract partial class GameCore
         this.songManager = songManager;
         MapManager = renderView.GameData.MapManager;
         ItemManager = renderView.GameData.ItemManager;
+        // Ordinary starting weapon catalog, shared by both bundled editions.
+        // Change runtime definitions only; neither versions.dat nor saves are patched.
+        foreach (var item in ItemManager.Items)
+        {
+            if (item.Index >= 181 && item.Index <= 201 &&
+                (item.Type == ItemType.CloseRangeWeapon || item.Type == ItemType.LongRangeWeapon))
+                item.BreakChance = 0;
+        }
         CharacterManager = renderView.GameData.CharacterManager;
         layout = new Layout(this, renderView, ItemManager);
         layout.BattleFieldSlotClicked += BattleFieldSlotClicked;

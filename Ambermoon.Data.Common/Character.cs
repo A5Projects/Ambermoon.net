@@ -6,7 +6,8 @@ namespace Ambermoon.Data
 {
 	public abstract class Character
     {
-        public const uint GoldWeight = 5;
+        // Immersive balance: one gram per coin (original: five grams).
+        public const uint GoldWeight = 1;
         public static uint FoodWeight { get; set; } = 250;
 
         public uint Index { get; set; }

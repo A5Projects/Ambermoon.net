@@ -435,6 +435,10 @@ partial class GameCore
 
         ClearPartyMembers();
 
+        // Gold now weighs less. Recompute stored weights for unrecruited companions
+        // as well, so they already have the correct load when they join later.
+        FixSavegameValues(savegame);
+
         for (int i = 0; i < MaxPartyMembers; ++i)
         {
             if (savegame.CurrentPartyMemberIndices[i] != 0)
