@@ -6,16 +6,14 @@ namespace Ambermoon.UI;
 
 internal partial class Layout
 {
-    const int ExplorationActionsPadding = 4;
     public static readonly Rect ExplorationActionsArea = new(
-        Global.VirtualScreenWidth - 3 * Button.Width - 2 * ExplorationActionsPadding,
-        Global.VirtualScreenHeight - 3 * Button.Height - 2 * ExplorationActionsPadding,
-        3 * Button.Width + 2 * ExplorationActionsPadding,
-        3 * Button.Height + 2 * ExplorationActionsPadding);
+        Global.VirtualScreenWidth - 3 * Button.Width,
+        Global.VirtualScreenHeight - 3 * Button.Height,
+        3 * Button.Width,
+        3 * Button.Height);
     public static readonly Rect ExplorationMenuButtonArea = new(282, 37, 36, 12);
     public bool IsExplorationLayout => Type is LayoutType.Map2D or LayoutType.Map3D;
     public bool ExplorationActionsOpen { get; private set; }
-    IColoredRect? explorationActionBackground;
     IColoredRect[]? explorationMenuBorder;
     IColoredRect? explorationMenuBackground;
     IColoredRect? explorationTitleBackground;
@@ -36,7 +34,6 @@ internal partial class Layout
     {
         if (explorationMenuLabel != null)
             return;
-        explorationActionBackground = CreateExplorationArea(ExplorationActionsArea, new Color(24, 21, 16, 120), 1);
         // Draw only the outline so its opacity does not accumulate beneath the fill.
         var borderColor = new Color(139, 125, 94, 150);
         explorationMenuBorder =
@@ -74,8 +71,8 @@ internal partial class Layout
 
     public void UpdateExplorationActionsVisibility()
     {
-        buttonGrid.SetPosition(IsExplorationLayout ? ExplorationActionsArea.X + ExplorationActionsPadding : Global.ButtonGridX,
-            IsExplorationLayout ? ExplorationActionsArea.Y + ExplorationActionsPadding : Global.ButtonGridY);
+        buttonGrid.SetPosition(IsExplorationLayout ? ExplorationActionsArea.X : Global.ButtonGridX,
+            IsExplorationLayout ? ExplorationActionsArea.Y : Global.ButtonGridY);
         if (IsExplorationLayout)
             EnsureExplorationActions();
         bool exploring = IsExplorationLayout && !game.WindowActive;
@@ -88,7 +85,6 @@ internal partial class Layout
                 edge.Visible = chrome;
             explorationMenuBackground!.Visible = chrome;
             explorationTitleBackground!.Visible = chrome;
-            explorationActionBackground!.Visible = exploring && !PopupActive && (ExplorationActionsOpen || OptionMenuOpen);
         }
         if (IsExplorationLayout)
             buttonGrid.Visible = exploring && !PopupActive && (ExplorationActionsOpen || OptionMenuOpen);
@@ -147,14 +143,13 @@ internal partial class Layout
     {
         ExplorationActionsOpen = false;
         ButtonGridPage = 0;
-        explorationActionBackground?.Delete();
         if (explorationMenuBorder != null)
             foreach (var edge in explorationMenuBorder)
                 edge.Delete();
         explorationMenuBackground?.Delete();
         explorationTitleBackground?.Delete();
         explorationMenuLabel?.Destroy();
-        explorationActionBackground = explorationMenuBackground = explorationTitleBackground = null;
+        explorationMenuBackground = explorationTitleBackground = null;
         explorationMenuBorder = null;
         explorationMenuLabel = null;
         // Retain a pending mouse-up after an action opens a legacy window.

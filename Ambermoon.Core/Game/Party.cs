@@ -1356,6 +1356,7 @@ partial class GameCore
 
     void AddPartyMember(int slot, PartyMember partyMember, Action? followAction = null, bool forceAnimation = false)
     {
+        partyMember.ExtraCarryWeightKg = extraCarryWeightKg;
         FixPartyMember(partyMember);
         partyMember.Died += PartyMemberDied;
         layout.SetCharacter(slot, partyMember, false, followAction, forceAnimation);

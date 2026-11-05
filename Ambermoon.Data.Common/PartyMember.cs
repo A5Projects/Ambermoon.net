@@ -16,8 +16,23 @@ namespace Ambermoon.Data
         public List<string> Texts { get; set; }
         public List<Event> Events { get; } = new List<Event>();
         public List<Event> EventList { get; } = new List<Event>();
+        public const uint MaxExtraCarryWeightKg = 10000;
+        uint extraCarryWeightKg;
+
+        /// <summary>Session-only capacity bonus, deliberately omitted by the save serializers.</summary>
+        public uint ExtraCarryWeightKg
+        {
+            get => extraCarryWeightKg;
+            set
+            {
+                if (value > MaxExtraCarryWeightKg)
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                extraCarryWeightKg = value;
+            }
+        }
+
         // Keep the sub-kilogram rounding allowance; quadruple the actual capacity.
-        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * 4000;
+        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * 4000 + ExtraCarryWeightKg * 1000;
         public bool Overweight => (TotalWeight / 1000) > (MaxWeight / 1000);
         public uint MaxGoldToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Gold, ((int)MaxWeight - (int)TotalWeight) / Character.GoldWeight));
         public uint MaxFoodToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Food, ((int)MaxWeight - (int)TotalWeight) / Character.FoodWeight));
