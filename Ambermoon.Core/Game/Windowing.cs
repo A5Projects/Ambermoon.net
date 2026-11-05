@@ -52,11 +52,29 @@ partial class GameCore
         }
     }
 
+    string FormatInventoryWeight(PartyMember partyMember)
+    {
+        uint weight = partyMember.TotalWeight / 1000;
+        uint capacity = partyMember.MaxWeight / 1000;
+        const int maxCharacters = 68 / Global.GlyphWidth;
+        string text = string.Format(DataNameProvider.CharacterInfoWeightString, weight, capacity);
+        if (text.Length <= maxCharacters)
+            return text;
+
+        // The original padded, repeated unit does not fit larger cheat limits.
+        // Keep exact values within the existing inventory field.
+        text = $"{weight}/{capacity}KG";
+        if (text.Length <= maxCharacters)
+            return text;
+
+        text = $"{weight}/{capacity}";
+        return text.Length <= maxCharacters ? text : $"{weight}KG^/{capacity}KG";
+    }
+
     void SetInventoryWeightDisplay(PartyMember partyMember)
     {
         var weightArea = new Rect(27, 152, 68, 15);
-        string weightText = string.Format(DataNameProvider.CharacterInfoWeightString,
-            partyMember.TotalWeight / 1000, partyMember.MaxWeight / 1000);
+        string weightText = FormatInventoryWeight(partyMember);
         if (partyMember.Overweight)
         {
             weightDisplayBlinking = true;
@@ -1206,8 +1224,7 @@ partial class GameCore
                 string.Format(DataNameProvider.CharacterInfoDefenseString.Replace(' ', defense < 0 ? '-' : '+'), Math.Abs(defense)));
         }
         UpdateSecondaryStatTooltip(SecondaryStat.Defense);
-        UpdateText(CharacterInfo.Weight, () => string.Format(DataNameProvider.CharacterInfoWeightString,
-            character.TotalWeight / 1000, (character as PartyMember)!.MaxWeight / 1000), true);
+        UpdateText(CharacterInfo.Weight, () => FormatInventoryWeight((character as PartyMember)!), true);
         if (conversationPartner != null)
         {
             UpdateText(CharacterInfo.ConversationPartyMember, () => CurrentPartyMember!.Name);

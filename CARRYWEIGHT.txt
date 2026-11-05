@@ -1,0 +1,33 @@
+Temporary carry capacity and save transfer
+
+Enable the existing cheat console in Options -> Settings -> Enable cheats.
+
+  carryweight 1000   Add 1000 kg of capacity to every companion.
+  carryweight 0      Remove the bonus; use this build's normal capacity.
+  carryweight        Show the current bonus.
+  help carryweight   Show command help.
+
+The number sets the total extra capacity, rather than adding it again each
+time. Whole numbers from 0 to 10000 are accepted. The bonus lasts until the
+application is restarted and survives loading another save during that session.
+It applies to active and unrecruited companions. It changes neither strength
+nor item/gold weight, inventory slots, combat stats or the save format.
+Re-enter it after restarting if the party still needs the extra capacity.
+
+Save transfer between our two Ambermoon.net 1.15.1 builds
+
+Ambermoon-immersive-ui and Ambermoon-expanded-1.15.1 use the same bundled game
+data and save format. Select the same edition and language when transferring
+saves; the tested pair is German Advanced. This does not imply compatibility
+between Original and Advanced, or arbitrary other data releases/mods.
+
+Earned stats, points, spells and world progress are retained. Future gains and
+costs use the destination build's rules. Both builds now recalculate carried
+weight for every stored companion on load. This also covers companions who
+join later: the old default build repaired only active members, which could
+make a lighter imported cached weight underflow when gold was removed.
+
+The carry bonus itself is not saved. In particular, saving with the bonus on
+does not change the character's strength or give permanent carrying capacity
+to another build. The destination must enable its own bonus if needed.
+Ordinary overloading under its different capacity/weight rules is expected.

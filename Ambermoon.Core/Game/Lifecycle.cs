@@ -433,6 +433,11 @@ partial class GameCore
 
         ClearPartyMembers();
 
+        // Imported saves can use different gold weights. Correct every stored
+        // companion now, including those who may be recruited later.
+        FixSavegameValues(savegame);
+        ApplyExtraCarryWeight(savegame);
+
         for (int i = 0; i < MaxPartyMembers; ++i)
         {
             if (savegame.CurrentPartyMemberIndices[i] != 0)

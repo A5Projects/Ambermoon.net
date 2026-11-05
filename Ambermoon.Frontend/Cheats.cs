@@ -52,6 +52,16 @@ public class Cheats
                 NoClip
             )
         },
+        { "carryweight",
+            Create
+            (
+                "Adds a flat carry capacity bonus to every companion without changing strength or item weights." + Environment.NewLine +
+                "Usage: carryweight <extra kilograms, 0-10000>" + Environment.NewLine +
+                "0 removes the bonus. Without an argument, shows the current bonus." + Environment.NewLine +
+                "Lasts until the game is restarted and is not stored in savegames.",
+                CarryWeight
+            )
+        },
         { "netsrak",
             Create
             (
@@ -613,6 +623,29 @@ public class Cheats
         WriteLine();
 
         game.NoClip = activate;
+    }
+
+    static void CarryWeight(GameCore game, string[] args)
+    {
+        args = args.Where(arg => !string.IsNullOrWhiteSpace(arg)).ToArray();
+        if (args.Length == 0)
+        {
+            WriteLine($"Extra carry capacity: {game.ExtraCarryWeightKg} kg per companion.");
+            WriteLine("Usage: carryweight <extra kilograms, 0-10000>; 0 removes the bonus.");
+            return;
+        }
+
+        if (args.Length != 1 || !uint.TryParse(args[0], System.Globalization.NumberStyles.None,
+            System.Globalization.CultureInfo.InvariantCulture, out uint kilograms) || kilograms > PartyMember.MaxExtraCarryWeightKg)
+        {
+            WriteLine("Usage: carryweight <extra kilograms, 0-10000>; 0 removes the bonus.");
+            return;
+        }
+
+        game.ExtraCarryWeightKg = kilograms;
+        WriteLine(kilograms == 0
+            ? "Extra carry capacity removed. Normal carry limits apply."
+            : $"Extra carry capacity set to {kilograms} kg per companion for this session.");
     }
 
     static void Netsrak(GameCore game, string[] args)
