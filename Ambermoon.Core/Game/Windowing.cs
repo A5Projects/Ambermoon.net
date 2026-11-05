@@ -32,14 +32,16 @@ partial class GameCore
     internal bool GameOverButtonsVisible { get; private set; } = false;
     public bool CampActive => WindowActive && CurrentWindow.Window == Window.Camp;
 
-    void UpdateMapName(Map? map = null)
+    internal void UpdateMapName(Map? map = null)
     {
         map ??= Map;
-        string mapName = map!.IsWorldMap
+        if (map == null || windowTitle == null)
+            return;
+        string mapName = map.IsWorldMap
             ? DataNameProvider.GetWorldName(map.World)
             : map.Name;
-        windowTitle!.Text = ProcessText(mapName);
-        windowTitle.Place(layout.GetTextRect(8, 38, 192, 10), TextAlign.Center);
+        windowTitle.Text = ProcessText(layout.FitExplorationTitle(mapName));
+        windowTitle.Place(layout.GetTextRect(layout.ExplorationTitleTextArea), TextAlign.Center);
         windowTitle.PaletteIndex = UIPaletteIndex;
         windowTitle.TextColor = TextColor.BrightGray;
     }

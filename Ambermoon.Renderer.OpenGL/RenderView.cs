@@ -743,7 +743,7 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
 
                     try
                     {
-                        layer.Value.Render();
+                        layer.Value.Render(layer.Key == Layer.UI && (!render3DMap || !useFrameBuffer));
                     }
                     finally
                     {
@@ -753,7 +753,7 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                 }
                 else
                 {
-                    layer.Value.Render();
+                    layer.Value.Render(layer.Key == Layer.UI && (!render3DMap || !useFrameBuffer));
                 }
             }
 

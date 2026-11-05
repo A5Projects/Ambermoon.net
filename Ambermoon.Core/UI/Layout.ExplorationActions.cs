@@ -47,10 +47,12 @@ internal partial class Layout
             CreateExplorationArea(new Rect(317, 38, 1, 10), borderColor, 1)
         ];
         explorationMenuBackground = CreateExplorationArea(new Rect(283, 38, 34, 10), new Color(24, 21, 16, 95), 2);
-        explorationTitleBackground = CreateExplorationArea(new Rect(4, 37, 200, 10), new Color(16, 15, 12, 95), 1);
+        explorationTitleBackground = CreateExplorationArea(new Rect(4, 37, ExplorationTitleWidth, 10), new Color(16, 15, 12, 95), 1);
         explorationMenuLabel = new UIText(RenderView, game.UIPaletteIndex,
             RenderView.TextProcessor.CreateText("MENU"), new Rect(284, 39, 32, 8), 4,
             TextColor.BrightGray, true, TextAlign.Center);
+        if (game.Map != null && !game.WindowActive)
+            game.UpdateMapName();
     }
 
     public void ToggleExplorationActions()

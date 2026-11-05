@@ -34,7 +34,18 @@ partial class GameCore
             _ => "Keyboard speed"
         };
         // A speed toggle should not pause movement or open a modal popup.
-        var message = ProcessText($"{label}: {percent}%");
+        if (label.Length + 6 > layout.ExplorationTitleTextArea.Width / Global.GlyphWidth)
+        {
+            // Keep the percentage visible when acquired indicators narrow the title.
+            label = GameLanguage switch
+            {
+                GameLanguage.German or GameLanguage.Polish => "Tempo",
+                GameLanguage.French => "Vitesse",
+                GameLanguage.Czech => "Rychlost",
+                _ => "Speed"
+            };
+        }
+        var message = ProcessText(layout.FitExplorationTitle($"{label}: {percent}%"));
         windowTitle!.Text = message;
         AddTimedEvent(TimeSpan.FromSeconds(1.5), () =>
         {

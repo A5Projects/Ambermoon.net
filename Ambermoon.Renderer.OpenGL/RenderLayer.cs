@@ -450,7 +450,9 @@ public class RenderLayer : IRenderLayer, IDisposable
         RenderBuffer.SetTextureFactor(factor);
     }
 
-    public void Render()
+    public void Render() => Render(false);
+
+    internal void Render(bool blendColorRects)
     {
         if (!Visible)
             return;
@@ -466,14 +468,34 @@ public class RenderLayer : IRenderLayer, IDisposable
         {
             if (renderBufferColorRects != null)
             {
-                EnsureCorrectRenderOrder(renderBufferColorRects);
+                if (blendColorRects)
+                    renderBufferColorRects.EnsureCorrectRenderOrder();
+                else
+                    EnsureCorrectRenderOrder(renderBufferColorRects);
 
                 var colorShader = renderBufferColorRects.ColorShader;
 
                 colorShader.UpdateMatrices(state);
                 colorShader.SetZ(Config.BaseZ);
 
-                renderBufferColorRects.Render();
+                if (blendColorRects)
+                {
+                    // UI rectangles normally store their alpha for the separate
+                    // 3D framebuffer composite. Over a 2D map (or without that
+                    // framebuffer), blend them against the scene already drawn.
+                    state.Gl.Enable(EnableCap.Blend);
+                    state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
+                        BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+                }
+                try
+                {
+                    renderBufferColorRects.Render();
+                }
+                finally
+                {
+                    if (blendColorRects && !Config.EnableBlending)
+                        state.Gl.Disable(EnableCap.Blend);
+                }
             }
 
             if (Texture != null)
