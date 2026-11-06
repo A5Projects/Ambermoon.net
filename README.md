@@ -11,6 +11,17 @@ Both branches retain the startup selector for **Original 1.22** and **Ambermoon 
 Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).
 Savegames are fully compatible between versions.
 
+## Download this fork
+
+Edition | Windows 64-bit portable download | Release notes
+--- | --- | ---
+**Immersive UI v1.0.0** — full exploration view and relaxed balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.0/Ambermoon.net-ImmersiveUI-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.0)
+**Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
+
+Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive UI to Expanded. See [save transfer](CARRYWEIGHT.txt).
+
+These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
+
 ## Immersive UI
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
@@ -24,19 +35,32 @@ Savegames are fully compatible between versions.
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 
 
-<img width="1249" height="781" alt="8-3dtownwmenu" src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" />
-<img width="1249" height="781" alt="6-2doutdoorwmenu" src="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5" />
-<img width="1249" height="781" alt="7-2doutdoornomenu" src="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794" />
-<img width="1249" height="781" alt="5-2dindoorwmenu" src="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f" />
-<img width="1249" height="781" alt="4-2dindoor" src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" />
-<img width="1249" height="781" alt="2-3dindoornomenu" src="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93" />
-<img width="1249" height="781" alt="1-3dindoorwmenu" src="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4" />
-<img width="1249" height="828" alt="Screenshot_menuexplain" src="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091" />
-<img width="900" height="415" alt="NewCheatmenuadds1" src="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79" />
-<img width="1249" height="781" alt="10-3dwreadpopup" src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" />
+## Immersive UI screenshots
+
+Click any image to view it at full size.
+
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="400" alt="3D town with the action menu" /></a>
+  <a href="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5"><img src="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5" width="400" alt="2D outdoor map with the action menu" /></a>
+</p>
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794"><img src="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794" width="400" alt="2D outdoor map with the menu hidden" /></a>
+  <a href="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f"><img src="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f" width="400" alt="2D interior with the action menu" /></a>
+</p>
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f"><img src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" width="400" alt="2D interior with the menu hidden" /></a>
+  <a href="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93"><img src="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93" width="400" alt="3D interior with the menu hidden" /></a>
+</p>
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4"><img src="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4" width="400" alt="3D interior with the action menu" /></a>
+  <a href="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091"><img src="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091" width="400" alt="Immersive UI controls and options" /></a>
+</p>
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79"><img src="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79" width="400" alt="Additional cheat commands" /></a>
+  <a href="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af"><img src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" width="400" alt="Original dialog over the 3D world" /></a>
+</p>
 
 
-This fork currently publishes source code only; no fork binary release is available yet. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes.
 
 ## Upstream documentation and credits
 
