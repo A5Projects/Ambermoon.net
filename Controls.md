@@ -43,6 +43,14 @@ Hovering over the player the cursor becomes Zzz. Left clicking will wait for 5 m
 
 #### 3D Maps
 
+**C** or **middle-click (mouse wheel button)** switches between the original mouse arrows and horizontal mouse-look while exploring. The same saved option is available as **3D mouse** on settings page 4 (**Maussteuerung 3D** in German). Mouse-look hides and captures the pointer; moving the mouse left/right turns the view. Vertical movement does not tilt the camera.
+
+The viewport and full interface remain visible in both modes. Press C or middle-click again to release the pointer and click the existing controls. Opening an inventory, a dialog, or the options menu also releases the pointer; returning to eligible 3D exploration resumes mouse-look. Switching to 2D or away from the game window releases it as well.
+
+For first-person controls, select **QWEASD** in the existing 3D movement setting: W/S move, A/D strafe, and Q/E still turn. **Space** continues to interact with what is directly in front of you. Left/right mouse buttons do not start arrow movement or switch to the interaction cursor while mouse-look is active. The default mouse mode remains arrows; changing it is remembered. `MouseLookSensitivity` in the configuration adjusts turning sensitivity independently of Caps Lock's keyboard-speed setting.
+
+In the original **arrows** mouse mode:
+
 Hovering over the map view will change the cursor to movement arrows or Zzz in the center.
 
 You will move faster if the mouse is at the edge of the view and slower if it is more in the center.

@@ -63,6 +63,8 @@ partial class GameCore
     public void ExternalVolumeChanged() => layout.OnExternalVolumeChanged();
     public void PreFullscreenChanged()
     {
+        mouseLookFullscreenChanging = true;
+        ReleaseMouseLookCapture();
         preFullscreenMousePosition = renderView.ScreenToGame(GetMousePosition(lastMousePosition));
         preFullscreenChangeTrapMouseArea = trapMouseGameArea;
         if (trapMouseGameArea != null)
@@ -87,5 +89,7 @@ partial class GameCore
         {
             layout.UpdateFullscreenOption();
         }
+        mouseLookFullscreenChanging = false;
+        UpdateMouseLookCapture();
     }
 }

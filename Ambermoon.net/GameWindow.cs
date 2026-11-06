@@ -69,7 +69,7 @@ file class CheatConsole : IConsole
     }
 }
 
-class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHost
+partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHost
 {
     string gameVersion = "Ambermoon.net";
     Configuration configuration;
@@ -313,6 +313,7 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
         Silk.NET.Input.Key.End => Key.End,
         Silk.NET.Input.Key.Space => Key.Space,
         Silk.NET.Input.Key.CapsLock => Key.CapsLock,
+        Silk.NET.Input.Key.C => Key.C,
         Silk.NET.Input.Key.W => Key.W,
         Silk.NET.Input.Key.A => Key.A,
         Silk.NET.Input.Key.S => Key.S,
@@ -488,7 +489,10 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
             else if (mainMenu != null)
                 mainMenu.OnKeyDown(ConvertKey(key));
             else
+            {
                 Game?.OnKeyDown(ConvertKey(key), GetModifiers(keyboard));
+                Game?.UpdateMouseLookCapture();
+            }
         }
     }
 
@@ -562,7 +566,10 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
         else if (intro != null)
             intro.Click();
         else
+        {
             Game?.OnMouseDown(ConvertMousePosition(position), GetMouseButtons(mouse), GetModifiers(keyboard));
+            Game?.UpdateMouseLookCapture();
+        }
     }
 
     void Mouse_MouseUp(IMouse mouse, MouseButton button)
@@ -578,11 +585,20 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
         else if (mainMenu != null)
             mainMenu.OnMouseUp(ConvertMousePosition(position), ConvertMouseButtons(button));
         else if (Game != null)
+        {
             Game.OnMouseUp(ConvertMousePosition(position), ConvertMouseButtons(button));
+            Game.UpdateMouseLookCapture();
+        }
     }
 
     void Mouse_MouseMove(IMouse mouse, MousePosition position)
     {
+        Game?.UpdateMouseLookCapture();
+        if (mouseLookCaptured)
+        {
+            HandleMouseLookMove(position);
+            return;
+        }
         if (trapMouse && mouse != null)
         {
             mouse.MouseMove -= Mouse_MouseMove;
@@ -1171,17 +1187,23 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
                                 activeMod?.AttachGame(game);
 
                             game.QuitRequested += window.Close;
+                            game.MouseLookCaptureChanged += SetMouseLookCapture;
+                            game.SetMouseLookFocus(mouseLookWindowFocused);
                             game.MousePositionChanged += position =>
                             {
                                 if (mouse != null)
                                 {
                                     mouse.MouseMove -= Mouse_MouseMove;
                                     mouse.Position = new MousePosition(position.X, position.Y);
+                                    mouseLookLastPosition = mouse.Position;
+                                    mouseLookIgnoreNextMove = mouseLookCaptured;
                                     mouse.MouseMove += Mouse_MouseMove;
                                 }
                             };
                             game.MouseTrappedChanged += (bool trapped, Position position) =>
                             {
+                                if (mouseLookCaptured && !trapped)
+                                    return;
                                 try
                                 {
                                     this.cursor.CursorMode = trapped ? CursorMode.Disabled : CursorMode.Hidden;
@@ -2319,8 +2341,10 @@ class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHo
             window.FramebufferResize += Window_FramebufferResize;
             window.Move += Window_Move;
             window.StateChanged += Window_StateChanged;
+            window.FocusChanged += Window_FocusChanged;
             window.Closing += () =>
             {
+                Game?.SetMouseLookFocus(false);
                 audioOutput?.Stop();
                 audioOutput?.Dispose();
                 cheatTaskCancellationTokenSource.Cancel();

@@ -78,6 +78,7 @@ namespace Ambermoon
         Number7,
         Number8,
         Number9,
-        CapsLock
+        CapsLock,
+        C
     }
 }

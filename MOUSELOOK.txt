@@ -1,0 +1,21 @@
+Optional horizontal mouse-look
+
+During 3D exploration, press C or click the mouse wheel to switch between the
+original arrow controls and mouse-look. The same saved option is on Options ->
+Settings -> page 4: 3D mouse (German: Maussteuerung 3D, Pfeile/Mausblick).
+
+Mouse-look turns left/right only. For first-person keyboard controls, choose
+QWEASD under 3D Movement: W/S move, A/D strafe and Q/E turn. Space still
+interacts with what is directly in front of you.
+
+The viewport, frame and full interface remain unchanged and visible. Press C
+or click the wheel again to release the pointer for clicking the controls.
+Opening an inventory, dialog or options also releases the pointer;
+returning to 3D exploration resumes the selected mode. 2D maps, switching away
+from the window, and window/fullscreen transitions release mouse capture.
+
+Arrows remain the default. The selected mode is remembered between sessions.
+MouseLookSensitivity in ambermoon.cfg adjusts turning speed (25-300 percent,
+default 100), independently of the keyboard movement speed.
+
+This addition changes neither game balance nor the existing menu shortcuts.

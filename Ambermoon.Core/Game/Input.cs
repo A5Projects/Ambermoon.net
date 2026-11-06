@@ -117,6 +117,7 @@ partial class GameCore
             {
                 ResetMoveKeys(true);
                 CurrentMobileAction = MobileAction.None;
+                ReleaseMouseLookCapture();
             }
         }
     }
@@ -139,6 +140,7 @@ partial class GameCore
 
     internal void TrapMouse(Rect area)
     {
+        ReleaseMouseLookCapture();
         if (clickMoveActive)
             trappedAfterClickMoveActivation = true;
 
@@ -191,6 +193,9 @@ partial class GameCore
 
     public virtual void OnMouseMove(Position position, MouseButtons buttons)
     {
+        UpdateMouseLookCapture();
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnMouseMove(position, buttons);
@@ -488,6 +493,12 @@ partial class GameCore
 
     public virtual void OnKeyDown(Key key, KeyModifiers modifiers, bool tapped = false)
     {
+        bool wasPressed = keys[(int)key];
+        // Record C even when a dialog consumes it. Holding the key while that
+        // dialog closes must not turn a later repeat into a mouse-mode toggle.
+        if (key == Key.C)
+            keys[(int)key] = true;
+
         if (worldMapViewer != null)
         {
             worldMapViewer.OnKeyDown(key);
@@ -558,9 +569,15 @@ partial class GameCore
             return;
         }
 
-        bool wasPressed = keys[(int)key];
         bool movementHeld = KeyboardMovementHeld;
         keys[(int)key] = true;
+
+        if (key == Key.C && modifiers == KeyModifiers.None && TextInput.FocusedInput == null && CanUseMouseLook)
+        {
+            if (!wasPressed)
+                SetMouseLook3D(!CoreConfiguration.MouseLook3D);
+            return;
+        }
 
         if (key == Key.CapsLock)
         {
@@ -1010,6 +1027,16 @@ partial class GameCore
 
     public virtual void OnMouseUp(Position cursorPosition, MouseButtons buttons)
     {
+        if (buttons.HasFlag(MouseButtons.Middle))
+        {
+            bool toggledMouseLook = mouseLookToggleHeld;
+            mouseLookToggleHeld = false;
+            if (toggledMouseLook)
+                return;
+        }
+        UpdateMouseLookCapture();
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnMouseUp(buttons);
@@ -1071,6 +1098,18 @@ partial class GameCore
 
     public virtual void OnMouseDown(Position position, MouseButtons buttons, KeyModifiers keyModifiers = KeyModifiers.None)
     {
+        UpdateMouseLookCapture();
+        if (buttons.HasFlag(MouseButtons.Middle) && CanUseMouseLook)
+        {
+            if (!mouseLookToggleHeld)
+            {
+                mouseLookToggleHeld = true;
+                SetMouseLook3D(!CoreConfiguration.MouseLook3D);
+            }
+            return;
+        }
+        if (MouseLookActive)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnMouseDown(position, buttons);

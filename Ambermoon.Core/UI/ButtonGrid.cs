@@ -103,6 +103,13 @@ namespace Ambermoon.UI
                 button?.HideTooltip();
         }
 
+        public void CancelMousePress()
+        {
+            rightMouseDown = false;
+            foreach (var button in buttons)
+                button.Release(true);
+        }
+
         public void Hover(Position position)
         {
             foreach (var button in buttons)
