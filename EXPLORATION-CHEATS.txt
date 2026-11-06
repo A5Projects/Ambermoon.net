@@ -1,0 +1,22 @@
+Optional exploration cheats
+
+Enable the existing cheat console through Options -> Settings -> Enable cheats.
+
+  noencounters 1   Disable random combat encounters while moving.
+  notired 1        Prevent tiredness and exhaustion from lack of sleep.
+
+Use 0 instead of 1 to disable either cheat, or omit the number to toggle it.
+Both commands appear in help; help noencounters and help notired explain them.
+
+Both default off. They last for the current application session, including
+save reloads. Re-enter them after restarting the application.
+
+noencounters preserves scripted/story battles and monsters visible on the map.
+notired removes existing exhaustion and restores its reduced attributes/skills
+without healing HP/SP. Time, poison, disease and spell durations still advance;
+ordinary resting remains available.
+
+This expanded build retains its standard balance. The immersive build's growth,
+spell prices, hit chances, break chances, gold weight and capacity changes have
+not been copied. The separate carryweight cheat remains available as before;
+see CARRYWEIGHT.txt.

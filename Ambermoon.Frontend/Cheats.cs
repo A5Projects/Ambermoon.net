@@ -62,6 +62,25 @@ public class Cheats
                 CarryWeight
             )
         },
+        { "noencounters",
+            Create
+            (
+                "Disables random combat encounters while moving. Story fights and visible monsters remain active." + Environment.NewLine +
+                "Usage: noencounters [0/1]" + Environment.NewLine +
+                "Without an argument, toggles the cheat. Lasts until the game is restarted.",
+                NoEncounters
+            )
+        },
+        { "notired",
+            Create
+            (
+                "Prevents tiredness and exhaustion from lack of sleep, and removes existing exhaustion." + Environment.NewLine +
+                "Time still passes normally and resting remains available." + Environment.NewLine +
+                "Usage: notired [0/1]" + Environment.NewLine +
+                "Without an argument, toggles the cheat. Lasts until the game is restarted.",
+                NotTired
+            )
+        },
         { "netsrak",
             Create
             (
@@ -646,6 +665,49 @@ public class Cheats
         WriteLine(kilograms == 0
             ? "Extra carry capacity removed. Normal carry limits apply."
             : $"Extra carry capacity set to {kilograms} kg per companion for this session.");
+    }
+
+    static bool TryReadToggle(string command, string[] args, bool currentValue, out bool enabled)
+    {
+        args = args.Where(arg => !string.IsNullOrWhiteSpace(arg)).ToArray();
+        enabled = currentValue;
+
+        if (args.Length == 0)
+        {
+            enabled = !currentValue;
+            return true;
+        }
+
+        if (args.Length == 1 && (args[0] == "0" || args[0] == "1"))
+        {
+            enabled = args[0] == "1";
+            return true;
+        }
+
+        WriteLine($"Usage: {command} [0/1] (omit the argument to toggle).");
+        return false;
+    }
+
+    static void NoEncounters(GameCore game, string[] args)
+    {
+        if (!TryReadToggle("noencounters", args, game.DisableRandomEncounters, out bool enabled))
+            return;
+
+        game.DisableRandomEncounters = enabled;
+        WriteLine(enabled
+            ? "Random combat encounters disabled. Story fights and visible monsters remain active."
+            : "Random combat encounters enabled.");
+    }
+
+    static void NotTired(GameCore game, string[] args)
+    {
+        if (!TryReadToggle("notired", args, game.PreventTiredness, out bool enabled))
+            return;
+
+        game.PreventTiredness = enabled;
+        WriteLine(enabled
+            ? "Tiredness and exhaustion from lack of sleep disabled. Time and resting still work normally."
+            : "Tiredness and exhaustion from lack of sleep enabled.");
     }
 
     static void Netsrak(GameCore game, string[] args)

@@ -7,6 +7,38 @@ namespace Ambermoon;
 partial class GameCore
 {
     internal SavegameTime? GameTime { get; private set; } = null;
+    bool preventTiredness;
+    uint tirednessPreventionGeneration;
+
+    public bool PreventTiredness
+    {
+        get => preventTiredness;
+        set
+        {
+            preventTiredness = value;
+            if (GameTime != null)
+                GameTime.PreventTiredness = value;
+            if (value)
+            {
+                ++tirednessPreventionGeneration;
+                if (Ingame)
+                    ClearPartyExhaustion();
+            }
+        }
+    }
+
+    void ClearPartyExhaustion()
+    {
+        for (int i = 0; i < MaxPartyMembers; ++i)
+        {
+            var member = GetPartyMember(i);
+            if (member != null && member.Alive && member.Conditions.HasFlag(Condition.Exhausted))
+            {
+                RemoveCondition(Condition.Exhausted, member);
+                layout.UpdateCharacter(member);
+            }
+        }
+    }
 
     public void PauseGame()
     {
@@ -90,7 +122,14 @@ partial class GameCore
         if (disableTimeEvents)
             return;
 
+        if (PreventTiredness)
+        {
+            GameTime_HoursPassed(hoursPassed, true);
+            return;
+        }
+
         swimDamageHandled = true;
+        uint exhaustionGeneration = tirednessPreventionGeneration;
         bool alreadyExhausted = false;
         uint[] damageValues = new uint[MaxPartyMembers];
 
@@ -112,6 +151,15 @@ partial class GameCore
 
         void DealDamage()
         {
+            // A console command can enable the cheat while the warning popup
+            // is open. Do not apply its already calculated exhaustion damage.
+            if (PreventTiredness || exhaustionGeneration != tirednessPreventionGeneration)
+            {
+                // This warning already claimed the hourly swim-damage update.
+                GameTime_HoursPassed(hoursPassed);
+                return;
+            }
+
             DamageAllPartyMembers(p => damageValues[SlotFromPartyMember(p)!.Value],
                 null, null, someoneDied =>
                 {
@@ -136,6 +184,12 @@ partial class GameCore
     {
         if (disableTimeEvents)
             return;
+
+        if (PreventTiredness)
+        {
+            GameTime_HoursPassed(hoursPassed, true);
+            return;
+        }
 
         swimDamageHandled = true;
         ShowMessagePopup(DataNameProvider.TiredMessage, () => GameTime_HoursPassed(hoursPassed));
