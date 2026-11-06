@@ -1,4 +1,31 @@
-# Ambermoon.net
+# Ambermoon.net — Immersive UI fork
+
+[A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
+
+Branch | Version in this fork
+--- | ---
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view with the original interface and standard balance.
+
+Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
+
+## Immersive UI
+
+- Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
+- A compact action overlay opens at the bottom right without moving or resizing the world view.
+- One translucent top bar holds the left-aligned location, centered scrolling compass, clock, and other acquired indicators. The compass appears only after activation in the game. A thin black strip closes the gap beneath the portrait names.
+- Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
+- Relaxed balance includes four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
+
+**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. **Caps Lock** switches keyboard movement between 60% and full speed by default. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
+
+Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
+
+This fork currently publishes source code only; no fork binary release is available yet. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes.
+
+## Upstream documentation and credits
+
+The original README content below is retained from **Pyrdacor/Ambermoon.net**. Its first-person text, contact details, donations, screenshots, and release links belong to the upstream project. For this branch's controls and balance, use the fork documentation linked above.
 
 ## Introduction
 

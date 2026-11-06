@@ -1,6 +1,6 @@
 # Controls
 
-This experimental branch uses a full exploration view below the party portraits in both 2D and 3D. Inventory, conversations, shops, and battles keep their original interfaces.
+The Immersive UI branch uses a full exploration view below the party portraits in both 2D and 3D. Inventory, conversations, shops, and battles keep their original interfaces.
 
 ## General (work everywhere)
 
@@ -39,7 +39,7 @@ Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to sho
 
 Use the arrow keys, WASD, or the numpad to move without opening any controls. In 3D, Q/E and numpad 7/9 turn, while numpad 1/3 turn around. Numpad 5 opens the wait popup. With the overlay open, numpad keys select its buttons instead of moving. Mouse movement and the existing right-click interactions remain available.
 
-Acquired compass, clock, daylight, monster, wind, and position indicators appear in a compact strip at the bottom left. Active spells appear directly above that strip. These indicators still require the corresponding items or spells.
+The location and acquired indicators share a slim translucent bar directly below the portraits. The horizontal compass stays centered: localized bearings and intermediate ticks slide beneath a fixed pointer as you turn. It remains hidden until activated in the game. The clock, daylight, monster, wind, and position indicators appear to its right; coordinates use a small second row when the top row is full. Hover a shortened location name to see it in full. Active spells remain near the bottom left. These indicators still require the corresponding items or spells.
 
 On desktop, **Caps Lock** toggles keyboard movement between the configured slower speed (60% by default) and full speed. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the selected percentage. The setting is remembered between sessions; mouse movement keeps its normal behavior. In 2D, slowing movement increases the time between tile steps.
 
@@ -51,9 +51,9 @@ Hovering over the player the cursor becomes Zzz. Left clicking will wait for 5 m
 
 #### 3D Maps
 
-**Middle-click (mouse wheel button)** switches between the original mouse arrows and horizontal mouse-look while exploring. The same saved option is available as **3D mouse** on settings page 4. Mouse-look hides and captures the pointer; moving the mouse left/right turns your view. Vertical movement does not tilt the camera. Opening the action overlay, a dialog, or another game window releases the pointer; returning to 3D exploration resumes mouse-look. Switching to 2D or away from the game window also releases it.
+**C** or **middle-click (mouse wheel button)** switches between the original mouse arrows and horizontal mouse-look while exploring. The same saved option is clickable as **3D mouse** on settings page 4 (**Maussteuerung 3D** in German, switching **Pfeile/Mausblick**). Mouse-look hides and captures the pointer; moving the mouse left/right turns your view. Vertical movement does not tilt the camera. Opening the action overlay, a dialog, or another game window releases the pointer; returning to 3D exploration resumes mouse-look. Switching to 2D or away from the game window also releases it.
 
-For first-person controls, select the **WASDQE** keyboard setting: W/S move, A/D strafe, and Q/E still turn. **Space** continues to interact with what is directly in front of you. Left/right mouse buttons do not start arrow movement or switch to the old interaction cursor while mouse-look is active. The default mouse mode remains arrows; changing it is remembered. `MouseLookSensitivity` in the configuration adjusts turning sensitivity independently of the Caps Lock keyboard-speed setting.
+For first-person controls, select the **QWEASD** keyboard setting: W/S move, A/D strafe, and Q/E still turn. **Space** continues to interact with what is directly in front of you. Left/right mouse buttons do not start arrow movement or switch to the old interaction cursor while mouse-look is active. The default mouse mode remains arrows; changing it is remembered. `MouseLookSensitivity` in the configuration adjusts turning sensitivity independently of the Caps Lock keyboard-speed setting.
 
 In the original **arrows** mouse mode:
 
