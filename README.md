@@ -9,6 +9,17 @@ Branch | Version in this fork
 
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
 
+## Download this fork
+
+Edition | Windows 64-bit portable download | Release notes
+--- | --- | ---
+**Immersive UI v1.0.0** — full exploration view and relaxed balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.0/Ambermoon.net-ImmersiveUI-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.0)
+**Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
+
+Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive UI to Expanded. See [save transfer](CARRYWEIGHT.txt).
+
+These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
+
 ## Expanded interface
 
 - The enlarged 3D viewport uses more of the left-hand section while retaining the original interface, portrait bar, and right-hand controls. The stone header joins the side borders.
@@ -18,8 +29,6 @@ Both branches retain the startup selector for **Original 1.22** and **Ambermoon 
 - Optional session cheats `noencounters`, `notired`, and `carryweight` remain available. They default off and do not change the save format. Both builds correct cached companion weights when loading transferred saves.
 
 See [Controls](Controls.md), [exploration cheats](EXPLORATION-CHEATS.txt), and [carry capacity/save transfer](CARRYWEIGHT.txt). Choose [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) for full exploration views, compact overlays, and relaxed balance.
-
-This fork currently publishes source code only; no fork binary release is available yet. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes.
 
 ## Upstream documentation and credits
 
