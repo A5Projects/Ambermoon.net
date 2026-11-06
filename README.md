@@ -4,10 +4,12 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance.
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view with the original interface and standard balance.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance, mainly back to Defaults, but Carry weight limit much higher.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard balance. 
 
-Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
+Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant (removed gaps around the world view); it is separate from the Advanced game-data edition. 
+Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).
+Savegames are fully compatible between versions.
 
 ## Immersive UI
 
@@ -20,6 +22,19 @@ Both branches retain the startup selector for **Original 1.22** and **Ambermoon 
 **Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. **Caps Lock** switches keyboard movement between 60% and full speed by default. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
 
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
+
+
+<img width="1249" height="781" alt="8-3dtownwmenu" src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" />
+<img width="1249" height="781" alt="6-2doutdoorwmenu" src="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5" />
+<img width="1249" height="781" alt="7-2doutdoornomenu" src="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794" />
+<img width="1249" height="781" alt="5-2dindoorwmenu" src="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f" />
+<img width="1249" height="781" alt="4-2dindoor" src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" />
+<img width="1249" height="781" alt="2-3dindoornomenu" src="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93" />
+<img width="1249" height="781" alt="1-3dindoorwmenu" src="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4" />
+<img width="1249" height="828" alt="Screenshot_menuexplain" src="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091" />
+<img width="900" height="415" alt="NewCheatmenuadds1" src="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79" />
+<img width="1249" height="781" alt="10-3dwreadpopup" src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" />
+
 
 This fork currently publishes source code only; no fork binary release is available yet. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes.
 
