@@ -313,6 +313,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         Silk.NET.Input.Key.End => Key.End,
         Silk.NET.Input.Key.Space => Key.Space,
         Silk.NET.Input.Key.CapsLock => Key.CapsLock,
+        Silk.NET.Input.Key.C => Key.C,
         Silk.NET.Input.Key.W => Key.W,
         Silk.NET.Input.Key.A => Key.A,
         Silk.NET.Input.Key.S => Key.S,

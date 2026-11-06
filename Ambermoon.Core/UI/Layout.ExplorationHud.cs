@@ -8,11 +8,12 @@ namespace Ambermoon.UI;
 
 internal partial class Layout
 {
-    IColoredRect? explorationHudBackground;
     Tooltip? explorationTitleTooltip;
     bool explorationTitleTruncated;
     internal int ExplorationTitleWidth { get; private set; } = 200;
-    internal Rect ExplorationTitleTextArea => new(8, 38, ExplorationTitleWidth - 8, 10);
+    // GetTextRect adds the font's vertical offset; keep the final title aligned
+    // with the directly positioned indicator and MENU text at y=39.
+    internal Rect ExplorationTitleTextArea => new(8, 39 - (Global.GlyphLineHeight - GlyphHeight), ExplorationTitleWidth - 8, 7);
     static readonly SpecialItemPurpose[] explorationHudOrder =
     [
         SpecialItemPurpose.Compass, SpecialItemPurpose.Clock, SpecialItemPurpose.DayTime,
@@ -27,7 +28,7 @@ internal partial class Layout
         return directions[bearing];
     }
 
-    string GetCompactMapLocation() => $"X:{game.PartyPosition.X + 1,3}^Y:{game.PartyPosition.Y + 1,3}";
+    string GetCompactMapLocation() => $"X{game.PartyPosition.X + 1} Y{game.PartyPosition.Y + 1}";
 
     internal string FitExplorationTitle(string mapName)
     {
@@ -69,7 +70,7 @@ internal partial class Layout
                 AddIcon(UIGraphic.Windchain, 15, 6);
                 break;
             case SpecialItemPurpose.MapLocation:
-                specialItemTexts.Add(specialItem, AddText(new Rect(4, 38, 30, 14), GetCompactMapLocation(), TextColor.BrightGray));
+                specialItemTexts.Add(specialItem, AddText(new Rect(4, 39, 54, 7), GetCompactMapLocation(), TextColor.BrightGray));
                 break;
             case SpecialItemPurpose.Clock:
                 specialItemTexts.Add(specialItem, AddText(new Rect(4, 39, 30, 7), $"{game.GameTime!.Hour,2}:{game.GameTime.Minute:00}", TextColor.BrightGray));
@@ -86,7 +87,8 @@ internal partial class Layout
     {
         static int ItemWidth(SpecialItemPurpose item) => item switch
         {
-            SpecialItemPurpose.Compass or SpecialItemPurpose.Clock or SpecialItemPurpose.MapLocation => 34,
+            SpecialItemPurpose.Compass or SpecialItemPurpose.Clock => 34,
+            SpecialItemPurpose.MapLocation => 58,
             _ => 16
         };
 
@@ -97,9 +99,8 @@ internal partial class Layout
 
         // The common compass + clock pair fits the original gap. As other
         // indicators are acquired, reserve room by shortening only the title.
-        int backgroundWidth = contentWidth + 4;
-        int backgroundX = ExplorationMenuButtonArea.X - 2 - backgroundWidth;
-        int x = backgroundX + 2;
+        int statusX = ExplorationMenuButtonArea.X - 4 - contentWidth;
+        int x = statusX;
         foreach (var item in explorationHudOrder)
         {
             bool hasIcon = specialItemSprites.TryGetValue(item, out var icon);
@@ -113,22 +114,12 @@ internal partial class Layout
                 icon.Y = item == SpecialItemPurpose.WindChain ? 40 : 37;
             }
             if (hasText)
-                text!.SetPosition(new Position(x + (item == SpecialItemPurpose.Compass ? 14 : 0),
-                    item == SpecialItemPurpose.MapLocation ? 38 : 39));
+                text!.SetPosition(new Position(x + (item == SpecialItemPurpose.Compass ? 14 : 0), 39));
 
             x += ItemWidth(item);
         }
 
-        ExplorationTitleWidth = contentWidth == 0 ? 200 : Math.Min(200, backgroundX - 8);
-        explorationTitleBackground?.Resize(ExplorationTitleWidth, 10);
-        if (contentWidth != 0)
-        {
-            int height = specialItemTexts.ContainsKey(SpecialItemPurpose.MapLocation) ? 16 : 12;
-            explorationHudBackground ??= CreateArea(new Rect(backgroundX, 37, backgroundWidth, height), new Render.Color(16, 15, 12, 95), 1);
-            explorationHudBackground.X = backgroundX;
-            explorationHudBackground.Y = 37;
-            explorationHudBackground.Resize(backgroundWidth, height);
-        }
+        ExplorationTitleWidth = contentWidth == 0 ? 200 : Math.Min(200, statusX - 10);
 
         if (game.Map != null && !game.WindowActive)
             game.UpdateMapName();
@@ -141,8 +132,6 @@ internal partial class Layout
             icon.Visible = visible;
         foreach (var text in specialItemTexts.Values)
             text.Visible = visible;
-        if (explorationHudBackground != null)
-            explorationHudBackground.Visible = visible && (specialItemSprites.Count != 0 || specialItemTexts.Count != 0);
         if (explorationTitleTooltip != null)
             explorationTitleTooltip.Enabled = visible && explorationTitleTruncated;
 
@@ -159,8 +148,6 @@ internal partial class Layout
 
     internal void ResetExplorationHud()
     {
-        // The rectangle is tracked by filledAreas and deleted by Layout.Reset.
-        explorationHudBackground = null;
         ExplorationTitleWidth = 200;
         if (explorationTitleTooltip != null)
             RemoveTooltip(explorationTitleTooltip);

@@ -493,6 +493,12 @@ partial class GameCore
 
     public virtual void OnKeyDown(Key key, KeyModifiers modifiers, bool tapped = false)
     {
+        bool wasPressed = keys[(int)key];
+        // Record C even when a dialog consumes it. Holding the key while that
+        // dialog closes must not turn a later repeat into a mouse-mode toggle.
+        if (key == Key.C)
+            keys[(int)key] = true;
+
         if (worldMapViewer != null)
         {
             worldMapViewer.OnKeyDown(key);
@@ -563,9 +569,15 @@ partial class GameCore
             return;
         }
 
-        bool wasPressed = keys[(int)key];
         bool movementHeld = KeyboardMovementHeld;
         keys[(int)key] = true;
+
+        if (key == Key.C && modifiers == KeyModifiers.None && TextInput.FocusedInput == null && CanUseMouseLook)
+        {
+            if (!wasPressed)
+                SetMouseLook3D(!CoreConfiguration.MouseLook3D);
+            return;
+        }
 
         if (key == Key.CapsLock)
         {
