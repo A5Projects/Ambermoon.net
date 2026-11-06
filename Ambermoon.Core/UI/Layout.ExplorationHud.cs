@@ -10,23 +10,17 @@ internal partial class Layout
 {
     Tooltip? explorationTitleTooltip;
     bool explorationTitleTruncated;
+    IColoredRect? explorationCoordinatesBackground;
+    bool explorationCoordinatesBelow;
     internal int ExplorationTitleWidth { get; private set; } = 200;
     // GetTextRect adds the font's vertical offset; keep the final title aligned
-    // with the directly positioned indicator and MENU text at y=39.
-    internal Rect ExplorationTitleTextArea => new(8, 39 - (Global.GlyphLineHeight - GlyphHeight), ExplorationTitleWidth - 8, 7);
+    // with the directly positioned indicator and MENU text at y=40.
+    internal Rect ExplorationTitleTextArea => new(4, 40 - (Global.GlyphLineHeight - GlyphHeight), ExplorationTitleWidth - 4, 7);
     static readonly SpecialItemPurpose[] explorationHudOrder =
     [
-        SpecialItemPurpose.Compass, SpecialItemPurpose.Clock, SpecialItemPurpose.DayTime,
+        SpecialItemPurpose.Clock, SpecialItemPurpose.DayTime,
         SpecialItemPurpose.MonsterEye, SpecialItemPurpose.WindChain, SpecialItemPurpose.MapLocation
     ];
-
-    string GetCompactCompassString()
-    {
-        // The original localized ribbon starts at west and advances clockwise.
-        var directions = game.DataNameProvider.CompassDirections.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        int bearing = ((game.PlayerAngle % 360 + 360 + 22) / 45 + 2) % 8;
-        return directions[bearing];
-    }
 
     string GetCompactMapLocation() => $"X{game.PartyPosition.X + 1} Y{game.PartyPosition.Y + 1}";
 
@@ -34,8 +28,8 @@ internal partial class Layout
     {
         int maxCharacters = ExplorationTitleTextArea.Width / Global.GlyphWidth;
         explorationTitleTruncated = mapName.Length > maxCharacters;
-        explorationTitleTooltip ??= AddTooltip(new Rect(4, 37, ExplorationTitleWidth, 10), mapName, TextColor.BrightGray);
-        explorationTitleTooltip.Area = new Rect(4, 37, ExplorationTitleWidth, 10);
+        explorationTitleTooltip ??= AddTooltip(new Rect(4, 38, ExplorationTitleWidth - 4, 10), mapName, TextColor.BrightGray);
+        explorationTitleTooltip.Area = new Rect(4, 38, ExplorationTitleWidth - 4, 10);
         explorationTitleTooltip.Text = mapName;
         explorationTitleTooltip.ShowBelow = true;
         explorationTitleTooltip.Enabled = explorationTitleTruncated && IsExplorationLayout && !game.WindowActive && !PopupActive && !OptionMenuOpen;
@@ -44,22 +38,26 @@ internal partial class Layout
 
     void AddExplorationSpecialItem(SpecialItemPurpose specialItem)
     {
+        if (specialItem == SpecialItemPurpose.Compass)
+        {
+            EnsureExplorationCompass();
+            ReflowExplorationHud();
+            UpdateExplorationHudVisibility();
+            return;
+        }
+
         if (specialItemSprites.ContainsKey(specialItem) || specialItemTexts.ContainsKey(specialItem))
             return;
 
         void AddIcon(UIGraphic graphic, int sourceHeight = 32, int height = 12)
         {
-            var icon = AddSprite(new Rect(4, 37, 12, height), Graphics.GetUIGraphicIndex(graphic), game.UIPaletteIndex, 3);
+            var icon = AddSprite(new Rect(4, 38, 12, height), Graphics.GetUIGraphicIndex(graphic), game.UIPaletteIndex, 3);
             icon.TextureSize = new Size(32, sourceHeight);
             specialItemSprites.Add(specialItem, icon);
         }
 
         switch (specialItem)
         {
-            case SpecialItemPurpose.Compass:
-                AddIcon(UIGraphic.Compass);
-                specialItemTexts.Add(specialItem, AddText(new Rect(18, 39, 18, 7), GetCompactCompassString(), TextColor.BrightGray));
-                break;
             case SpecialItemPurpose.MonsterEye:
                 AddIcon(game.MonsterSeesPlayer ? UIGraphic.MonsterEyeActive : UIGraphic.MonsterEyeInactive);
                 break;
@@ -70,10 +68,10 @@ internal partial class Layout
                 AddIcon(UIGraphic.Windchain, 15, 6);
                 break;
             case SpecialItemPurpose.MapLocation:
-                specialItemTexts.Add(specialItem, AddText(new Rect(4, 39, 54, 7), GetCompactMapLocation(), TextColor.BrightGray));
+                specialItemTexts.Add(specialItem, AddText(new Rect(4, 40, 54, 7), GetCompactMapLocation(), TextColor.BrightGray));
                 break;
             case SpecialItemPurpose.Clock:
-                specialItemTexts.Add(specialItem, AddText(new Rect(4, 39, 30, 7), $"{game.GameTime!.Hour,2}:{game.GameTime.Minute:00}", TextColor.BrightGray));
+                specialItemTexts.Add(specialItem, AddText(new Rect(4, 40, 30, 7), $"{game.GameTime!.Hour,2}:{game.GameTime.Minute:00}", TextColor.BrightGray));
                 break;
             default:
                 throw new AmbermoonException(ExceptionScope.Application, $"Invalid special item: {specialItem}");
@@ -87,7 +85,7 @@ internal partial class Layout
     {
         static int ItemWidth(SpecialItemPurpose item) => item switch
         {
-            SpecialItemPurpose.Compass or SpecialItemPurpose.Clock => 34,
+            SpecialItemPurpose.Clock => 34,
             SpecialItemPurpose.MapLocation => 58,
             _ => 16
         };
@@ -97,8 +95,17 @@ internal partial class Layout
             if (specialItemSprites.ContainsKey(item) || specialItemTexts.ContainsKey(item))
                 contentWidth += ItemWidth(item);
 
-        // The common compass + clock pair fits the original gap. As other
-        // indicators are acquired, reserve room by shortening only the title.
+        // Keep the compass centered even as other indicators are acquired.
+        // Coordinates need a second line only when the right-hand row is full.
+        explorationCoordinatesBelow = ExplorationCompassActive && contentWidth > 82 &&
+            specialItemTexts.ContainsKey(SpecialItemPurpose.MapLocation);
+        if (explorationCoordinatesBelow)
+        {
+            contentWidth -= ItemWidth(SpecialItemPurpose.MapLocation);
+            explorationCoordinatesBackground ??= CreateExplorationArea(new Rect(220, 51, 58, 9),
+                new Render.Color(16, 15, 12, 95), 1);
+        }
+
         int statusX = ExplorationMenuButtonArea.X - 4 - contentWidth;
         int x = statusX;
         foreach (var item in explorationHudOrder)
@@ -108,18 +115,24 @@ internal partial class Layout
             if (!hasIcon && !hasText)
                 continue;
 
+            if (item == SpecialItemPurpose.MapLocation && explorationCoordinatesBelow)
+            {
+                text!.SetPosition(new Position(222, 52));
+                continue;
+            }
+
             if (hasIcon)
             {
                 icon!.X = x;
-                icon.Y = item == SpecialItemPurpose.WindChain ? 40 : 37;
+                icon.Y = item == SpecialItemPurpose.WindChain ? 41 : 38;
             }
             if (hasText)
-                text!.SetPosition(new Position(x + (item == SpecialItemPurpose.Compass ? 14 : 0), 39));
+                text!.SetPosition(new Position(x, 40));
 
             x += ItemWidth(item);
         }
 
-        ExplorationTitleWidth = contentWidth == 0 ? 200 : Math.Min(200, statusX - 10);
+        ExplorationTitleWidth = ExplorationCompassActive ? 124 : Math.Min(200, statusX - 10);
 
         if (game.Map != null && !game.WindowActive)
             game.UpdateMapName();
@@ -128,6 +141,9 @@ internal partial class Layout
     internal void UpdateExplorationHudVisibility()
     {
         bool visible = IsExplorationLayout && !game.WindowActive && !PopupActive && !OptionMenuOpen;
+        SetExplorationCompassVisible(visible);
+        if (explorationCoordinatesBackground != null)
+            explorationCoordinatesBackground.Visible = visible && explorationCoordinatesBelow;
         foreach (var icon in specialItemSprites.Values)
             icon.Visible = visible;
         foreach (var text in specialItemTexts.Values)
@@ -148,6 +164,10 @@ internal partial class Layout
 
     internal void ResetExplorationHud()
     {
+        ResetExplorationCompass();
+        explorationCoordinatesBackground?.Delete();
+        explorationCoordinatesBackground = null;
+        explorationCoordinatesBelow = false;
         ExplorationTitleWidth = 200;
         if (explorationTitleTooltip != null)
             RemoveTooltip(explorationTitleTooltip);

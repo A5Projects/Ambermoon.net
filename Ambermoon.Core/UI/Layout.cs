@@ -3925,6 +3925,7 @@ namespace Ambermoon.UI
         public void Destroy()
         {
             ResetExplorationActions();
+            ResetExplorationHud();
             Util.SafeCall(() => sprite?.Delete());
             expandedMapFrame.ForEach(part => part.Delete());
             expandedMapFrame.Clear();
@@ -4696,8 +4697,10 @@ namespace Ambermoon.UI
         void UpdateSpecialItems()
         {
             // Update compass
-            if (specialItemTexts.ContainsKey(SpecialItemPurpose.Compass))
-                specialItemTexts[SpecialItemPurpose.Compass].SetText(game.ProcessText(IsExplorationLayout ? GetCompactCompassString() : GetCompassString()));
+            if (IsExplorationLayout)
+                UpdateExplorationCompass();
+            else if (specialItemTexts.ContainsKey(SpecialItemPurpose.Compass))
+                specialItemTexts[SpecialItemPurpose.Compass].SetText(game.ProcessText(GetCompassString()));
 
             // Update monster eye
             if (specialItemSprites.ContainsKey(SpecialItemPurpose.MonsterEye))

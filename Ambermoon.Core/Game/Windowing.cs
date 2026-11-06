@@ -41,7 +41,7 @@ partial class GameCore
             ? DataNameProvider.GetWorldName(map.World)
             : map.Name;
         windowTitle.Text = ProcessText(layout.FitExplorationTitle(mapName));
-        windowTitle.Place(layout.GetTextRect(layout.ExplorationTitleTextArea), TextAlign.Center);
+        windowTitle.Place(layout.GetTextRect(layout.ExplorationTitleTextArea), TextAlign.Left);
         windowTitle.PaletteIndex = UIPaletteIndex;
         windowTitle.TextColor = TextColor.BrightGray;
     }

@@ -11,10 +11,11 @@ internal partial class Layout
         Global.VirtualScreenHeight - 3 * Button.Height,
         3 * Button.Width,
         3 * Button.Height);
-    public static readonly Rect ExplorationMenuButtonArea = new(282, 37, 36, 12);
+    public static readonly Rect ExplorationMenuButtonArea = new(282, 38, 36, 12);
     public bool IsExplorationLayout => Type is LayoutType.Map2D or LayoutType.Map3D;
     public bool ExplorationActionsOpen { get; private set; }
     IColoredRect? explorationTopBackground;
+    IColoredRect? explorationPortraitSeparator;
     IColoredRect? explorationActionBackground;
     UIText? explorationMenuLabel;
     bool explorationUiPress;
@@ -34,14 +35,16 @@ internal partial class Layout
         if (explorationMenuLabel != null)
             return;
         // One backing keeps opacity uniform across the title, indicators and MENU.
-        explorationTopBackground = CreateExplorationArea(new Rect(0, 37, Global.VirtualScreenWidth, 10),
+        explorationTopBackground = CreateExplorationArea(new Rect(0, 38, Global.VirtualScreenWidth, 10),
             new Color(16, 15, 12, 95), 1);
+        explorationPortraitSeparator = CreateExplorationArea(new Rect(0, 37, Global.VirtualScreenWidth, 1),
+            new Color(0, 0, 0, 255), 1);
         // Some button icons contain transparent pixels. Cover the scene beneath
         // them completely, staying inside the grid's opaque outer frame.
         explorationActionBackground = CreateExplorationArea(ExplorationActionsArea.CreateModified(1, 1, -2, -2),
             new Color(16, 15, 12, 255), 1);
         explorationMenuLabel = new UIText(RenderView, game.UIPaletteIndex,
-            RenderView.TextProcessor.CreateText("MENU"), new Rect(284, 39, 32, 8), 4,
+            RenderView.TextProcessor.CreateText("MENU"), new Rect(284, 40, 32, 8), 4,
             TextColor.BrightGray, true, TextAlign.Center);
         if (game.Map != null && !game.WindowActive)
             game.UpdateMapName();
@@ -77,6 +80,7 @@ internal partial class Layout
             explorationMenuLabel.Visible = chrome;
             explorationMenuLabel.PaletteIndex = game.UIPaletteIndex;
             explorationTopBackground!.Visible = chrome;
+            explorationPortraitSeparator!.Visible = chrome;
         }
         if (IsExplorationLayout)
             buttonGrid.Visible = exploring && !PopupActive && (ExplorationActionsOpen || OptionMenuOpen);
@@ -138,9 +142,10 @@ internal partial class Layout
         ExplorationActionsOpen = false;
         ButtonGridPage = 0;
         explorationTopBackground?.Delete();
+        explorationPortraitSeparator?.Delete();
         explorationActionBackground?.Delete();
         explorationMenuLabel?.Destroy();
-        explorationTopBackground = explorationActionBackground = null;
+        explorationTopBackground = explorationPortraitSeparator = explorationActionBackground = null;
         explorationMenuLabel = null;
         // Retain a pending mouse-up after an action opens a legacy window.
         // It must not click through into that new window.
