@@ -1,4 +1,29 @@
-# Ambermoon.net
+# Ambermoon.net — Expanded fork
+
+[A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
+
+Branch | Version in this fork
+--- | ---
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) — this branch | **Expanded:** enlarged 3D view with the original interface and standard balance.
+
+Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
+
+## Expanded interface
+
+- The enlarged 3D viewport uses more of the left-hand section while retaining the original interface, portrait bar, and right-hand controls. The stone header joins the side borders.
+- Optional horizontal mouse-look is available through **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [mouse-look controls](MOUSELOOK.txt).
+- **Caps Lock** switches keyboard movement between 60% and full speed by default.
+- Standard balance is retained: this branch does not include the Immersive UI changes to party growth, spell costs, hit chances, weapon breakage, gold weight, or normal carrying capacity.
+- Optional session cheats `noencounters`, `notired`, and `carryweight` remain available. They default off and do not change the save format. Both builds correct cached companion weights when loading transferred saves.
+
+See [Controls](Controls.md), [exploration cheats](EXPLORATION-CHEATS.txt), and [carry capacity/save transfer](CARRYWEIGHT.txt). Choose [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) for full exploration views, compact overlays, and relaxed balance.
+
+This fork currently publishes source code only; no fork binary release is available yet. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes.
+
+## Upstream documentation and credits
+
+The original README content below is retained from **Pyrdacor/Ambermoon.net**. Its first-person text, contact details, donations, screenshots, and release links belong to the upstream project. For this branch's controls, use the fork documentation linked above.
 
 ## Introduction
 
