@@ -60,6 +60,12 @@ Click any image to view it at full size.
   <a href="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af"><img src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" width="400" alt="Original dialog over the 3D world" /></a>
 </p>
 
+## Ambermoon.net Expanded edition Screenshots:
+Closer to the original visually and unchanged balance. Slightly  expanded world view, mouse view controls, added cheats. Original 
+### Screenshots:
+<img width="640" height="360" alt="Amermoon.net Expanded" src="https://github.com/user-attachments/assets/d4e517ff-7779-49f3-bbb5-32cdec9d6ef3" />
+<img width="640" height="360" alt="Screenshot_07-11-2026 01-04-40" src="https://github.com/user-attachments/assets/fb6dacfc-d2d3-4605-8733-bb239e01ff72" />
+
 
 
 ## Upstream documentation and credits
