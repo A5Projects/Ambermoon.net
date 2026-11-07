@@ -35,7 +35,7 @@ These first fork releases are for Windows x64. The downloads and build badges in
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 
 
-## Immersive UI screenshots
+### Immersive UI (Main branch, most changed version). Screenshots:
 
 Click any image to view it at full size.
 
@@ -60,7 +60,7 @@ Click any image to view it at full size.
   <a href="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af"><img src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" width="400" alt="Original dialog over the 3D world" /></a>
 </p>
 
-## Ambermoon.net Expanded edition Screenshots:
+## Ambermoon.net Expanded edition (Second branch, less changed version) Screenshots:
 Closer to the original visually and unchanged balance. Slightly  expanded world view, mouse view controls, added cheats. Original 
 ### Screenshots:
 <img width="640" height="360" alt="Amermoon.net Expanded" src="https://github.com/user-attachments/assets/d4e517ff-7779-49f3-bbb5-32cdec9d6ef3" />
