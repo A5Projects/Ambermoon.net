@@ -5,9 +5,10 @@
 Branch | Version in this fork
 --- | ---
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance.
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) — this branch | **Expanded:** enlarged 3D view with the original interface and standard balance.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) — this branch | **Expanded:** enlarged 3D view with the original interface, mouse view and standard balance.
 
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
+<br>Both branches contain the optional new Mouse look feature, for semi modern 1st person controls (combine with QWEASD control option). 
 
 ## Download this fork
 
@@ -29,6 +30,15 @@ These first fork releases are for Windows x64. The downloads and build badges in
 - Optional session cheats `noencounters`, `notired`, and `carryweight` remain available. They default off and do not change the save format. Both builds correct cached companion weights when loading transferred saves.
 
 See [Controls](Controls.md), [exploration cheats](EXPLORATION-CHEATS.txt), and [carry capacity/save transfer](CARRYWEIGHT.txt). Choose [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) for full exploration views, compact overlays, and relaxed balance.
+
+<img width="640" height="360" alt="cli_2s" src="https://github.com/user-attachments/assets/95e87763-39a0-412a-97ea-a6bbe185f5c6" />
+<img width="640" height="360" alt="Screenshot_06-11-2026 22-11-16" src="https://github.com/user-attachments/assets/e0501ab0-7b1d-45d8-b026-c228d82fe6c7" />
+<img width="640" height="360" alt="Screenshot_06-11-2026 22-11-29" src="https://github.com/user-attachments/assets/234df080-7664-47a6-8923-0b03be17a45b" />
+<img width="640" height="360" alt="Screenshot_menuexplain" src="https://github.com/user-attachments/assets/a364903e-e2f2-425c-9ad4-1900cd7bc79e" />
+<img width="640" height="360" alt="NewCheatmenuadds1" src="https://github.com/user-attachments/assets/7b94750f-00df-4254-9cd8-6e2f9fd8f9e2" />
+
+
+
 
 ## Upstream documentation and credits
 
