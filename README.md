@@ -8,13 +8,13 @@ Branch | Version in this fork
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard balance. 
 
 ### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (The immersive UI edition).
-Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted...
+Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
 <br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
 ### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
 
 ## Finally, ai disclaimer and background: 
 when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mostly on Ultra.  This project was done only with my input and my decisions. All changes and choices done (or not) are mine!
-<br> Apropos mine: I played Ambermoon first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content.
+<br> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
 <br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).
 
 ## back to offical readme:
