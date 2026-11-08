@@ -50,6 +50,8 @@ namespace Ambermoon.Render
         readonly Func<CharacterDirection?, Position> drawOffsetProvider;
         bool active = true;
         bool visible = true;
+        bool hiddenByTile;
+        int displayOffsetX, displayOffsetY;
         Character2DAnimationInfo CurrentAnimationInfo => animationInfoProvider(Direction);
         public uint CurrentBaseFrameIndex { get; private set; }
         public uint CurrentFrameIndex { get; private set; }
@@ -74,12 +76,38 @@ namespace Ambermoon.Render
         public Position Position { get; } // in tiles
         public Rect DisplayArea => new Rect(topSprite?.X ?? sprite.X, topSprite?.Y ?? sprite.Y,
             Math.Max(topSprite?.Width ?? 0, sprite.Width), (topSprite?.Height ?? 0) + sprite.Height);
+        internal Rect LogicalDisplayArea => new Rect(DisplayArea.X - displayOffsetX, DisplayArea.Y - displayOffsetY,
+            DisplayArea.Width, DisplayArea.Height);
+
+        internal void RefreshDisplayPosition()
+        {
+            if (Position.X < 0 || Position.Y < 0)
+                return;
+            displayOffsetX = Map.CameraOffsetX + (this is Player2D ? Map.PlayerOffsetX : 0);
+            displayOffsetY = Map.CameraOffsetY + (this is Player2D ? Map.PlayerOffsetY : 0);
+            var drawOffset = drawOffsetProvider?.Invoke(Direction) ?? new Position();
+            int x = Map.RenderOriginX + (Position.X - (int)Map.ScrollX) * RenderMap2D.TILE_WIDTH + drawOffset.X + displayOffsetX;
+            int y = Map.RenderOriginY + (Position.Y - (int)Map.ScrollY) * RenderMap2D.TILE_HEIGHT + drawOffset.Y + displayOffsetY;
+            sprite.X = x;
+            if (topSprite == null)
+                sprite.Y = y;
+            else
+            {
+                topSprite.X = x;
+                topSprite.Y = y + RenderMap2D.TILE_HEIGHT - CurrentAnimationInfo.FrameHeight;
+                sprite.Y = topSprite.Y + topSprite.Height;
+            }
+            sprite.Visible = visible && active && !hiddenByTile && GameCore.Map2DViewArea.IntersectsWith(DisplayArea);
+            if (topSprite != null)
+                topSprite.Visible = sprite.Visible;
+        }
         public bool Visible
         {
             get => visible;
             set
             {
                 visible = value;
+                hiddenByTile = false;
 
                 sprite.Visible = visible && active;
 
@@ -281,6 +309,7 @@ namespace Ambermoon.Render
             }
 
             bool moved = true;
+            displayOffsetX = displayOffsetY = 0;
 
             if (x == uint.MaxValue || y == uint.MaxValue)
             {
@@ -372,11 +401,13 @@ namespace Ambermoon.Render
                 }
                 sprite.Visible = GameCore.Map2DViewArea.IntersectsWith(DisplayArea);
                 bool hidePlayer = tileType == Data.Map.TileType.Invisible && game.CanSee();
+                hiddenByTile = hidePlayer;
                 if (sprite.Visible && hidePlayer)
                     sprite.Visible = false;
                 if (topSprite != null && topSprite.Visible && hidePlayer)
                     topSprite.Visible = false;
                 UpdateBaseline();
+                RefreshDisplayPosition();
             }
 
             if (moved)
@@ -384,7 +415,7 @@ namespace Ambermoon.Render
                 if (this is Player2D)
                     Map.CheckIfMonstersSeePlayer(x, y);
                 else if (this is MapCharacter2D monster && monster.IsMonster)
-                    Map.CheckIfMonsterSeesPlayer(monster, Map.IsWithinOriginalMonsterView(DisplayArea));
+                    Map.CheckIfMonsterSeesPlayer(monster, Map.IsWithinOriginalMonsterView(LogicalDisplayArea));
             }
         }
 

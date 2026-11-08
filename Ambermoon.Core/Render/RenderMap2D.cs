@@ -47,6 +47,9 @@ namespace Ambermoon.Render
         public static int MaxScrollX(Map map) => Math.Max(0, map.Width - NUM_FULL_TILES_X);
         public static int MaxScrollY(Map map) => Math.Max(0, map.Height - NUM_FULL_TILES_Y);
         const int NUM_TILES = NUM_VISIBLE_TILES_X * NUM_VISIBLE_TILES_Y;
+        const int RENDER_MARGIN = 2;
+        const int RENDER_TILES_X = NUM_VISIBLE_TILES_X + 2 * RENDER_MARGIN;
+        const int RENDER_TILES_Y = NUM_VISIBLE_TILES_Y + 2 * RENDER_MARGIN;
         readonly GameCore game;
         public Map? Map { get; private set; } = null;
         Map[]? adjacentMaps = null;
@@ -64,6 +67,113 @@ namespace Ambermoon.Render
         Map? lastUpdateMap = null;
         readonly Dictionary<uint, MapCharacter2D> mapCharacters = [];
         readonly MapAnimation mapAnimation;
+        double visualMovementElapsed;
+        double visualMovementDuration;
+        double visualTime;
+        double? lastVisualStepTime;
+        double lastVisualStepDuration;
+        int cameraStartX, cameraStartY, playerStartX, playerStartY;
+        uint visualResetVersion;
+        internal int CameraOffsetX { get; private set; }
+        internal int CameraOffsetY { get; private set; }
+        internal int PlayerOffsetX { get; private set; }
+        internal int PlayerOffsetY { get; private set; }
+        internal bool VisualMovementActive => visualMovementDuration > 0;
+
+        internal readonly record struct VisualMovementSnapshot(Map? Map, int ScrollX, int ScrollY,
+            int PlayerX, int PlayerY, int CameraX, int CameraY, int PlayerOffsetX, int PlayerOffsetY, uint ResetVersion);
+
+        internal VisualMovementSnapshot CaptureVisualMovement(Player2D player) => new(Map,
+            (int)ScrollX, (int)ScrollY, player.Position.X, player.Position.Y,
+            CameraOffsetX, CameraOffsetY, PlayerOffsetX, PlayerOffsetY, visualResetVersion);
+
+        internal void CompleteVisualMovement(VisualMovementSnapshot previous, Player2D player, int dx, int dy, double duration)
+        {
+            // Teleports, events and chunk changes keep their immediate placement. Only
+            // a confirmed ordinary step receives a visual transition.
+            if (previous.Map != Map || previous.ResetVersion != visualResetVersion || !game.IdleOnMap || game.Is3D ||
+                player.Position.X != previous.PlayerX + dx || player.Position.Y != previous.PlayerY + dy)
+            {
+                CancelVisualMovement();
+                return;
+            }
+
+            // Keep the displayed position continuous when the update cadence speeds
+            // up before the previous step has finished. The extra margin covers the
+            // unfinished part, and the observed repeat interval lets it catch up.
+            cameraStartX = Math.Clamp(previous.CameraX + ((int)ScrollX - previous.ScrollX) * TILE_WIDTH, -RENDER_MARGIN * TILE_WIDTH, RENDER_MARGIN * TILE_WIDTH);
+            cameraStartY = Math.Clamp(previous.CameraY + ((int)ScrollY - previous.ScrollY) * TILE_HEIGHT, -RENDER_MARGIN * TILE_HEIGHT, RENDER_MARGIN * TILE_HEIGHT);
+            playerStartX = Math.Clamp(previous.PlayerOffsetX - dx * TILE_WIDTH, -RENDER_MARGIN * TILE_WIDTH, RENDER_MARGIN * TILE_WIDTH);
+            playerStartY = Math.Clamp(previous.PlayerOffsetY - dy * TILE_HEIGHT, -RENDER_MARGIN * TILE_HEIGHT, RENDER_MARGIN * TILE_HEIGHT);
+            if (lastVisualStepTime is double lastStep)
+            {
+                double interval = visualTime - lastStep;
+                // A pause or a stopped/blocked walk must not turn the next step
+                // into a long slide. Only use a still-continuous movement run.
+                if (interval > 0 && interval <= 1.25 * Math.Max(duration, lastVisualStepDuration))
+                    duration = interval;
+            }
+            lastVisualStepTime = visualTime;
+            lastVisualStepDuration = duration;
+            visualMovementElapsed = 0;
+            visualMovementDuration = Math.Max(0.001, duration);
+            CameraOffsetX = cameraStartX;
+            CameraOffsetY = cameraStartY;
+            PlayerOffsetX = playerStartX;
+            PlayerOffsetY = playerStartY;
+            RefreshVisualPositions();
+        }
+
+        internal void UpdateVisualMovement(double deltaTime)
+        {
+            visualTime += Math.Max(0, deltaTime);
+            if (!VisualMovementActive)
+                return;
+            if (!game.IdleOnMap || game.Is3D)
+            {
+                CancelVisualMovement();
+                return;
+            }
+            visualMovementElapsed += Math.Max(0, deltaTime);
+            double remaining = Math.Max(0, 1 - visualMovementElapsed / visualMovementDuration);
+            CameraOffsetX = (int)Math.Round(cameraStartX * remaining);
+            CameraOffsetY = (int)Math.Round(cameraStartY * remaining);
+            PlayerOffsetX = (int)Math.Round(playerStartX * remaining);
+            PlayerOffsetY = (int)Math.Round(playerStartY * remaining);
+            if (remaining == 0)
+                visualMovementDuration = 0;
+            RefreshVisualPositions();
+        }
+
+        internal void CancelVisualMovement(bool invalidateStep = true)
+        {
+            if (invalidateStep)
+            {
+                ++visualResetVersion;
+                lastVisualStepTime = null;
+            }
+            if (!VisualMovementActive && CameraOffsetX == 0 && CameraOffsetY == 0 && PlayerOffsetX == 0 && PlayerOffsetY == 0)
+                return;
+            visualMovementDuration = 0;
+            CameraOffsetX = CameraOffsetY = PlayerOffsetX = PlayerOffsetY = 0;
+            RefreshVisualPositions();
+        }
+
+        void RefreshVisualPositions()
+        {
+            for (int index = 0; index < backgroundTileSprites.Count; ++index)
+            {
+                int column = index % RENDER_TILES_X - RENDER_MARGIN;
+                int row = index / RENDER_TILES_X - RENDER_MARGIN;
+                backgroundTileSprites[index].X = foregroundTileSprites[index].X = RenderOriginX + column * TILE_WIDTH + CameraOffsetX;
+                backgroundTileSprites[index].Y = foregroundTileSprites[index].Y = RenderOriginY + row * TILE_HEIGHT + CameraOffsetY;
+            }
+            UpdateTransports();
+            foreach (var character in mapCharacters.Values)
+                character.RefreshDisplayPosition();
+            if (game.RenderPlayer is Player2D player)
+                player.RefreshDisplayPosition();
+        }
 
         public event Action<Map?, Map[]>? MapChanged;
 
@@ -79,6 +189,7 @@ namespace Ambermoon.Render
         public int RenderOriginY => Global.Map2DViewY + PaddingY;
 
         bool HasRenderTile(uint x, uint y) => worldMap || (x < Map!.Width && y < Map.Height);
+        bool HasRenderTile(int x, int y) => x >= 0 && y >= 0 && HasRenderTile((uint)x, (uint)y);
 
         internal bool IsWithinOriginalMonsterView(Rect displayArea)
         {
@@ -102,9 +213,9 @@ namespace Ambermoon.Render
 
             var spriteFactory = renderView.SpriteFactory;
 
-            for (int row = 0; row < NUM_VISIBLE_TILES_Y; ++row)
+            for (int row = -RENDER_MARGIN; row < NUM_VISIBLE_TILES_Y + RENDER_MARGIN; ++row)
             {
-                for (int column = 0; column < NUM_VISIBLE_TILES_X; ++column)
+                for (int column = -RENDER_MARGIN; column < NUM_VISIBLE_TILES_X + RENDER_MARGIN; ++column)
                 {
                     var backgroundSprite = spriteFactory.CreateAnimated(TILE_WIDTH, TILE_HEIGHT, 0, 1);
                     var foregroundSprite = spriteFactory.CreateAnimated(TILE_WIDTH, TILE_HEIGHT, 0, 1);
@@ -136,16 +247,20 @@ namespace Ambermoon.Render
 
 				int index = 0;
 
-                for (int row = 0; row < NUM_VISIBLE_TILES_Y; ++row)
+                for (int row = -RENDER_MARGIN; row < NUM_VISIBLE_TILES_Y + RENDER_MARGIN; ++row)
                 {
-                    for (int column = 0; column < NUM_VISIBLE_TILES_X; ++column)
+                    for (int column = -RENDER_MARGIN; column < NUM_VISIBLE_TILES_X + RENDER_MARGIN; ++column)
                     {
-                        if (!HasRenderTile(ScrollX + (uint)column, ScrollY + (uint)row))
+                        int tileX = (int)ScrollX + column;
+                        int tileY = (int)ScrollY + row;
+                        bool originalView = column >= 0 && row >= 0 && column < NUM_VISIBLE_TILES_X && row < NUM_VISIBLE_TILES_Y;
+                        int animationIndex = row * NUM_VISIBLE_TILES_X + column;
+                        if (!HasRenderTile(tileX, tileY))
                         {
                             ++index;
                             continue;
                         }
-						var tile = this[ScrollX + (uint)column, ScrollY + (uint)row];
+						var tile = this[(uint)tileX, (uint)tileY];
 
                         if (tile.BackTileIndex != 0)
                         {
@@ -159,8 +274,8 @@ namespace Ambermoon.Render
                                 (
                                     (int)background.CurrentFrame,
                                     (int)background.NumFrames,
-                                    index, backTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation),
-                                    backTile.Flags.HasFlag(Tileset.TileFlags.RandomAnimationStart)
+                                    animationIndex, backTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation),
+                                    backTile.Flags.HasFlag(Tileset.TileFlags.RandomAnimationStart), originalView
                                 );
                             }
                         }
@@ -177,8 +292,8 @@ namespace Ambermoon.Render
 								(
 									(int)foreground.CurrentFrame,
 									(int)foreground.NumFrames,
-									index, frontTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation),
-									frontTile.Flags.HasFlag(Tileset.TileFlags.RandomAnimationStart)
+									animationIndex, frontTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation),
+									frontTile.Flags.HasFlag(Tileset.TileFlags.RandomAnimationStart), originalView
 								);
 							}
 						}
@@ -196,6 +311,7 @@ namespace Ambermoon.Render
 
         public void Pause()
         {
+            CancelVisualMovement();
             foreach (var character in mapCharacters)
                 character.Value.Paused = true;
         }
@@ -315,16 +431,14 @@ namespace Ambermoon.Render
                 position.X >= Global.Map2DViewWidth || position.Y >= Global.Map2DViewHeight)
                 return null;
 
-            int x = position.X - PaddingX;
-            int y = position.Y - PaddingY;
-            if (x < 0 || y < 0)
-                return null;
+            int x = position.X - PaddingX - CameraOffsetX;
+            int y = position.Y - PaddingY - CameraOffsetY;
             var tilePosition = new Position
             (
-                (int)ScrollX + x / TILE_WIDTH,
-                (int)ScrollY + y / TILE_HEIGHT
+                (int)ScrollX + (int)Math.Floor((double)x / TILE_WIDTH),
+                (int)ScrollY + (int)Math.Floor((double)y / TILE_HEIGHT)
             );
-            return HasRenderTile((uint)tilePosition.X, (uint)tilePosition.Y) ? tilePosition : null;
+            return HasRenderTile(tilePosition.X, tilePosition.Y) ? tilePosition : null;
         }
 
         public Position GetCenterPosition()
@@ -390,6 +504,7 @@ namespace Ambermoon.Render
 
         public void Destroy()
         {
+            CancelVisualMovement();
             foreach (var tile in backgroundTileSprites)
                 tile.Visible = false;
             foreach (var tile in foregroundTileSprites)
@@ -457,8 +572,8 @@ namespace Ambermoon.Render
         {
             foreach (var transport in mapTransports)
             {
-                transport.Sprite.X = RenderOriginX + (int)(transport.Position.X - ScrollX) * TILE_WIDTH + transport.Offset.X;
-                transport.Sprite.Y = RenderOriginY + (int)(transport.Position.Y - ScrollY) * TILE_HEIGHT + transport.Offset.Y;
+                transport.Sprite.X = RenderOriginX + (int)(transport.Position.X - ScrollX) * TILE_WIDTH + transport.Offset.X + CameraOffsetX;
+                transport.Sprite.Y = RenderOriginY + (int)(transport.Position.Y - ScrollY) * TILE_HEIGHT + transport.Offset.Y + CameraOffsetY;
             }
         }
 
@@ -502,18 +617,20 @@ namespace Ambermoon.Render
             sprite.BaseLineOffset = TILE_HEIGHT / 2;
             sprite.PaletteIndex = (byte)game.GetPlayerPaletteIndex();
             sprite.TextureAtlasOffset = textureAtlas.GetOffset(Graphics.TransportGraphicOffset + travelType.AsStationaryImageIndex());
-            sprite.X = RenderOriginX + (position.X - (int)ScrollX) * TILE_WIDTH + offset.X;
-            sprite.Y = RenderOriginY + (position.Y - (int)ScrollY) * TILE_HEIGHT + offset.Y;
+            sprite.X = RenderOriginX + (position.X - (int)ScrollX) * TILE_WIDTH + offset.X + CameraOffsetX;
+            sprite.Y = RenderOriginY + (position.Y - (int)ScrollY) * TILE_HEIGHT + offset.Y + CameraOffsetY;
             sprite.Visible = true;
             mapTransports.Add(new Transport { Index = index, Position = position, Sprite = sprite, Offset = offset });
         }
 
         internal void UpdateTile(uint x, uint y)
         {
-            if (x < ScrollX || y < ScrollY || x >= ScrollX + NUM_VISIBLE_TILES_X || y >= ScrollY + NUM_VISIBLE_TILES_Y)
+            int column = (int)x - (int)ScrollX + RENDER_MARGIN;
+            int row = (int)y - (int)ScrollY + RENDER_MARGIN;
+            if (column < 0 || row < 0 || column >= RENDER_TILES_X || row >= RENDER_TILES_Y)
                 return; // not visible
 
-            int spriteIndex = (int)(x - ScrollX + (y - ScrollY) * NUM_VISIBLE_TILES_X);
+            int spriteIndex = column + row * RENDER_TILES_X;
             var tile = this[x, y];
 
             if (tile.BackTileIndex == 0)
@@ -560,20 +677,22 @@ namespace Ambermoon.Render
             lastUpdateMap = Map;
             lastUpdateScroll = new Position((int)ScrollX, (int)ScrollY);
 
-            for (uint row = 0; row < NUM_VISIBLE_TILES_Y; ++row)
+            for (int row = -RENDER_MARGIN; row < NUM_VISIBLE_TILES_Y + RENDER_MARGIN; ++row)
             {
-                for (uint column = 0; column < NUM_VISIBLE_TILES_X; ++column)
+                for (int column = -RENDER_MARGIN; column < NUM_VISIBLE_TILES_X + RENDER_MARGIN; ++column)
                 {
-                    backgroundTileSprites[index].X = foregroundTileSprites[index].X = RenderOriginX + (int)column * TILE_WIDTH;
-                    backgroundTileSprites[index].Y = foregroundTileSprites[index].Y = RenderOriginY + (int)row * TILE_HEIGHT;
-                    if (!HasRenderTile(ScrollX + column, ScrollY + row))
+                    backgroundTileSprites[index].X = foregroundTileSprites[index].X = RenderOriginX + column * TILE_WIDTH + CameraOffsetX;
+                    backgroundTileSprites[index].Y = foregroundTileSprites[index].Y = RenderOriginY + row * TILE_HEIGHT + CameraOffsetY;
+                    int tileX = (int)ScrollX + column;
+                    int tileY = (int)ScrollY + row;
+                    if (!HasRenderTile(tileX, tileY))
                     {
                         backgroundTileSprites[index].Visible = false;
                         foregroundTileSprites[index].Visible = false;
                         ++index;
                         continue;
                     }
-                    var tile = this[ScrollX + column, ScrollY + row];
+                    var tile = this[(uint)tileX, (uint)tileY];
 
                     backgroundTileSprites[index].Layer = backLayer;
                     backgroundTileSprites[index].TextureAtlasWidth = textureAtlas!.Texture.Width;
@@ -716,6 +835,7 @@ namespace Ambermoon.Render
 
             var lastMap = Map;
             map.Reset();
+            CancelVisualMovement();
             Map = map;
             tileset = mapManager!.GetTilesetForMap(map);
             ticksPerFrame = map.TicksPerAnimationFrame;
@@ -911,6 +1031,7 @@ namespace Ambermoon.Render
 
         public void ScrollTo(uint x, uint y, bool forceUpdate = false)
         {
+            CancelVisualMovement(forceUpdate);
             if (!forceUpdate && ScrollX == x && ScrollY == y)
                 return;
 

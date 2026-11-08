@@ -399,6 +399,11 @@ partial class GameCore
             if (cursor.Type == value)
                 return;
 
+            // Interaction ranges are tile-based. Settle the display before the
+            // action cursor installs its mouse bounds around the player.
+            if (!is3D && value is CursorType.Eye or CursorType.Mouth or CursorType.Hand or CursorType.Target)
+                renderMap2D?.CancelVisualMovement();
+
             if (value != CursorType.Eye &&
                 value != CursorType.Mouth &&
                 value != CursorType.Hand &&

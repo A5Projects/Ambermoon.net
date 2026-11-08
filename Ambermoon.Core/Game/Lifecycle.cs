@@ -147,6 +147,7 @@ partial class GameCore
 
         if (Ingame)
         {
+            renderMap2D?.UpdateVisualMovement(deltaTime);
             CurrentAnimationTicks = UpdateTicks(CurrentAnimationTicks, deltaTime);
 
             if (currentAnimation != null)
@@ -158,7 +159,9 @@ partial class GameCore
                 swamLastTick = false;
                 MonsterSeesPlayer = false; // Will be set by the monsters Update methods eventually
 
+                uint previousTicks = CurrentTicks;
                 CurrentTicks = UpdateTicks(CurrentTicks, deltaTime);
+                UpdateVisualMovementTiming(deltaTime, unchecked(CurrentTicks - previousTicks));
 
                 CurrentMapTicks = CurrentTicks >= lastMapTicksReset ? CurrentTicks - lastMapTicksReset : (uint)((long)CurrentTicks + uint.MaxValue - lastMapTicksReset);
 

@@ -12,6 +12,27 @@ partial class GameCore
     readonly Func<List<Key>> pressedKeyProvider;
     uint lastMoveTicksReset = 0;
     readonly Movement movement;
+    readonly Queue<(double Seconds, uint Ticks)> visualMovementTiming = new();
+    double visualMovementSeconds;
+    uint visualMovementTicks;
+    internal double Movement2DVisualDuration => movement.MovementTicks(false, Map?.UseTravelTypes ?? false, TravelType)
+        * (visualMovementTicks == 0 ? 1.0 / TicksPerSecond : visualMovementSeconds / visualMovementTicks)
+        / (clickMoveActive ? 1.0 : KeyboardMovementFactor);
+
+    void UpdateVisualMovementTiming(double deltaTime, uint tickCount)
+    {
+        // Observe the existing rounded tick clock without changing its gameplay cadence.
+        // At a 120 Hz update rate a logical tick can take less than 1/60 second.
+        visualMovementTiming.Enqueue((deltaTime, tickCount));
+        visualMovementSeconds += deltaTime;
+        visualMovementTicks += tickCount;
+        while (visualMovementTiming.Count > 1 && (visualMovementSeconds > 0.25 || visualMovementTiming.Count > 60))
+        {
+            var sample = visualMovementTiming.Dequeue();
+            visualMovementSeconds -= sample.Seconds;
+            visualMovementTicks -= sample.Ticks;
+        }
+    }
     internal float KeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement
         ? 1.0f : Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, 100) / 100.0f;
     internal bool NumpadMovementHeld => Enumerable.Range((int)Key.Num1, 9).Any(index => keys[index]);

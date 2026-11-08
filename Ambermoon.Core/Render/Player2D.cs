@@ -31,6 +31,20 @@ namespace Ambermoon.Render
         readonly GameCore game;
         readonly Player player;
         readonly IMapManager mapManager;
+        bool movingOrdinaryStep;
+
+        void MoveToDuringStep(Map map, uint x, uint y, uint ticks, bool frameReset, CharacterDirection? direction)
+        {
+            movingOrdinaryStep = true;
+            try
+            {
+                MoveTo(map, x, y, ticks, frameReset, direction);
+            }
+            finally
+            {
+                movingOrdinaryStep = false;
+            }
+        }
 
         public Player2D(GameCore game, IRenderLayer layer, Player player, RenderMap2D map,
             ISpriteFactory spriteFactory, Position startPosition,
@@ -168,6 +182,7 @@ namespace Ambermoon.Render
             if (canMove)
             {
                 var oldMap = map;
+                var previousVisualMovement = Map.CaptureVisualMovement(this);
                 int scrollX = 0;
                 int scrollY = 0;
                 prevDirection ??= Direction;
@@ -205,7 +220,7 @@ namespace Ambermoon.Render
                     bool frameReset = NumFrames == 1 || newDirection != prevDirection;
                     var prevState = CurrentState;
 
-                    MoveTo(oldMap, (uint)newX, (uint)newY, ticks, frameReset, null);
+                    MoveToDuringStep(oldMap, (uint)newX, (uint)newY, ticks, frameReset, null);
 
                     game.ResetMapCharacterInteraction(map);
 
@@ -235,7 +250,7 @@ namespace Ambermoon.Render
                     // adjust player position on map transition
                     var position = Map.GetCenterPosition();
 
-                    MoveTo(Map.Map!, (uint)position.X, (uint)position.Y, ticks, false, player.Direction);
+                    MoveToDuringStep(Map.Map!, (uint)position.X, (uint)position.Y, ticks, false, player.Direction);
 
                     game.ResetMapCharacterInteraction(map);
 
@@ -259,6 +274,7 @@ namespace Ambermoon.Render
                         game.PlayerMoved(true, null, true, oldMap);
                     }
                 }
+                Map.CompleteVisualMovement(previousVisualMovement, this, x, y, game.Movement2DVisualDuration);
             }
             else
             {
@@ -297,11 +313,14 @@ namespace Ambermoon.Render
 
         public void UpdateAppearance(uint ticks)
         {
+            Map.CancelVisualMovement();
             MoveTo(Map.Map!, (uint)Position.X, (uint)Position.Y, ticks, true, null);
         }
 
         public override void MoveTo(Map map, uint x, uint y, uint ticks, bool frameReset, CharacterDirection? newDirection, Action<Map>? mapInitAction = null)
         {
+            if (!movingOrdinaryStep && (map != Map.Map || x != Position.X || y != Position.Y))
+                Map.CancelVisualMovement();
             if (Map.Map != map)
                 Visible = true; // reset visibility before changing map
 

@@ -135,13 +135,19 @@ namespace Ambermoon.Render
 			}
 		}
 
-        public int UpdateFrameIndex(int currentIndex, int frameCount, int tileIndex, bool wave, bool randomAnimationStart)
+        public int UpdateFrameIndex(int currentIndex, int frameCount, int tileIndex, bool wave, bool randomAnimationStart,
+            bool initializeAnimation = true)
 		{
 			if (frameCount < 2)
 				return 0;
 
 			if (frameCount > 8 && !forwardAnimationInfos.ContainsKey(frameCount))
+            {
+                // Off-screen scrolling margins must not consume gameplay randomness.
+                if (!initializeAnimation)
+                    return currentIndex;
 				CreateAnimationInfos(frameCount);
+            }
 
 			var infos = wave ? waveAnimationInfos : forwardAnimationInfos;
 			var info = infos[frameCount];

@@ -24,9 +24,12 @@ These first fork releases are for Windows x64. The downloads and build badges in
 
 **Local development change:** Original balance is now restored when selecting Original. This has not been pushed or released; the v1.0.0 downloads above still apply the carrying, gold, accuracy, and starter-weapon changes to both selections.
 
+Smooth 2D scrolling is also a local development change and is not included in those downloads.
+
 ## Immersive UI
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
+- 2D movement scrolls between tile positions using the original pixel art. Gameplay remains on the original tile grid; map transitions and opening interfaces settle immediately.
 - A compact action overlay opens at the bottom right without moving or resizing the world view.
 - One translucent top bar holds the left-aligned location, centered scrolling compass, clock, and other acquired indicators. The compass appears only after activation in the game. A thin black strip closes the gap beneath the portrait names.
 - Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
