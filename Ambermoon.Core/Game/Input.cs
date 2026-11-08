@@ -494,10 +494,14 @@ partial class GameCore
     public virtual void OnKeyDown(Key key, KeyModifiers modifiers, bool tapped = false)
     {
         bool wasPressed = keys[(int)key];
-        // Record C even when a dialog consumes it. Holding the key while that
-        // dialog closes must not turn a later repeat into a mouse-mode toggle.
-        if (key == Key.C)
+        // Record toggles even when a dialog consumes them. Holding a key while
+        // that dialog closes must not turn a repeat into a new toggle.
+        if (key is Key.C or Key.CapsLock or Key.LeftShift or Key.RightShift)
             keys[(int)key] = true;
+        // Shift is a held movement modifier, not a map action. Other shortcuts
+        // continue to receive the original KeyModifiers on their own key event.
+        if (key is Key.LeftShift or Key.RightShift)
+            return;
 
         if (worldMapViewer != null)
         {
@@ -608,7 +612,7 @@ partial class GameCore
                 !(layout.ExplorationActionsOpen && key >= Key.Num1 && key <= Key.Num9))
             {
                 Move(tapped);
-                lastMoveTicksReset = CurrentTicks;
+                ResetMovementTimer();
             }
         }
         else if (currentWindow.Window == Window.BattlePositions && battlePositionDragging)
@@ -777,13 +781,15 @@ partial class GameCore
         }
 
         if (!IsMovementKey(key) && !movementHeld)
-            lastMoveTicksReset = CurrentTicks;
+            ResetMovementTimer();
     }
 
     public virtual void OnKeyUp(Key key, KeyModifiers modifiers)
     {
         // Clear even if a popup or world map opened between key-down and key-up.
         keys[(int)key] = false;
+        if (key is Key.LeftShift or Key.RightShift)
+            return;
         if (worldMapViewer != null)
         {
             worldMapViewer.OnKeyUp(key);
@@ -1303,7 +1309,7 @@ partial class GameCore
                     if (is3D)
                         TrapMouse(Map3DViewArea);
                     clickMoveActive = true;
-                    lastMoveTicksReset = CurrentTicks;
+                    ResetMovementTimer();
                     HandleClickMovement();
                 }
                 else if (CoreConfiguration.IsMobile)

@@ -66,6 +66,11 @@ partial class GameCore
     internal uint CurrentNormalizedBattleTicks { get; private set; } = 0;
     internal uint CurrentPopupTicks { get; private set; } = 0;
     internal uint CurrentAnimationTicks { get; private set; } = 0;
+    double currentTickFraction;
+    double animationTickFraction;
+    double popupTickFraction;
+    double battleTickFraction;
+    double normalizedBattleTickFraction;
 
 
     #region Hooks
@@ -97,16 +102,18 @@ partial class GameCore
     #endregion
 
 
-    internal static uint UpdateTicks(uint ticks, double deltaTime)
+    internal static uint UpdateTicks(uint ticks, double deltaTime, ref double fraction)
     {
-        uint add = (uint)Util.Round(TicksPerSecond * (float)deltaTime);
-
-        if (ticks <= uint.MaxValue - add)
-            ticks += add;
-        else
-            ticks = (uint)(((long)ticks + add) % uint.MaxValue);
-
-        return ticks;
+        if (!double.IsFinite(deltaTime) || deltaTime <= 0)
+            return ticks;
+        double elapsed = TicksPerSecond * deltaTime + fraction;
+        if (!double.IsFinite(elapsed))
+            return ticks;
+        double wholeTicks = Math.Floor(elapsed + 1e-9);
+        fraction = Math.Max(0, elapsed - wholeTicks);
+        double total = ticks + wholeTicks;
+        // Keep the existing tick-counter wrap convention.
+        return total <= uint.MaxValue ? (uint)total : (uint)(total % uint.MaxValue);
     }
 
     public void Update(double deltaTime)
@@ -149,7 +156,7 @@ partial class GameCore
         if (Ingame)
         {
             renderMap2D?.UpdateVisualMovement(deltaTime);
-            CurrentAnimationTicks = UpdateTicks(CurrentAnimationTicks, deltaTime);
+            CurrentAnimationTicks = UpdateTicks(CurrentAnimationTicks, deltaTime, ref animationTickFraction);
 
             if (currentAnimation != null)
                 currentAnimation.Update(CurrentAnimationTicks);
@@ -160,9 +167,7 @@ partial class GameCore
                 swamLastTick = false;
                 MonsterSeesPlayer = false; // Will be set by the monsters Update methods eventually
 
-                uint previousTicks = CurrentTicks;
-                CurrentTicks = UpdateTicks(CurrentTicks, deltaTime);
-                UpdateVisualMovementTiming(deltaTime, unchecked(CurrentTicks - previousTicks));
+                CurrentTicks = UpdateTicks(CurrentTicks, deltaTime, ref currentTickFraction);
 
                 CurrentMapTicks = CurrentTicks >= lastMapTicksReset ? CurrentTicks - lastMapTicksReset : (uint)((long)CurrentTicks + uint.MaxValue - lastMapTicksReset);
 
@@ -177,24 +182,10 @@ partial class GameCore
 
                 monstersCanMoveImmediately = false;
 
-                var moveTicks = CurrentTicks >= lastMoveTicksReset ? CurrentTicks - lastMoveTicksReset : (uint)((long)CurrentTicks + uint.MaxValue - lastMoveTicksReset);
-
-                // 2D movement advances whole tiles, so slow keyboard repeat cadence.
-                // 3D keeps its update cadence and scales distance/turn angle instead.
-                double moveInterval = movement.MovementTicks(is3D, Map?.UseTravelTypes ?? false, TravelType);
-                if (!is3D && !clickMoveActive)
-                    moveInterval /= KeyboardMovementFactor;
-
-                if (moveTicks >= moveInterval)
-                {
-                    lastMoveTicksReset = CurrentTicks;
-
-                    if (clickMoveActive)
-                        HandleClickMovement();
-                    else
-                        Move();
-                }
+                UpdateMovementTiming(deltaTime);
             }
+            else
+                ResetMovementTimer();
 
             if ((!WindowActive ||
                 currentWindow.Window == Window.Inventory ||
@@ -212,17 +203,20 @@ partial class GameCore
             }
 
             if (layout.PopupActive)
-                CurrentPopupTicks = UpdateTicks(CurrentPopupTicks, deltaTime);
+                CurrentPopupTicks = UpdateTicks(CurrentPopupTicks, deltaTime, ref popupTickFraction);
             else
+            {
                 CurrentPopupTicks = CurrentTicks;
+                popupTickFraction = currentTickFraction;
+            }
 
             if (currentBattle != null)
             {
                 if (!layout.OptionMenuOpen)
                 {
                     double timeFactor = BattleTimeFactor;
-                    CurrentBattleTicks = UpdateTicks(CurrentBattleTicks, deltaTime * timeFactor);
-                    CurrentNormalizedBattleTicks = UpdateTicks(CurrentNormalizedBattleTicks, deltaTime);
+                    CurrentBattleTicks = UpdateTicks(CurrentBattleTicks, deltaTime * timeFactor, ref battleTickFraction);
+                    CurrentNormalizedBattleTicks = UpdateTicks(CurrentNormalizedBattleTicks, deltaTime, ref normalizedBattleTickFraction);
                     UpdateBattle(1.0 / timeFactor);
 
                     // Note: The null check for currentBattle is important here even if checking above.
@@ -258,6 +252,7 @@ partial class GameCore
             {
                 CurrentBattleTicks = 0;
                 CurrentNormalizedBattleTicks = 0;
+                battleTickFraction = normalizedBattleTickFraction = 0;
             }
 
             if (!WindowActive && layout.ButtonGridPage == 0)
@@ -646,6 +641,7 @@ partial class GameCore
 
     internal void Start2D(Map map, uint playerX, uint playerY, CharacterDirection direction, bool initial, Action<Map>? mapInitAction = null)
     {
+        ResetMovementTimer();
         camera3D?.ResetMovementInterpolation();
         if (map.Type != MapType.Map2D)
             throw new AmbermoonException(ExceptionScope.Application, "Given map is not 2D.");
@@ -717,6 +713,7 @@ partial class GameCore
 
     internal void Start3D(Map map, uint playerX, uint playerY, CharacterDirection direction, bool initial, Action<Map>? mapInitAction = null)
     {
+        ResetMovementTimer();
         if (map.Type != MapType.Map3D)
             throw new AmbermoonException(ExceptionScope.Application, "Given map is not 3D.");
 

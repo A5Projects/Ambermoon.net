@@ -320,7 +320,10 @@ namespace Ambermoon.Render
         public override void MoveTo(Map map, uint x, uint y, uint ticks, bool frameReset, CharacterDirection? newDirection, Action<Map>? mapInitAction = null)
         {
             if (!movingOrdinaryStep && (map != Map.Map || x != Position.X || y != Position.Y))
+            {
+                game.ResetMovementTimer();
                 Map.CancelVisualMovement();
+            }
             if (Map.Map != map)
                 Visible = true; // reset visibility before changing map
 

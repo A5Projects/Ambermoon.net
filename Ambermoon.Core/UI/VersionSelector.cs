@@ -101,6 +101,7 @@ namespace Ambermoon.UI
             }
         }
         uint ticks = 0;
+        double tickFraction;
 
 		public event Action<int, Func<IGameData>, bool>? Closed;
 
@@ -677,7 +678,7 @@ namespace Ambermoon.UI
 
         public void Update(double deltaTime)
         {
-            ticks = GameCore.UpdateTicks(ticks, deltaTime);
+            ticks = GameCore.UpdateTicks(ticks, deltaTime, ref tickFraction);
             okButton!.Update(ticks);
             changeSaveOptionButton!.Update(ticks);
             cancelButton!.Update(ticks);

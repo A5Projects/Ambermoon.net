@@ -34,6 +34,7 @@ partial class GameCore
     public void SetMouseLookFocus(bool focused)
     {
         mouseLookFocused = focused;
+        RefreshSprintKeys(focused ? pressedKeyProvider?.Invoke() : null);
         if (!focused)
         {
             camera3D?.ResetMovementInterpolation();

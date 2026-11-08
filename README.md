@@ -36,7 +36,9 @@ The local 3D movement-smoothing trial is also unreleased; it smooths walking and
 - Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
 - Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
 
-**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. **Caps Lock** switches keyboard movement between 60% and full speed by default. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
+**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. Keyboard movement defaults to **60% walk speed**; **Caps Lock** toggles **100% sprint**, and **holding Shift** temporarily sprints. The saved Caps Lock mode is independent of the keyboard's lock light. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
+
+Movement is timed independently of render and update frequency at the game's nominal 60-tick rate. Catch-up after a long stall is limited to avoid sudden movement bursts.
 
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 

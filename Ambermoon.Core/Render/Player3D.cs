@@ -115,6 +115,7 @@ namespace Ambermoon.Render
 
         public void SetPosition(int x, int y, uint ticks, bool triggerEvents)
         {
+            game.ResetMovementTimer();
             Position = new Position(x, y);
             ResetCameraPosition();
 

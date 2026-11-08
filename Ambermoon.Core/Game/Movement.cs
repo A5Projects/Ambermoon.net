@@ -10,16 +10,17 @@ partial class GameCore
 {
     readonly bool[] keys = new bool[EnumHelper.GetValues<Key>().Length];
     readonly Func<List<Key>> pressedKeyProvider;
-    uint lastMoveTicksReset = 0;
     readonly Movement movement;
-    readonly Queue<(double Seconds, uint Ticks)> visualMovementTiming = new();
-    double visualMovementSeconds;
-    uint visualMovementTicks;
+    double movementElapsed;
+    double lastMovementInterval;
+    double movementBatchDuration;
+    uint movementResetVersion;
+    const double MaxMovementCatchUp = 0.1;
     internal double Movement2DVisualDuration => movement.MovementTicks(false, Map?.UseTravelTypes ?? false, TravelType)
-        * (visualMovementTicks == 0 ? 1.0 / TicksPerSecond : visualMovementSeconds / visualMovementTicks)
+        / (double)TicksPerSecond
         / (clickMoveActive ? 1.0 : KeyboardMovementFactor);
-    internal double Movement3DVisualDuration => movement.MovementTicks(true, false, TravelType)
-        * (visualMovementTicks == 0 ? 1.0 / TicksPerSecond : visualMovementSeconds / visualMovementTicks);
+    internal double Movement3DVisualDuration => movementBatchDuration > 0 ? movementBatchDuration :
+        movement.MovementTicks(true, false, TravelType) / (double)TicksPerSecond;
     internal bool CanInterpolate3DMovement => CoreConfiguration.Smooth3DMovement && !CoreConfiguration.IsMobile &&
         IdleOnMap && Is3D && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
         !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
@@ -33,22 +34,80 @@ partial class GameCore
             camera3D?.ResetMovementInterpolation();
     }
 
-    void UpdateVisualMovementTiming(double deltaTime, uint tickCount)
+    bool CanScheduleMovement => IdleOnMap && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
+        !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
+        worldMapViewer == null && QuestLog?.Open != true && nextClickHandler == null && !GameOverButtonsVisible;
+
+    internal void ResetMovementTimer()
     {
-        // Observe the existing rounded tick clock without changing its gameplay cadence.
-        // At a 120 Hz update rate a logical tick can take less than 1/60 second.
-        visualMovementTiming.Enqueue((deltaTime, tickCount));
-        visualMovementSeconds += deltaTime;
-        visualMovementTicks += tickCount;
-        while (visualMovementTiming.Count > 1 && (visualMovementSeconds > 0.25 || visualMovementTiming.Count > 60))
+        movementElapsed = 0;
+        lastMovementInterval = 0;
+        ++movementResetVersion;
+    }
+
+    void UpdateMovementTiming(double deltaTime)
+    {
+        if (!CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
         {
-            var sample = visualMovementTiming.Dequeue();
-            visualMovementSeconds -= sample.Seconds;
-            visualMovementTicks -= sample.Ticks;
+            ResetMovementTimer();
+            return;
+        }
+        if (!double.IsFinite(deltaTime) || deltaTime <= 0)
+            return;
+
+        double interval = is3D ? movement.MovementTicks(true, false, TravelType) / (double)TicksPerSecond : Movement2DVisualDuration;
+        // Keep the fractional progress to the next step when Caps/Shift changes
+        // 2D speed, instead of granting an extra step or starting the wait over.
+        if (lastMovementInterval > 0 && lastMovementInterval != interval)
+            movementElapsed *= interval / lastMovementInterval;
+        lastMovementInterval = interval;
+        movementElapsed += Math.Min(deltaTime, MaxMovementCatchUp);
+        int steps = Math.Min(6, (int)Math.Floor((movementElapsed + 1e-9) / interval));
+        movementBatchDuration = is3D ? steps * interval : 0;
+        try
+        {
+            for (int step = 0; step < steps; ++step)
+            {
+                movementElapsed = Math.Max(0, movementElapsed - interval);
+                uint resetVersion = movementResetVersion;
+                var previousMap = Map;
+                bool was3D = is3D;
+                var oldPosition = new Position(RenderPlayer.Position);
+                float oldX = camera3D?.X ?? 0;
+                float oldZ = camera3D?.Z ?? 0;
+                float oldAngle = camera3D?.Angle ?? 0;
+
+                if (clickMoveActive)
+                    HandleClickMovement();
+                else
+                    Move();
+
+                if (movementResetVersion != resetVersion || Map != previousMap || is3D != was3D ||
+                    !CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
+                {
+                    ResetMovementTimer();
+                    break;
+                }
+                bool unchanged = is3D ? camera3D!.X == oldX && camera3D.Z == oldZ && camera3D.Angle == oldAngle :
+                    RenderPlayer.Position == oldPosition;
+                if (unchanged)
+                {
+                    // A held key against an obstacle must not replay the same
+                    // blocked interaction several times after a long frame.
+                    ResetMovementTimer();
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            movementBatchDuration = 0;
         }
     }
-    internal float KeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement
+    float BaseKeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement
         ? 1.0f : Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, 100) / 100.0f;
+    internal float KeyboardMovementFactor => !CoreConfiguration.IsMobile && mouseLookFocused &&
+        (keys[(int)Key.LeftShift] || keys[(int)Key.RightShift]) ? 1.0f : BaseKeyboardMovementFactor;
     internal bool NumpadMovementHeld => Enumerable.Range((int)Key.Num1, 9).Any(index => keys[index]);
     static bool IsMovementKey(Key key) => key is Key.Left or Key.Right or Key.Up or Key.Down
         or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E
@@ -59,7 +118,8 @@ partial class GameCore
     {
         CoreConfiguration.SlowKeyboardMovement = !CoreConfiguration.SlowKeyboardMovement;
         CoreConfiguration.RequestSave();
-        int percent = (int)Math.Round(KeyboardMovementFactor * 100);
+        // Report the saved toggle, even if Shift currently overrides it.
+        int percent = (int)Math.Round(BaseKeyboardMovementFactor * 100);
         string label = GameLanguage switch
         {
             GameLanguage.German => "Tastaturtempo",
@@ -89,9 +149,26 @@ partial class GameCore
         });
     }
 
+    void RefreshSprintKeys(List<Key>? pressedKeys)
+    {
+        if (!mouseLookFocused)
+        {
+            keys[(int)Key.LeftShift] = false;
+            keys[(int)Key.RightShift] = false;
+        }
+        else if (pressedKeys != null)
+        {
+            keys[(int)Key.LeftShift] = pressedKeys.Contains(Key.LeftShift);
+            keys[(int)Key.RightShift] = pressedKeys.Contains(Key.RightShift);
+        }
+    }
+
     internal void ResetMoveKeys(bool forceDisable = false)
     {
         var pressedKeys = pressedKeyProvider?.Invoke();
+        // Opening a menu or changing mouse capture clears movement keys, but
+        // must not forget a physically held Shift or retain a released one.
+        RefreshSprintKeys(pressedKeys);
 
         void ResetKey(Key key) => keys[(int)key] = !forceDisable && pressedKeys?.Contains(key) == true;
 
@@ -120,7 +197,7 @@ partial class GameCore
             layout.ReleaseButton(8, true);
         }
 
-        lastMoveTicksReset = CurrentTicks;
+        ResetMovementTimer();
     }
 
     internal void Move(bool fromNumpadButton, float speedFactor3D, params CursorType[] cursorTypes)

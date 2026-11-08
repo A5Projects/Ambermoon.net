@@ -81,6 +81,7 @@ partial class GameCore
             return;
 
         paused = true;
+        ResetMovementTimer();
 
         GameTime?.Pause();
 

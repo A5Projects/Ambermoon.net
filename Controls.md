@@ -41,7 +41,9 @@ Use the arrow keys, WASD, or the numpad to move without opening any controls. In
 
 The location and acquired indicators share a slim translucent bar directly below the portraits. The horizontal compass stays centered: localized bearings and intermediate ticks slide beneath a fixed pointer as you turn. It remains hidden until activated in the game. The clock, daylight, monster, wind, and position indicators appear to its right; coordinates use a small second row when the top row is full. Hover a shortened location name to see it in full. Active spells remain near the bottom left. These indicators still require the corresponding items or spells.
 
-On desktop, **Caps Lock** toggles keyboard movement between the configured slower speed (60% by default) and full speed. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the selected percentage. The setting is remembered between sessions; mouse movement keeps its normal behavior. In 2D, slowing movement increases the time between tile steps.
+On desktop, keyboard movement defaults to **60% walk speed**. **Caps Lock** toggles between that configured walking speed and **100% sprint speed**. **Hold either Shift key** to sprint temporarily; releasing Shift restores the selected Caps Lock mode. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the mode selected by Caps Lock, even while Shift is held. The selection is remembered between sessions and is independent of the keyboard's Caps Lock light; Shift is never saved. Mouse movement keeps its normal behavior. In 2D, walking increases the time between tile steps. Existing Shift shortcuts in inventory and other windows still work.
+
+Movement uses elapsed time at the game's nominal 60-tick rate, keeping walking and sprint speed independent of render and update frequency. Original movement distances and collision checks are preserved. Catch-up after a stall is limited to 100 milliseconds to avoid sudden long movement bursts.
 
 #### 2D Maps
 

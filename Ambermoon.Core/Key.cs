@@ -79,6 +79,8 @@ namespace Ambermoon
         Number8,
         Number9,
         CapsLock,
-        C
+        C,
+        LeftShift,
+        RightShift
     }
 }

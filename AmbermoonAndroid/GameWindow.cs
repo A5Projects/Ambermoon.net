@@ -213,6 +213,8 @@ class GameWindow
         Silk.NET.Input.Key.Home => Key.Home,
         Silk.NET.Input.Key.End => Key.End,
         Silk.NET.Input.Key.Space => Key.Space,
+        Silk.NET.Input.Key.ShiftLeft => Key.LeftShift,
+        Silk.NET.Input.Key.ShiftRight => Key.RightShift,
         Silk.NET.Input.Key.W => Key.W,
         Silk.NET.Input.Key.A => Key.A,
         Silk.NET.Input.Key.S => Key.S,
