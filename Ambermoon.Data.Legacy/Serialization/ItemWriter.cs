@@ -17,7 +17,7 @@ namespace Ambermoon.Data.Legacy.Serialization
             dataWriter.Write((byte)(item.GraphicIndex % 256));
             dataWriter.WriteEnumAsByte(item.Type);
             dataWriter.WriteEnumAsByte(item.EquipmentSlot);
-            dataWriter.Write(item.BreakChance);
+            dataWriter.Write(item.BaseBreakChance);
             dataWriter.WriteEnumAsByte(item.Genders);
             dataWriter.Write((byte)item.NumberOfHands);
             dataWriter.Write((byte)item.NumberOfFingers);

@@ -435,8 +435,8 @@ partial class GameCore
 
         ClearPartyMembers();
 
-        // Gold now weighs less. Recompute stored weights for unrecruited companions
-        // as well, so they already have the correct load when they join later.
+        // Recompute weights using the selected edition's rules, including for
+        // unrecruited companions and saves from earlier balance configurations.
         FixSavegameValues(savegame);
         ApplyExtraCarryWeight(savegame);
 

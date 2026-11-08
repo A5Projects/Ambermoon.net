@@ -4622,8 +4622,9 @@ namespace Ambermoon
             // A roll is 0..99 and fails only when greater than the skill. 84
             // therefore gives an 85% baseline. Apply ailments afterwards and
             // retain trained/equipment accuracy above this floor. Monsters keep
-            // their own skills; no saved character skill is changed.
-            if (attacker is PartyMember)
+            // their own skills; no saved character skill is changed. Original
+            // retains its normal skill check, including early-game misses.
+            if (attacker is PartyMember && ImmersiveBalance.UsesRelaxedBalance(game.Features))
                 hitChance = Math.Max(hitChance, 84);
 
             if (game.Features.HasFlag(Features.ExtendedCurseEffects))

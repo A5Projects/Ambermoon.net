@@ -4,7 +4,7 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance, mainly back to Defaults, but Carry weight limit much higher.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views and compact overlays. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard balance. 
 
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant (removed gaps around the world view); it is separate from the Advanced game-data edition. 
@@ -22,13 +22,15 @@ Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both pack
 
 These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
+**Local development change:** Original balance is now restored when selecting Original. This has not been pushed or released; the v1.0.0 downloads above still apply the carrying, gold, accuracy, and starter-weapon changes to both selections.
+
 ## Immersive UI
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
 - A compact action overlay opens at the bottom right without moving or resizing the world view.
 - One translucent top bar holds the left-aligned location, centered scrolling compass, clock, and other acquired indicators. The compass appears only after activation in the game. A thin black strip closes the gap beneath the portrait names.
 - Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
-- Relaxed balance includes four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
+- Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
 
 **Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. **Caps Lock** switches keyboard movement between 60% and full speed by default. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
 

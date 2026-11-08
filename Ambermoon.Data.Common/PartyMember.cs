@@ -31,8 +31,8 @@ namespace Ambermoon.Data
             }
         }
 
-        // Keep the sub-kilogram rounding allowance; quadruple the actual capacity.
-        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * 4000 + ExtraCarryWeightKg * 1000;
+        // Keep the original rounding allowance and the optional session cheat.
+        public uint MaxWeight => 999 + Attributes[Attribute.Strength].TotalCurrentValue * ImmersiveBalance.CarryWeightPerStrength + ExtraCarryWeightKg * 1000;
         public bool Overweight => (TotalWeight / 1000) > (MaxWeight / 1000);
         public uint MaxGoldToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Gold, ((int)MaxWeight - (int)TotalWeight) / Character.GoldWeight));
         public uint MaxFoodToTake => (uint)Math.Max(0, Math.Min(ushort.MaxValue - Food, ((int)MaxWeight - (int)TotalWeight) / Character.FoodWeight));

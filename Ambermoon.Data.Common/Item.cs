@@ -8,7 +8,16 @@ namespace Ambermoon.Data
         public uint GraphicIndex { get; set; }
         public ItemType Type { get; set; }
         public EquipmentSlot EquipmentSlot { get; set; }
-        public byte BreakChance { get; set; }
+        byte breakChance;
+        public byte BreakChance
+        {
+            // Retain the loaded definition so changing game-data editions cannot
+            // leave Original weapons permanently modified by an Advanced session.
+            get => ImmersiveBalance.IsUnbreakableWeapon(this) ? (byte)0 : breakChance;
+            set => breakChance = value;
+        }
+        // Definition writers must retain the data value, not an active-game override.
+        public byte BaseBreakChance => breakChance;
         public GenderFlag Genders { get; set; }
         public uint NumberOfHands { get; set; }
         public uint NumberOfFingers { get; set; }

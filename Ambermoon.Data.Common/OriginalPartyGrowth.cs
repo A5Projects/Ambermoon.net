@@ -9,7 +9,7 @@ namespace Ambermoon.Data
     {
         public static OriginalPartyGrowth? For(PartyMember member, Features? features)
         {
-            if (features?.HasFlag(Features.AdjustedEPFactors) != true || features.Value.HasFlag(Features.Mod))
+            if (features == null || !ImmersiveBalance.UsesRelaxedBalance(features.Value))
                 return null;
 
             return (member.Index, member.Class) switch

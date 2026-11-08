@@ -126,7 +126,8 @@ $editionHelp = if ($Edition -eq 'immersive') {
 Immersive UI fills the area below the portraits during 2D and 3D exploration.
 Esc/Enter/Tab or MENU opens the compact action overlay; Esc closes other windows
 first. See Documentation/ImmersiveUI.md and Controls.md for the complete controls.
-This edition uses relaxed balance: see Documentation/IMMERSIVE-BALANCE.txt.
+The Original selection keeps original balance, including misses and weapon breaks.
+Advanced uses relaxed balance: see Documentation/IMMERSIVE-BALANCE.txt.
 '@
 } else {
 @'

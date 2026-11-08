@@ -1,7 +1,17 @@
-Immersive UI - relaxed balance
+Immersive UI - balance by game-data edition
 
 Based on the installed Original 1.22 / Advanced 1.33 data, running in the
 Ambermoon.net 1.15.1 immersive branch. No versions.dat or save files are patched.
+
+Original 1.22
+- The Original startup selection uses original balance: one kilogram of carry
+  capacity per effective strength point (plus the original 999-gram allowance),
+  five grams per gold coin, original attack skill checks including misses, and
+  the original weapon break chances.
+- Original progression, spell costs, damage, item weights and XP requirements
+  remain unchanged. Immersive visuals and controls still apply.
+- Optional session cheats remain available but default off. No third balance
+  choice is added.
 
 Advanced party progression
 - Original base HP, SP, spell-learning points (SLP), and training points (TP)
@@ -28,7 +38,7 @@ Spells and other Advanced features
 - New quests, locations, items, sages, transports, and other world interactions
   remain. Individual enemy stats and initial party skill/attribute data remain.
 
-Convenience changes (both editions in this immersive build)
+Convenience changes (Advanced only in this immersive build)
 - Carrying capacity is four kilograms per effective strength point, instead of
   one. The original 999-gram rounding allowance, inventory slots, stack limits,
   strength itself, and stat caps are unchanged.
@@ -50,5 +60,9 @@ Compatibility
 - No save format changes, level recalculation, skill reset, point refunds, or
   retroactive level-up rewards. The existing save files are not rewritten during
   installation. Future saves use the existing format and store newly earned gains.
-- The Original edition retains its own progression and spell costs while getting
-  the shared carrying, gold, accuracy, and ordinary weapon conveniences.
+- Original saves from earlier Immersive builds remain readable. Gold weight is
+  recalculated on load; reduced normal capacity may leave characters overloaded.
+  Existing character progress is retained. The optional carryweight command can
+  temporarily help move items to storage, without changing the saved stats.
+- These rules are selected from the game-data edition on every game startup;
+  selecting Original does not retain the previous Advanced balance settings.
