@@ -278,7 +278,7 @@ namespace Ambermoon.Render
                 float oldX = Camera.X;
                 float oldY = Camera.Z;
                 if (game.CanInterpolate3DMovement)
-                    Camera.BeginMovementInterpolation(ticks, game.Movement3DVisualDuration);
+                    Camera.BeginMovementInterpolation(game.Movement3DVisualTicks, game.Movement3DVisualDuration);
                 try
                 {
                     mover(distance, noX, noZ);

@@ -13,14 +13,19 @@ partial class GameCore
     readonly Movement movement;
     double movementElapsed;
     double lastMovementInterval;
-    double movementBatchDuration;
     uint movementResetVersion;
+    uint movement3DTicks;
+    uint last3DMoveTicksReset;
+    readonly Queue<(double Seconds, uint Ticks)> visualMovement3DTiming = new();
+    double visualMovement3DSeconds;
+    uint visualMovement3DTicks;
     const double MaxMovementCatchUp = 0.1;
     internal double Movement2DVisualDuration => movement.MovementTicks(false, Map?.UseTravelTypes ?? false, TravelType)
         / (double)TicksPerSecond
         / (clickMoveActive ? 1.0 : KeyboardMovementFactor);
-    internal double Movement3DVisualDuration => movementBatchDuration > 0 ? movementBatchDuration :
-        movement.MovementTicks(true, false, TravelType) / (double)TicksPerSecond;
+    internal double Movement3DVisualDuration => movement.MovementTicks(true, false, TravelType)
+        * (visualMovement3DTicks == 0 ? 1.0 / TicksPerSecond : visualMovement3DSeconds / visualMovement3DTicks);
+    internal uint Movement3DVisualTicks => movement3DTicks;
     internal bool CanInterpolate3DMovement => CoreConfiguration.Smooth3DMovement && !CoreConfiguration.IsMobile &&
         IdleOnMap && Is3D && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
         !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
@@ -42,7 +47,34 @@ partial class GameCore
     {
         movementElapsed = 0;
         lastMovementInterval = 0;
+        last3DMoveTicksReset = movement3DTicks;
         ++movementResetVersion;
+    }
+
+    void Update3DMovementClock(double deltaTime)
+    {
+        if (!double.IsFinite(deltaTime) || deltaTime <= 0)
+            return;
+
+        // Restore the pre-timing-fix 3D cadence without changing the shared
+        // game clocks or the 2D scheduler. This deliberately retains the old
+        // per-update rounding and therefore its update-rate dependence.
+        uint add = (uint)Util.Round(TicksPerSecond * (float)deltaTime);
+        movement3DTicks = movement3DTicks <= uint.MaxValue - add
+            ? movement3DTicks + add
+            : (uint)(((long)movement3DTicks + add) % uint.MaxValue);
+
+        // The existing camera smoother expects the observed cadence of this
+        // rounded clock, not a fixed 1/60-second interval between movements.
+        visualMovement3DTiming.Enqueue((deltaTime, add));
+        visualMovement3DSeconds += deltaTime;
+        visualMovement3DTicks += add;
+        while (visualMovement3DTiming.Count > 1 && (visualMovement3DSeconds > 0.25 || visualMovement3DTiming.Count > 60))
+        {
+            var sample = visualMovement3DTiming.Dequeue();
+            visualMovement3DSeconds -= sample.Seconds;
+            visualMovement3DTicks -= sample.Ticks;
+        }
     }
 
     void UpdateMovementTiming(double deltaTime)
@@ -55,7 +87,24 @@ partial class GameCore
         if (!double.IsFinite(deltaTime) || deltaTime <= 0)
             return;
 
-        double interval = is3D ? movement.MovementTicks(true, false, TravelType) / (double)TicksPerSecond : Movement2DVisualDuration;
+        if (is3D)
+        {
+            uint moveTicks = movement3DTicks >= last3DMoveTicksReset ? movement3DTicks - last3DMoveTicksReset
+                : (uint)((long)movement3DTicks + uint.MaxValue - last3DMoveTicksReset);
+            if (moveTicks >= movement.MovementTicks(true, false, TravelType))
+            {
+                // Match the old 3D system: at most one move per callback,
+                // discarding any excess ticks instead of replaying a batch.
+                last3DMoveTicksReset = movement3DTicks;
+                if (clickMoveActive)
+                    HandleClickMovement();
+                else
+                    Move();
+            }
+            return;
+        }
+
+        double interval = Movement2DVisualDuration;
         // Keep the fractional progress to the next step when Caps/Shift changes
         // 2D speed, instead of granting an extra step or starting the wait over.
         if (lastMovementInterval > 0 && lastMovementInterval != interval)
@@ -63,46 +112,32 @@ partial class GameCore
         lastMovementInterval = interval;
         movementElapsed += Math.Min(deltaTime, MaxMovementCatchUp);
         int steps = Math.Min(6, (int)Math.Floor((movementElapsed + 1e-9) / interval));
-        movementBatchDuration = is3D ? steps * interval : 0;
-        try
+        for (int step = 0; step < steps; ++step)
         {
-            for (int step = 0; step < steps; ++step)
+            movementElapsed = Math.Max(0, movementElapsed - interval);
+            uint resetVersion = movementResetVersion;
+            var previousMap = Map;
+            var oldPosition = new Position(RenderPlayer.Position);
+
+            if (clickMoveActive)
+                HandleClickMovement();
+            else
+                Move();
+
+            bool continuedWorldScroll = !is3D && player2D?.CompletedWorldScroll(previousMap, Map) == true;
+            if (movementResetVersion != resetVersion || (Map != previousMap && !continuedWorldScroll) || is3D ||
+                !CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
             {
-                movementElapsed = Math.Max(0, movementElapsed - interval);
-                uint resetVersion = movementResetVersion;
-                var previousMap = Map;
-                bool was3D = is3D;
-                var oldPosition = new Position(RenderPlayer.Position);
-                float oldX = camera3D?.X ?? 0;
-                float oldZ = camera3D?.Z ?? 0;
-                float oldAngle = camera3D?.Angle ?? 0;
-
-                if (clickMoveActive)
-                    HandleClickMovement();
-                else
-                    Move();
-
-                bool continuedWorldScroll = !was3D && !is3D && player2D?.CompletedWorldScroll(previousMap, Map) == true;
-                if (movementResetVersion != resetVersion || (Map != previousMap && !continuedWorldScroll) || is3D != was3D ||
-                    !CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
-                {
-                    ResetMovementTimer();
-                    break;
-                }
-                bool unchanged = is3D ? camera3D!.X == oldX && camera3D.Z == oldZ && camera3D.Angle == oldAngle :
-                    RenderPlayer.Position == oldPosition;
-                if (unchanged)
-                {
-                    // A held key against an obstacle must not replay the same
-                    // blocked interaction several times after a long frame.
-                    ResetMovementTimer();
-                    break;
-                }
+                ResetMovementTimer();
+                break;
             }
-        }
-        finally
-        {
-            movementBatchDuration = 0;
+            if (RenderPlayer.Position == oldPosition)
+            {
+                // A held key against an obstacle must not replay the same
+                // blocked interaction several times after a long frame.
+                ResetMovementTimer();
+                break;
+            }
         }
     }
     float BaseKeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement

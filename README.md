@@ -38,7 +38,7 @@ The local 3D movement-smoothing trial is also unreleased; it smooths walking and
 
 **Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. Keyboard movement defaults to **60% walk speed**; **Caps Lock** toggles **100% sprint**, and **holding Shift** temporarily sprints. The saved Caps Lock mode is independent of the keyboard's lock light. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
 
-Movement is timed independently of render and update frequency at the game's nominal 60-tick rate. Catch-up after a long stall is limited to avoid sudden movement bursts.
+2D movement uses elapsed time, with bounded catch-up after stalls. 3D retains the earlier movement cadence after a timing experiment caused uneven camera motion. Its speed can depend on update frequency; see the [3D timing investigation](docs/3d-movement-timing.md) for the findings, rollback, and possible future solutions.
 
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 

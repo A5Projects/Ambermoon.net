@@ -168,6 +168,7 @@ partial class GameCore
                 MonsterSeesPlayer = false; // Will be set by the monsters Update methods eventually
 
                 CurrentTicks = UpdateTicks(CurrentTicks, deltaTime, ref currentTickFraction);
+                Update3DMovementClock(deltaTime);
 
                 CurrentMapTicks = CurrentTicks >= lastMapTicksReset ? CurrentTicks - lastMapTicksReset : (uint)((long)CurrentTicks + uint.MaxValue - lastMapTicksReset);
 
