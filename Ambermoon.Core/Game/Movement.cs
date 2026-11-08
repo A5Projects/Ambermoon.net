@@ -82,7 +82,8 @@ partial class GameCore
                 else
                     Move();
 
-                if (movementResetVersion != resetVersion || Map != previousMap || is3D != was3D ||
+                bool continuedWorldScroll = !was3D && !is3D && player2D?.CompletedWorldScroll(previousMap, Map) == true;
+                if (movementResetVersion != resetVersion || (Map != previousMap && !continuedWorldScroll) || is3D != was3D ||
                     !CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
                 {
                     ResetMovementTimer();

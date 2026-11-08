@@ -82,20 +82,41 @@ namespace Ambermoon.Render
 
         internal readonly record struct VisualMovementSnapshot(Map? Map, int ScrollX, int ScrollY,
             int PlayerX, int PlayerY, int CameraX, int CameraY, int PlayerOffsetX, int PlayerOffsetY, uint ResetVersion);
+        internal readonly record struct WorldScrollTransition(Map PreviousMap, Map Map, uint ScrollX, uint ScrollY);
 
         internal VisualMovementSnapshot CaptureVisualMovement(Player2D player) => new(Map,
             (int)ScrollX, (int)ScrollY, player.Position.X, player.Position.Y,
             CameraOffsetX, CameraOffsetY, PlayerOffsetX, PlayerOffsetY, visualResetVersion);
 
-        internal void CompleteVisualMovement(VisualMovementSnapshot previous, Player2D player, int dx, int dy, double duration)
+        internal bool RebaseVisualMovement(ref VisualMovementSnapshot previous, WorldScrollTransition transition, int dx, int dy)
         {
-            // Teleports, events and chunk changes keep their immediate placement. Only
-            // a confirmed ordinary step receives a visual transition.
+            // Only the exact neighbor swap performed by Scroll is eligible.
+            // Capture this before movement events can teleport or pause the party.
+            if (previous.Map != transition.PreviousMap || Map != transition.Map ||
+                ScrollX != transition.ScrollX || ScrollY != transition.ScrollY || previous.ResetVersion != visualResetVersion)
+                return false;
+
+            var position = GetCenterPosition();
+            previous = previous with
+            {
+                Map = Map,
+                ScrollX = (int)ScrollX - dx,
+                ScrollY = (int)ScrollY - dy,
+                PlayerX = position.X - dx,
+                PlayerY = position.Y - dy
+            };
+            return true;
+        }
+
+        internal bool CompleteVisualMovement(VisualMovementSnapshot previous, Player2D player, int dx, int dy, double duration)
+        {
+            // A validated neighbor scroll has already rebased the snapshot.
+            // Teleports and other interruptions still invalidate its generation.
             if (previous.Map != Map || previous.ResetVersion != visualResetVersion || !game.IdleOnMap || game.Is3D ||
                 player.Position.X != previous.PlayerX + dx || player.Position.Y != previous.PlayerY + dy)
             {
                 CancelVisualMovement();
-                return;
+                return false;
             }
 
             // Keep the displayed position continuous when the update cadence speeds
@@ -122,6 +143,7 @@ namespace Ambermoon.Render
             PlayerOffsetX = playerStartX;
             PlayerOffsetY = playerStartY;
             RefreshVisualPositions();
+            return true;
         }
 
         internal void UpdateVisualMovement(double deltaTime)
@@ -191,6 +213,40 @@ namespace Ambermoon.Render
         bool HasRenderTile(uint x, uint y) => worldMap || (x < Map!.Width && y < Map.Height);
         bool HasRenderTile(int x, int y) => x >= 0 && y >= 0 && HasRenderTile((uint)x, (uint)y);
 
+        Map.Tile? GetRenderTile(int x, int y)
+        {
+            if (!worldMap)
+                return HasRenderTile(x, y) ? this[(uint)x, (uint)y] : null;
+            if (x >= 0 && y >= 0)
+                return this[(uint)x, (uint)y];
+
+            // The interpolated view can still show the old chunk to the left
+            // or above the new origin. This lookup is rendering-only: it does
+            // not change the active maps, event coordinates or mouse picking.
+            var renderMap = Map!;
+            if (x < 0)
+            {
+                renderMap = mapManager!.GetMap(renderMap.LeftMapIndex!.Value);
+                x += renderMap.Width;
+            }
+            else if (x >= renderMap.Width)
+            {
+                x -= renderMap.Width;
+                renderMap = mapManager!.GetMap(renderMap.RightMapIndex!.Value);
+            }
+            if (y < 0)
+            {
+                renderMap = mapManager!.GetMap(renderMap.UpMapIndex!.Value);
+                y += renderMap.Height;
+            }
+            else if (y >= renderMap.Height)
+            {
+                y -= renderMap.Height;
+                renderMap = mapManager!.GetMap(renderMap.DownMapIndex!.Value);
+            }
+            return renderMap.Tiles[x, y];
+        }
+
         internal bool IsWithinOriginalMonsterView(Rect displayArea)
         {
             // One monster sight-update path is gated by on-screen visibility.
@@ -255,12 +311,12 @@ namespace Ambermoon.Render
                         int tileY = (int)ScrollY + row;
                         bool originalView = column >= 0 && row >= 0 && column < NUM_VISIBLE_TILES_X && row < NUM_VISIBLE_TILES_Y;
                         int animationIndex = row * NUM_VISIBLE_TILES_X + column;
-                        if (!HasRenderTile(tileX, tileY))
+                        var tile = GetRenderTile(tileX, tileY);
+                        if (tile == null)
                         {
                             ++index;
                             continue;
                         }
-						var tile = this[(uint)tileX, (uint)tileY];
 
                         if (tile.BackTileIndex != 0)
                         {
@@ -685,14 +741,14 @@ namespace Ambermoon.Render
                     backgroundTileSprites[index].Y = foregroundTileSprites[index].Y = RenderOriginY + row * TILE_HEIGHT + CameraOffsetY;
                     int tileX = (int)ScrollX + column;
                     int tileY = (int)ScrollY + row;
-                    if (!HasRenderTile(tileX, tileY))
+                    var tile = GetRenderTile(tileX, tileY);
+                    if (tile == null)
                     {
                         backgroundTileSprites[index].Visible = false;
                         foregroundTileSprites[index].Visible = false;
                         ++index;
                         continue;
                     }
-                    var tile = this[(uint)tileX, (uint)tileY];
 
                     backgroundTileSprites[index].Layer = backLayer;
                     backgroundTileSprites[index].TextureAtlasWidth = textureAtlas!.Texture.Width;
@@ -826,6 +882,9 @@ namespace Ambermoon.Render
         }
 
         public void SetMap(Map? map, uint initialScrollX = 0, uint initialScrollY = 0)
+            => SetMap(map, initialScrollX, initialScrollY, false);
+
+        void SetMap(Map? map, uint initialScrollX, uint initialScrollY, bool preserveVisualStep)
         {
             if (Map == map || map == null)
                 return;
@@ -835,7 +894,7 @@ namespace Ambermoon.Render
 
             var lastMap = Map;
             map.Reset();
-            CancelVisualMovement();
+            CancelVisualMovement(!preserveVisualStep);
             Map = map;
             tileset = mapManager!.GetTilesetForMap(map);
             ticksPerFrame = map.TicksPerAnimationFrame;
@@ -861,7 +920,7 @@ namespace Ambermoon.Render
 
             ClearCharacters();
 
-            ScrollTo(initialScrollX, initialScrollY, true); // also updates tiles etc
+            ScrollTo(initialScrollX, initialScrollY, true, preserveVisualStep); // also updates tiles etc
 
             AddCharacters(map);
 
@@ -974,8 +1033,9 @@ namespace Ambermoon.Render
             MapChanged?.Invoke(lastMap, maps);
         }
 
-        public bool Scroll(int x, int y)
+        public bool Scroll(int x, int y, out WorldScrollTransition? worldTransition)
         {
+            worldTransition = null;
             int newScrollX = (int)ScrollX + x;
             int newScrollY = (int)ScrollY + y;
 
@@ -1000,7 +1060,12 @@ namespace Ambermoon.Render
                     uint newMapScrollX = newScrollX < 0 ? (uint)(Map.Width + newScrollX) : (uint)(newScrollX % Map.Width);
                     uint newMapScrollY = newScrollY < 0 ? (uint)(Map.Height + newScrollY) : (uint)(newScrollY % Map.Height);
 
-                    SetMap(newMap, newMapScrollX, newMapScrollY);
+                    bool continuous = newMap.IsWorldMap && newMap.World == Map.World &&
+                        newMap.Width == Map.Width && newMap.Height == Map.Height &&
+                        newMap.TilesetOrLabdataIndex == Map.TilesetOrLabdataIndex;
+                    if (continuous)
+                        worldTransition = new WorldScrollTransition(Map, newMap, newMapScrollX, newMapScrollY);
+                    SetMap(newMap, newMapScrollX, newMapScrollY, continuous);
                     game.MonsterSeesPlayer = false;
 
                     return true;
@@ -1030,8 +1095,11 @@ namespace Ambermoon.Render
         }
 
         public void ScrollTo(uint x, uint y, bool forceUpdate = false)
+            => ScrollTo(x, y, forceUpdate, false);
+
+        void ScrollTo(uint x, uint y, bool forceUpdate, bool preserveVisualStep)
         {
-            CancelVisualMovement(forceUpdate);
+            CancelVisualMovement(forceUpdate && !preserveVisualStep);
             if (!forceUpdate && ScrollX == x && ScrollY == y)
                 return;
 

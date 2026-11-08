@@ -32,6 +32,10 @@ namespace Ambermoon.Render
         readonly Player player;
         readonly IMapManager mapManager;
         bool movingOrdinaryStep;
+        RenderMap2D.WorldScrollTransition? completedWorldScroll;
+
+        internal bool CompletedWorldScroll(Map? previousMap, Map? currentMap) =>
+            completedWorldScroll is { } transition && transition.PreviousMap == previousMap && transition.Map == currentMap;
 
         void MoveToDuringStep(Map map, uint x, uint y, uint ticks, bool frameReset, CharacterDirection? direction)
         {
@@ -63,6 +67,7 @@ namespace Ambermoon.Render
             bool updateDirectionIfNotMoving = true) // x,y in tiles
         {
             eventTriggered = false;
+            completedWorldScroll = null;
 
             if (player.MovementAbility == PlayerMovementAbility.NoMovement)
                 return false;
@@ -213,7 +218,9 @@ namespace Ambermoon.Render
 
                 game.CurrentSavegame!.CharacterDirection = player.Direction = newDirection;
 
-                Map.Scroll(scrollX, scrollY);
+                Map.Scroll(scrollX, scrollY, out var worldTransition);
+                bool rebasedWorldScroll = worldTransition is { } transition &&
+                    Map.RebaseVisualMovement(ref previousVisualMovement, transition, x, y);
 
                 if (oldMap == Map.Map)
                 {
@@ -274,7 +281,8 @@ namespace Ambermoon.Render
                         game.PlayerMoved(true, null, true, oldMap);
                     }
                 }
-                Map.CompleteVisualMovement(previousVisualMovement, this, x, y, game.Movement2DVisualDuration);
+                if (Map.CompleteVisualMovement(previousVisualMovement, this, x, y, game.Movement2DVisualDuration) && rebasedWorldScroll)
+                    completedWorldScroll = worldTransition;
             }
             else
             {
