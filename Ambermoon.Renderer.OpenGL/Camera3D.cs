@@ -1,5 +1,7 @@
 ﻿using Ambermoon.Render;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ambermoon.Renderer.OpenGL;
@@ -18,10 +20,23 @@ internal class Camera3D : ICamera3D
     // The perpendicular value is -90° rotation (= turn left by a quarter)
     double currentPerpendicularAngleCos = -1.0;
     double currentPerpendicularAngleSin = 0.0;
+    readonly Func<double> interpolationClock;
+    readonly List<(float X, float Y, float Z)> movementTargets = new();
+    bool capturingMovement;
+    uint movementTick;
+    double movementDuration;
+    uint lastMovementTick;
+    bool movementBatchRendered;
+    double? lastMovementTime;
+    double batchDistance;
+    double batchDuration;
+    double playbackSpeed;
+    double lastInterpolationTime;
 
-    public Camera3D(State state)
+    public Camera3D(State state, Func<double> interpolationClock = null)
     {
         this.state = state;
+        this.interpolationClock = interpolationClock ?? (() => (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency);
         currentMatrix = new Matrix4(Matrix4.Identity);
     }
 
@@ -30,6 +45,115 @@ internal class Camera3D : ICamera3D
     public float Z { get; private set; } = 0.0f;
     public float GroundY { get; set; } = 0.0f;
     public float Angle => currentAngle;
+    public float RenderX { get; private set; }
+    public float RenderY { get; private set; }
+    public float RenderZ { get; private set; }
+
+    public void BeginMovementInterpolation(uint ticks, double duration)
+    {
+        capturingMovement = true;
+        movementTick = ticks;
+        movementDuration = Math.Clamp(duration, 1.0 / 240, 1.0 / 30);
+    }
+
+    public void EndMovementInterpolation() => capturingMovement = false;
+
+    public void ResetMovementInterpolation()
+    {
+        capturingMovement = false;
+        movementTargets.Clear();
+        lastMovementTime = null;
+        lastInterpolationTime = interpolationClock();
+        if (RenderX != X || RenderY != Y || RenderZ != Z)
+            SetRenderPosition(X, Y, Z);
+    }
+
+    void SetRenderPosition(float x, float y, float z)
+    {
+        RenderX = x;
+        RenderY = y;
+        RenderZ = z;
+        translateMatrix = Matrix4.CreateTranslationMatrix(x, y, z);
+        UpdateMatrix();
+    }
+
+    static double Distance((float X, float Y, float Z) a, (float X, float Y, float Z) b)
+        => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y) + (a.Z - b.Z) * (a.Z - b.Z));
+
+    void RecordMovement((float X, float Y, float Z) previous)
+    {
+        double now = interpolationClock();
+        var end = (X, Y, Z);
+        double distance = Distance(previous, end);
+        if (distance == 0)
+            return;
+
+        // Advance the old path before appending this accepted movement. Each
+        // collision-resolved endpoint stays in order, including corner slides.
+        AdvanceMovementInterpolation(now);
+        if (movementTargets.Count >= 64)
+        {
+            movementTargets.Clear();
+            SetRenderPosition(previous.X, previous.Y, previous.Z);
+            lastMovementTime = null;
+        }
+        if (lastMovementTime == null || lastMovementTick != movementTick || movementBatchRendered)
+        {
+            batchDuration = movementDuration;
+            if (lastMovementTime is double lastTime)
+            {
+                double interval = now - lastTime;
+                if (interval >= 1.0 / 240 && interval <= 1.5 * movementDuration)
+                    batchDuration = interval;
+            }
+            batchDistance = 0;
+            lastMovementTick = movementTick;
+            lastMovementTime = now;
+            movementBatchRendered = false;
+        }
+        movementTargets.Add(end);
+        batchDistance += distance;
+
+        double remainingDistance = 0;
+        var point = (RenderX, RenderY, RenderZ);
+        foreach (var target in movementTargets)
+        {
+            remainingDistance += Distance(point, target);
+            point = target;
+        }
+        // Catch up along the accepted path instead of accumulating queued time
+        // after frame stalls. Once movement stops this drains in at most 33 ms.
+        double catchUpDuration = Math.Min(1.0 / 30, 1.25 * movementDuration);
+        playbackSpeed = Math.Max(batchDistance / batchDuration, remainingDistance / catchUpDuration);
+    }
+
+    public void UpdateMovementInterpolation()
+    {
+        AdvanceMovementInterpolation(interpolationClock());
+        movementBatchRendered = true;
+    }
+
+    void AdvanceMovementInterpolation(double now)
+    {
+        double distance = Math.Max(0, now - lastInterpolationTime) * playbackSpeed;
+        lastInterpolationTime = now;
+        while (movementTargets.Count != 0)
+        {
+            var start = (X: RenderX, Y: RenderY, Z: RenderZ);
+            var end = movementTargets[0];
+            double length = Distance(start, end);
+            if (distance < length)
+            {
+                float factor = (float)(distance / length);
+                SetRenderPosition(start.X + (end.X - start.X) * factor,
+                    start.Y + (end.Y - start.Y) * factor, start.Z + (end.Z - start.Z) * factor);
+                return;
+            }
+            SetRenderPosition(end.X, end.Y, end.Z);
+            movementTargets.RemoveAt(0);
+            distance -= length;
+        }
+    }
 
     Action<float> turnedHandler;
 
@@ -72,6 +196,7 @@ internal class Camera3D : ICamera3D
 
     public void Activate()
     {
+        UpdateMovementInterpolation();
         state.RestoreModelViewMatrix(Matrix4.Identity);
         state.PushModelViewMatrix(currentMatrix);
     }
@@ -85,11 +210,14 @@ internal class Camera3D : ICamera3D
 
     private void Move(float x, float y, float z)
     {
+        var previous = (X, Y, Z);
         X += x;
         Y += y;
         Z += z;
-        translateMatrix = Matrix4.CreateTranslationMatrix(X, Y, Z);
-        UpdateMatrix();
+        if (capturingMovement && y == 0)
+            RecordMovement(previous);
+        else
+            ResetMovementInterpolation();
     }
 
     private void Rotate(float angle)
@@ -100,11 +228,13 @@ internal class Camera3D : ICamera3D
 
     public void LevitateDown(float distance)
     {
+        ResetMovementInterpolation();
         Move(0.0f, distance, 0.0f);
     }
 
     public void LevitateUp(float distance)
     {
+        ResetMovementInterpolation();
         Move(0.0f, -distance, 0.0f);
     }
 
@@ -131,7 +261,7 @@ internal class Camera3D : ICamera3D
     public void UpdatePosition()
     {
         Y = GroundY;
-        translateMatrix = Matrix4.CreateTranslationMatrix(X, Y, Z);
+        ResetMovementInterpolation();
         TurnTowards(currentAngle);
         UpdateMatrix();
     }
@@ -144,8 +274,7 @@ internal class Camera3D : ICamera3D
         X = -x;
         Y = y ?? GroundY;
         Z = z;
-        translateMatrix = Matrix4.CreateTranslationMatrix(X, Y, Z);
-        UpdateMatrix();
+        ResetMovementInterpolation();
     }
 
     public void TurnLeft(float angle)

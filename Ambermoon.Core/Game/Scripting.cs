@@ -659,7 +659,14 @@ partial class GameCore
             CurrentSavegame!.CharacterDirection = player.Direction = direction;
         }
 
-        return player3D!.MoveForward(Global.DistancePerBlock * 0.25f, CurrentTicks);
+        try
+        {
+            return player3D!.MoveForward(Global.DistancePerBlock * 0.25f, CurrentTicks);
+        }
+        finally
+        {
+            camera3D?.ResetMovementInterpolation();
+        }
     }
 
     /// <summary>

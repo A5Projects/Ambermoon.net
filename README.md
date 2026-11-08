@@ -25,6 +25,7 @@ These first fork releases are for Windows x64. The downloads and build badges in
 **Local development change:** Original balance is now restored when selecting Original. This has not been pushed or released; the v1.0.0 downloads above still apply the carrying, gold, accuracy, and starter-weapon changes to both selections.
 
 Smooth 2D scrolling is also a local development change and is not included in those downloads.
+The local 3D movement-smoothing trial is also unreleased; it smooths walking and strafing while keeping mouse-look and keyboard turning immediate. See [configuration](Configuration.md) for the `Smooth3DMovement` switch.
 
 ## Immersive UI
 

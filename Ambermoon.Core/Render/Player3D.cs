@@ -147,6 +147,20 @@ namespace Ambermoon.Render
 
         bool Move(float distance, uint ticks, PositionProvider positionProvider, Action<float, bool, bool> mover, bool turning = false)
         {
+            float oldX = Camera.X;
+            float oldY = Camera.Y;
+            float oldZ = Camera.Z;
+            bool moved = TryMove(distance, ticks, positionProvider, mover, turning);
+            // A collision fallback may report success while its permitted axis
+            // has no movement component. Keep that gameplay result unchanged.
+            if (!moved || !game.CanInterpolate3DMovement ||
+                (Camera.X == oldX && Camera.Y == oldY && Camera.Z == oldZ))
+                Camera.ResetMovementInterpolation();
+            return moved;
+        }
+
+        bool TryMove(float distance, uint ticks, PositionProvider positionProvider, Action<float, bool, bool> mover, bool turning)
+        {
             bool TriggerEvents(List<Position> touchedPositions, float oldX, float oldY, float newX, float newY)
             {
                 bool anyEventTriggered = false;
@@ -262,7 +276,16 @@ namespace Ambermoon.Render
             {
                 float oldX = Camera.X;
                 float oldY = Camera.Z;
-                mover(distance, noX, noZ);
+                if (game.CanInterpolate3DMovement)
+                    Camera.BeginMovementInterpolation(ticks, game.Movement3DVisualDuration);
+                try
+                {
+                    mover(distance, noX, noZ);
+                }
+                finally
+                {
+                    Camera.EndMovementInterpolation();
+                }
 
                 var touchedPositions = Geometry.CameraToTouchedBlockPositions(map.Map!, Camera.X, Camera.Z, 0.75f * Global.DistancePerBlock);
                 Position = touchedPositions[0];

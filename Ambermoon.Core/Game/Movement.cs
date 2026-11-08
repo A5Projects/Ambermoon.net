@@ -18,6 +18,20 @@ partial class GameCore
     internal double Movement2DVisualDuration => movement.MovementTicks(false, Map?.UseTravelTypes ?? false, TravelType)
         * (visualMovementTicks == 0 ? 1.0 / TicksPerSecond : visualMovementSeconds / visualMovementTicks)
         / (clickMoveActive ? 1.0 : KeyboardMovementFactor);
+    internal double Movement3DVisualDuration => movement.MovementTicks(true, false, TravelType)
+        * (visualMovementTicks == 0 ? 1.0 / TicksPerSecond : visualMovementSeconds / visualMovementTicks);
+    internal bool CanInterpolate3DMovement => CoreConfiguration.Smooth3DMovement && !CoreConfiguration.IsMobile &&
+        IdleOnMap && Is3D && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
+        !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
+        worldMapViewer == null && QuestLog?.Open != true && nextClickHandler == null && !GameOverButtonsVisible;
+
+    // Called at draw time as well as update time: input can open an overlay or
+    // lose focus between updates, and the renderer must settle immediately.
+    public void PrepareRender()
+    {
+        if (!CanInterpolate3DMovement)
+            camera3D?.ResetMovementInterpolation();
+    }
 
     void UpdateVisualMovementTiming(double deltaTime, uint tickCount)
     {

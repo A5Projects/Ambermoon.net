@@ -50,6 +50,7 @@ SlowKeyboardMovement | Enables slower keyboard movement; Caps Lock toggles this 
 KeyboardMovementSpeed | Keyboard movement and turning speed while slower movement is enabled, as a percentage of full speed. In 2D this controls tile-step frequency. Mouse movement is unaffected. | Integer from 10 to 100 (values outside this range are clamped) | 60
 MouseLook3D | Enables horizontal mouse-look during 3D exploration. C, middle-click, or the clickable 3D mouse setting on settings page 4 toggles it; menus, dialogs, 2D maps, and focus loss release the pointer. | true or false | false
 MouseLookSensitivity | Mouse-look turning sensitivity as a percentage of the base 0.15 degrees per window pixel. Independent of keyboard movement speed; configuration-only. | Integer from 25 to 300 (values outside this range are clamped) | 100
+Smooth3DMovement | Smooths the displayed camera position while walking and strafing in 3D. Mouse-look and keyboard turning remain immediate. Set to false to compare with the previous movement display; configuration-only. | true or false | true
 
 There are also some technical or more advanced settings which should only be changed by advanced users:
 

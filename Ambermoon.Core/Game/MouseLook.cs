@@ -36,6 +36,7 @@ partial class GameCore
         mouseLookFocused = focused;
         if (!focused)
         {
+            camera3D?.ResetMovementInterpolation();
             Array.Clear(keys, 0, keys.Length);
             mouseLookToggleHeld = false;
             clickMoveActive = false;

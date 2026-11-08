@@ -114,6 +114,7 @@ internal class Configuration : IConfiguration
     public Movement3D Movement3D { get; set; } = Movement3D.WASD;
     public bool TurnWithArrowKeys { get; set; } = true;
     public bool MouseLook3D { get; set; } = false;
+    public bool Smooth3DMovement { get; set; } = true;
     public int MouseLookSensitivity { get; set; } = 100;
     public GameLanguage Language { get; set; } = (CultureInfo.DefaultThreadCurrentCulture ?? CultureInfo.CurrentCulture)?.Name?.ToLower() switch
     {

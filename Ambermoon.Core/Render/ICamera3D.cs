@@ -31,6 +31,12 @@ namespace Ambermoon.Render
 
         event System.Action<float> Turned;
 
+        // These affect only the drawn translation. X/Y/Z and all direction and
+        // collision queries remain the immediate gameplay camera position.
+        void BeginMovementInterpolation(uint ticks, double duration);
+        void EndMovementInterpolation();
+        void ResetMovementInterpolation();
+
         void UpdatePosition();
         /// <summary>
         /// This will reset the view angle to up

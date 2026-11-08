@@ -1290,6 +1290,7 @@ namespace Ambermoon.Render
 
         public void Pause()
         {
+            camera?.ResetMovementInterpolation();
             foreach (var character in mapCharacters)
                 character.Value.Pause();
         }

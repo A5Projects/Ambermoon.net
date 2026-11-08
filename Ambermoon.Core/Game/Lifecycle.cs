@@ -111,6 +111,7 @@ partial class GameCore
 
     public void Update(double deltaTime)
     {
+        PrepareRender();
         UpdateMouseLookCapture();
         if (worldMapViewer != null)
         {
@@ -645,6 +646,7 @@ partial class GameCore
 
     internal void Start2D(Map map, uint playerX, uint playerY, CharacterDirection direction, bool initial, Action<Map>? mapInitAction = null)
     {
+        camera3D?.ResetMovementInterpolation();
         if (map.Type != MapType.Map2D)
             throw new AmbermoonException(ExceptionScope.Application, "Given map is not 2D.");
 

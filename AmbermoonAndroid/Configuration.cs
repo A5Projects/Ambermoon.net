@@ -111,6 +111,7 @@ namespace AmbermoonAndroid
         public bool ShowSaveLoadMessage { get; set; } = false;
         public Movement3D Movement3D { get; set; } = Movement3D.WASD;
 		public bool MouseLook3D { get; set; } = false;
+		public bool Smooth3DMovement { get; set; } = true;
 		public int MouseLookSensitivity { get; set; } = 100;
 		public bool TurnWithArrowKeys { get; set; } = true;
 		public GameLanguage Language { get; set; } = (CultureInfo.DefaultThreadCurrentCulture ?? CultureInfo.CurrentCulture)?.Name?.ToLower() switch

@@ -2070,7 +2070,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             else if (mainMenu != null)
                 mainMenu.Render();
             else if (Game != null)
+            {
+                Game.PrepareRender();
                 renderView.Render(Game.ViewportOffset);
+            }
             else if (renderView != null)
                 renderView.Render(null);
 

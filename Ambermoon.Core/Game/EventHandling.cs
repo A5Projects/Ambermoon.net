@@ -129,6 +129,8 @@ partial class GameCore
 
     internal bool TriggerMapEvents(EventTrigger trigger, uint x, uint y)
     {
+        if (is3D && trigger != EventTrigger.Move)
+            camera3D?.ResetMovementInterpolation();
         if (noEvents)
             return false;
 
