@@ -737,8 +737,8 @@ namespace Ambermoon.UI
             foreach (var part in expandedMapFrame)
                 part.Visible = false;
 
-            if (!IsExplorationLayout)
-                ExplorationActionsOpen = false;
+            if (layoutType == LayoutType.None)
+                explorationActionsEnabled = false;
             ButtonGridPage = ExplorationActionsOpen ? 1 : 0;
 
             buttonGrid.Visible = layoutType != LayoutType.None && layoutType != LayoutType.Event && layoutType != LayoutType.Automap;
@@ -778,7 +778,6 @@ namespace Ambermoon.UI
 
         public void OpenOptionMenu()
         {
-            ExplorationActionsOpen = false;
             OptionMenuOpen = true;
             game.InputEnable = false;
             game.Pause();
@@ -820,7 +819,7 @@ namespace Ambermoon.UI
             additionalSprites.Remove(additionalSprites.Last());
             texts.Last()?.Destroy(); // version and control hints
             texts.Remove(texts.Last());
-            ButtonGridPage = 0;
+            ButtonGridPage = ExplorationActionsOpen ? 1 : 0;
             UpdateLayoutButtons(ticksPerMovement);
             if (game.BattleActive)
                 game.SetupBattleButtons();
@@ -3982,11 +3981,11 @@ namespace Ambermoon.UI
             Util.SafeCall(() => buttonGrid.Visible = false);
         }
 
-        public void Reset(bool keepInventoryMessage = false)
+        public void Reset(bool keepInventoryMessage = false, bool keepExplorationActions = true)
         {
-            ResetExplorationActions();
-            ResetExplorationHud();
             OptionMenuOpen = false;
+            ResetExplorationActions(keepExplorationActions);
+            ResetExplorationHud();
             Util.SafeCall(() =>
             {
                 ChestText?.Destroy();

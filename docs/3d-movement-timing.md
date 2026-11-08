@@ -158,6 +158,14 @@ Local detailed logs and screenshots are archived with the installed build under
 `Verification/Rollback3D` and `Verification/GraphicsFilters`; the portable probe
 below preserves the minimal camera reproduction in source control.
 
+Follow-up on 2026-11-09: the exploration action grid is now explicitly non-modal.
+Held keyboard/mouse-arrow movement and camera interpolation continue while it
+is visible; only mouse-look capture is released for clicking its buttons. Its
+selection survives actions and temporary UI screens. Options, dialogs, and
+focus loss still block movement. Older tests that expected merely opening the
+action grid to stop movement must use those actual blocking states instead.
+This UI correction does not change the restored 3D cadence.
+
 ## Why earlier checks passed
 
 The timing tests verified equal elapsed-time distance at many update rates,

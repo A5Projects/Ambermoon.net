@@ -756,7 +756,7 @@ partial class GameCore
         highlightBattleFieldSprites.Clear();
         currentBattle?.EndBattleCleanup();
         battleRoundActiveSprite.Visible = false;
-        layout.Reset();
+        layout.Reset(keepExplorationActions: false);
         renderMap2D?.Destroy();
         renderMap2D = null;
         renderMap3D?.Destroy(true);

@@ -13,7 +13,10 @@ internal partial class Layout
         3 * Button.Height);
     public static readonly Rect ExplorationMenuButtonArea = new(282, 38, 36, 12);
     public bool IsExplorationLayout => Type is LayoutType.Map2D or LayoutType.Map3D;
-    public bool ExplorationActionsOpen { get; private set; }
+    // Keep the user's selection while a spell, inventory, or options screen
+    // temporarily replaces the exploration buttons.
+    bool explorationActionsEnabled;
+    public bool ExplorationActionsOpen => explorationActionsEnabled && IsExplorationLayout && !OptionMenuOpen;
     IColoredRect? explorationTopBackground;
     IColoredRect? explorationPortraitSeparator;
     IColoredRect? explorationActionBackground;
@@ -60,7 +63,7 @@ internal partial class Layout
     public void SetExplorationActions(bool open)
     {
         ReleaseButtons(true);
-        ExplorationActionsOpen = open && IsExplorationLayout;
+        explorationActionsEnabled = open && IsExplorationLayout;
         ButtonGridPage = ExplorationActionsOpen ? 1 : 0;
         buttonGrid.HideTooltips();
         UpdateLayoutButtons(ticksPerMovement);
@@ -117,12 +120,9 @@ internal partial class Layout
         if (!explorationUiPress)
             return false;
         explorationUiPress = false;
-        bool closeActions = ExplorationActionsOpen && explorationActionPress;
         if (explorationActionPress)
             buttonGrid.MouseUp(position, buttons, out cursorType, ticks);
         explorationActionPress = false;
-        if (closeActions && IsExplorationLayout && !OptionMenuOpen)
-            SetExplorationActions(false);
         return true;
     }
 
@@ -137,10 +137,11 @@ internal partial class Layout
             buttonGrid.GetButton(index).Release(true);
     }
 
-    void ResetExplorationActions()
+    void ResetExplorationActions(bool keepSelection = false)
     {
-        ExplorationActionsOpen = false;
-        ButtonGridPage = 0;
+        if (!keepSelection)
+            explorationActionsEnabled = false;
+        ButtonGridPage = ExplorationActionsOpen ? 1 : 0;
         explorationTopBackground?.Delete();
         explorationPortraitSeparator?.Delete();
         explorationActionBackground?.Delete();

@@ -31,7 +31,7 @@ The local 3D movement-smoothing trial is also unreleased; it smooths walking and
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
 - 2D movement scrolls between tile positions using the original pixel art, including continuous crossings between neighboring world-map sections. Gameplay remains on the original tile grid; teleports, entering locations and opening interfaces settle immediately.
-- A compact action overlay opens at the bottom right without moving or resizing the world view.
+- A compact action overlay opens at the bottom right without moving or resizing the world view. It stays open after actions, returns after temporary screens close, and allows held keyboard or mouse-arrow movement.
 - One translucent top bar holds the left-aligned location, centered scrolling compass, clock, and other acquired indicators. The compass appears only after activation in the game. A thin black strip closes the gap beneath the portrait names.
 - Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
 - Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).

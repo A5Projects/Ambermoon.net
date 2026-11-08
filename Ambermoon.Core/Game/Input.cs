@@ -743,7 +743,8 @@ partial class GameCore
                         Move(true, 1.0f, key == Key.Num1 ? CursorType.ArrowRotateLeft : CursorType.ArrowRotateRight);
                     break;
                 }
-                if (wasPressed && !WindowActive && !layout.PopupActive && layout.ButtonGridPage == 0)
+                if (wasPressed && !WindowActive && !layout.PopupActive &&
+                    (layout.ButtonGridPage == 0 || layout.ExplorationActionsOpen))
                     break;
                 if (layout.PopupDisableButtons || layout.IsDragging || layout.InventoryMessageWaitsForClick)
                     break;
@@ -759,7 +760,9 @@ partial class GameCore
                     if (layout.ExplorationActionsOpen)
                     {
                         ResetMoveKeys(true);
-                        layout.SetExplorationActions(false);
+                        // Keep the menu selected and consume this action key
+                        // until release, even if the OS sends repeated key-downs.
+                        keys[(int)key] = true;
                     }
                 }
 

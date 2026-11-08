@@ -28,7 +28,7 @@ partial class GameCore
     internal uint Movement3DVisualTicks => movement3DTicks;
     internal bool CanInterpolate3DMovement => CoreConfiguration.Smooth3DMovement && !CoreConfiguration.IsMobile &&
         IdleOnMap && Is3D && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
-        !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
+        !layout.OptionMenuOpen && !layout.IsDragging &&
         worldMapViewer == null && QuestLog?.Open != true && nextClickHandler == null && !GameOverButtonsVisible;
 
     // Called at draw time as well as update time: input can open an overlay or
@@ -39,8 +39,10 @@ partial class GameCore
             camera3D?.ResetMovementInterpolation();
     }
 
+    // The exploration action grid is a non-modal overlay. It releases mouse-look
+    // capture for clicking, but held keyboard and map-arrow movement still run.
     bool CanScheduleMovement => IdleOnMap && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
-        !layout.ExplorationActionsOpen && !layout.OptionMenuOpen && !layout.IsDragging &&
+        !layout.OptionMenuOpen && !layout.IsDragging &&
         worldMapViewer == null && QuestLog?.Open != true && nextClickHandler == null && !GameOverButtonsVisible;
 
     internal void ResetMovementTimer()
@@ -148,7 +150,8 @@ partial class GameCore
     static bool IsMovementKey(Key key) => key is Key.Left or Key.Right or Key.Up or Key.Down
         or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E
         or Key.Num1 or Key.Num2 or Key.Num3 or Key.Num4 or Key.Num6 or Key.Num7 or Key.Num8 or Key.Num9;
-    bool KeyboardMovementHeld => keys.Where((pressed, index) => pressed && IsMovementKey((Key)index)).Any();
+    bool KeyboardMovementHeld => keys.Where((pressed, index) => pressed && IsMovementKey((Key)index) &&
+        !(layout.ExplorationActionsOpen && (Key)index >= Key.Num1 && (Key)index <= Key.Num9)).Any();
 
     void ToggleKeyboardMovementSpeed()
     {

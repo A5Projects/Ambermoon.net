@@ -35,7 +35,7 @@ NumPad 1 to 9 | Move while the exploration overlay is closed; select the corresp
 
 ## Map
 
-Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape closes an existing window or popup first. A right click inside the overlay also closes it. The overlay sits against the bottom-right corner and provides interactions, spells, resting, the automap, battle positions, and options (including save/load). Opening it does not resize or recenter the world.
+Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape closes an existing window or popup first. A right click inside the overlay also closes it. The overlay sits against the bottom-right corner and provides interactions, spells, resting, the automap, battle positions, and options (including save/load). It stays open after actions and returns after temporary screens close; loading or starting a game resets it to closed. Holding movement keys or mouse arrows works while it is visible. Mouse-look releases the cursor for clicking the buttons; actual dialogs and options still block movement. Opening it does not resize or recenter the world.
 
 Use the arrow keys, WASD, or the numpad to move without opening any controls. In 3D, Q/E and numpad 7/9 turn, while numpad 1/3 turn around. Numpad 5 opens the wait popup. With the overlay open, numpad keys select its buttons instead of moving. Mouse movement and the existing right-click interactions remain available.
 
@@ -43,7 +43,7 @@ The location and acquired indicators share a slim translucent bar directly below
 
 On desktop, keyboard movement defaults to **60% walk speed**. **Caps Lock** toggles between that configured walking speed and **100% sprint speed**. **Hold either Shift key** to sprint temporarily; releasing Shift restores the selected Caps Lock mode. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the mode selected by Caps Lock, even while Shift is held. The selection is remembered between sessions and is independent of the keyboard's Caps Lock light; Shift is never saved. Mouse movement keeps its normal behavior. In 2D, walking increases the time between tile steps. Existing Shift shortcuts in inventory and other windows still work.
 
-Movement uses elapsed time at the game's nominal 60-tick rate, keeping walking and sprint speed independent of render and update frequency. Original movement distances and collision checks are preserved. Catch-up after a stall is limited to 100 milliseconds to avoid sudden long movement bursts.
+2D movement uses elapsed time at the game's nominal 60-tick rate, with catch-up limited to 100 milliseconds. 3D retains the earlier update-dependent movement cadence after the timing rollback. Original movement distances and collision checks are preserved. See the [3D timing investigation](docs/3d-movement-timing.md) for the findings and limitations.
 
 #### 2D Maps
 
