@@ -80,7 +80,7 @@ Circular and slalom paths produced essentially the same speed variation at 75
 and 84 Hz. There were no completely stationary frames in these probe cases: a
 large repeated speed change can look like stuttering without a full stop.
 
-The probe's `legacy-every-update` cases are a regular-delivery reference. They
+The probe's `regular-every-update` cases are a regular-delivery reference. They
 directly inject one movement step per update; they do **not** execute the old
 game scheduler. In particular, their synthetic 144/240 Hz results must not be
 read as measurements of how the old game would actually behave at those update

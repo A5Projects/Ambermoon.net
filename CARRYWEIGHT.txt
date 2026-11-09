@@ -32,7 +32,7 @@ does not change the character's strength or give permanent carrying capacity
 to another build. The destination must enable its own bonus if needed.
 Ordinary overloading under its different capacity/weight rules is expected.
 
-Original balance in the current local Immersive build
+Original balance in the current Immersive source
 
 The Original game-data selection now uses original capacity (1 kg per effective
 strength point) and gold weight (5 g per coin). Advanced retains 4 kg per strength
@@ -40,4 +40,5 @@ point and 1 g per coin. The normal 999-gram allowance applies in either case.
 Older Original saves from Immersive UI v1.0.0 still load, with gold weight corrected
 for every companion. The party may be overloaded after returning to original
 limits. Use carryweight temporarily if needed to reach storage; progress and the
-save format are unchanged. This change is local; published v1.0.0 is unchanged.
+save format are unchanged. This change is in the main branch; the published
+v1.0.0 download is unchanged.

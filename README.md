@@ -7,9 +7,20 @@ Branch | Version in this fork
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views and compact overlays. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard balance. 
 
-Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant (removed gaps around the world view); it is separate from the Advanced game-data edition. 
-Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).
-Savegames are fully compatible between versions.
+### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (The immersive UI edition).
+Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
+<br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
+### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
+
+## Finally, ai disclaimer and background: 
+when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mostly on Ultra.  This project was done only with my input and my decisions. All changes and choices done (or not) are mine!
+<br> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
+<br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).
+
+## back to offical readme:
+Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant and control changes, "expanded" slightly from the Ambermoon.net main UI. (removed gaps around the world view, mouse view); 
+<br> Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).<br>
+Savegames are fully compatible between all versions.
 
 ## Download this fork
 
@@ -22,10 +33,9 @@ Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both pack
 
 These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
-**Local development change:** Original balance is now restored when selecting Original. This has not been pushed or released; the v1.0.0 downloads above still apply the carrying, gold, accuracy, and starter-weapon changes to both selections.
+**Current source versus v1.0.0 downloads:** The `main` branch restores original balance when selecting Original. The v1.0.0 downloads above still apply the carrying, gold, accuracy, and starter-weapon changes to both selections.
 
-Smooth 2D scrolling is also a local development change and is not included in those downloads.
-The local 3D movement-smoothing trial is also unreleased; it smooths walking and strafing while keeping mouse-look and keyboard turning immediate. See [configuration](Configuration.md) for the `Smooth3DMovement` switch.
+The current source also includes smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action-menu fixes; these are not included in the v1.0.0 downloads. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch.
 
 ## Immersive UI
 
@@ -43,7 +53,7 @@ The local 3D movement-smoothing trial is also unreleased; it smooths walking and
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 
 
-## Immersive UI screenshots
+### Immersive UI (Main branch, most changed version). Screenshots:
 
 Click any image to view it at full size.
 
@@ -67,6 +77,12 @@ Click any image to view it at full size.
   <a href="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79"><img src="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79" width="400" alt="Additional cheat commands" /></a>
   <a href="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af"><img src="https://github.com/user-attachments/assets/75e7bb00-d528-4a06-a849-a685783841af" width="400" alt="Original dialog over the 3D world" /></a>
 </p>
+
+## Ambermoon.net Expanded edition (Second branch, less changed version) Screenshots:
+Closer to the original visually and unchanged balance. Slightly  expanded world view, mouse view controls, added cheats. Original 
+### Screenshots:
+<img width="640" height="360" alt="Amermoon.net Expanded" src="https://github.com/user-attachments/assets/d4e517ff-7779-49f3-bbb5-32cdec9d6ef3" />
+<img width="640" height="360" alt="Screenshot_07-11-2026 01-04-40" src="https://github.com/user-attachments/assets/fb6dacfc-d2d3-4605-8733-bb239e01ff72" />
 
 
 
