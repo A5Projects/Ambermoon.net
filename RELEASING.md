@@ -1,6 +1,6 @@
 # Packaging fork releases
 
-The first fork releases are portable, self-contained Windows x64 ZIPs. The fork version is separate from the upstream engine version: `immersive-v1.0.0` and `expanded-v1.0.0` both use Ambermoon.net 1.15.1.
+The fork releases are portable, self-contained Windows x64 ZIPs. The fork version is separate from the upstream engine version: `immersive-v1.0.1` and `expanded-v1.0.0` both use Ambermoon.net 1.15.1.
 
 Use the `main` branch for Immersive UI and `expanded` for Expanded. Commit the intended source and documentation before packaging so the binary and `START-HERE.txt` identify the correct source commit.
 
@@ -10,7 +10,7 @@ Install a .NET 9 SDK and Git, then run PowerShell from the chosen branch. The ou
 
 ```powershell
 # On main:
-./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.0 -OutputDirectory ../release-immersive
+./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.1 -OutputDirectory ../release-immersive
 
 # Or, on expanded:
 ./scripts/Package-WindowsRelease.ps1 -Edition expanded -Tag expanded-v1.0.0 -OutputDirectory ../release-expanded

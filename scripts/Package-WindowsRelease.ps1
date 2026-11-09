@@ -2,7 +2,7 @@
 .SYNOPSIS
 Build a clean, self-contained Windows x64 ZIP for either fork branch.
 .EXAMPLE
-./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.0 -OutputDirectory ../release-immersive
+./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.1 -OutputDirectory ../release-immersive
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
@@ -46,9 +46,12 @@ $payload = Join-Path $outputRoot $folderName
 $payloadPrefix = $payload.TrimEnd('\') + '\'
 $project = Join-Path $repoRoot 'Ambermoon.net\Ambermoon.net.csproj'
 
-$branchDocs = @('Controls.md', 'Configuration.md', 'CARRYWEIGHT.txt')
+$branchDocs = @('Controls.md', 'Configuration.md', 'CustomMusic.md', 'CARRYWEIGHT.txt',
+    'docs\action_buttons_0.png', 'docs\action_buttons_1.png', 'docs\amount_popup.png')
 if ($Edition -eq 'immersive') {
-    $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt')
+    $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\3d-movement-timing.md',
+        'tools\CameraTimingProbe\README.md', 'tools\CameraTimingProbe\CameraTimingProbe.csproj',
+        'tools\CameraTimingProbe\Program.cs')
 } else {
     $branchDocs += @('MOUSELOOK.txt', 'EXPLORATION-CHEATS.txt')
 }
@@ -86,7 +89,17 @@ $licenses = Join-Path $documentation 'Licenses'
 New-Item -ItemType Directory -Path $documentation, $licenses | Out-Null
 Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE') -Destination (Join-Path $payload 'LICENSE')
 foreach ($relative in $branchDocs) {
-    Copy-Item -LiteralPath (Join-Path $repoRoot $relative) -Destination $documentation
+    $documentPath = Join-Path $documentation $relative
+    New-Item -ItemType Directory -Path (Split-Path -Parent $documentPath) -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repoRoot $relative) -Destination $documentPath
+}
+if ($Edition -eq 'immersive') {
+    # Code links in the investigation refer to the matching tagged source,
+    # while its portable probe and other documentation stay available offline.
+    $timingDocument = Join-Path $documentation 'docs\3d-movement-timing.md'
+    $timingText = [IO.File]::ReadAllText($timingDocument)
+    $timingText = $timingText.Replace('](../Ambermoon.', "](https://github.com/A5Projects/Ambermoon.net/blob/$sourceCommit/Ambermoon.")
+    [IO.File]::WriteAllText($timingDocument, $timingText, [Text.UTF8Encoding]::new($false))
 }
 Copy-Item -LiteralPath (Join-Path $repoRoot 'Package') -Destination (Join-Path $documentation 'Upstream') -Recurse
 
@@ -136,6 +149,11 @@ balance. See Documentation/MOUSELOOK.txt and Controls.md for its controls.
 Documentation/EXPLORATION-CHEATS.txt describes the optional session cheats.
 '@
 }
+$movementHelp = if ($Edition -eq 'immersive') {
+    'Keyboard movement defaults to 60% walking speed. Caps Lock toggles 100% sprint; holding Shift temporarily sprints.'
+} else {
+    'Caps Lock switches keyboard movement to/from 60% speed.'
+}
 $quickStart = @"
 Ambermoon.net - $editionName
 Release: $Tag
@@ -160,7 +178,7 @@ $editionHelp
 In either edition, C or a mouse-wheel click switches between arrows and horizontal
 mouse-look during 3D exploration. Settings page 4 also has a clickable mouse-mode
 option. QWEASD movement gives W/S forward/back, A/D strafe, and Q/E turning.
-Space interacts ahead. Caps Lock switches keyboard movement to/from 60% speed.
+Space interacts ahead. $movementHelp
 Optional cheats start disabled. See Documentation/CARRYWEIGHT.txt for the temporary
 carryweight command and save transfer details.
 
