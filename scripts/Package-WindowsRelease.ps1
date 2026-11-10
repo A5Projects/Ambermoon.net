@@ -2,7 +2,7 @@
 .SYNOPSIS
 Build a clean, self-contained Windows x64 ZIP for either fork branch.
 .EXAMPLE
-./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.1 -OutputDirectory ../release-immersive
+./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.2 -OutputDirectory ../release-immersive
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
@@ -49,7 +49,7 @@ $project = Join-Path $repoRoot 'Ambermoon.net\Ambermoon.net.csproj'
 $branchDocs = @('Controls.md', 'Configuration.md', 'CustomMusic.md', 'CARRYWEIGHT.txt',
     'docs\action_buttons_0.png', 'docs\action_buttons_1.png', 'docs\amount_popup.png')
 if ($Edition -eq 'immersive') {
-    $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\3d-movement-timing.md',
+    $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
         'tools\CameraTimingProbe\README.md', 'tools\CameraTimingProbe\CameraTimingProbe.csproj',
         'tools\CameraTimingProbe\Program.cs')
 } else {
@@ -140,7 +140,12 @@ Immersive UI fills the area below the portraits during 2D and 3D exploration.
 Esc/Enter/Tab or MENU opens the compact action overlay; Esc closes other windows
 first. See Documentation/ImmersiveUI.md and Controls.md for the complete controls.
 The Original selection keeps original balance, including misses and weapon breaks.
-Advanced uses relaxed balance: see Documentation/IMMERSIVE-BALANCE.txt.
+Advanced uses relaxed balance, including a normal clock about 30% slower while
+travelling or standing still. Original's clock and explicit waits are unchanged.
+See Documentation/IMMERSIVE-BALANCE.txt for the full rules.
+F7 quicksaves during exploration to QuickSave F7 without replacing other saves.
+Reload through the normal load menu; no quick-load key is added. In combat F7
+keeps its battle-speed function. See Documentation/Controls.md.
 '@
 } else {
 @'

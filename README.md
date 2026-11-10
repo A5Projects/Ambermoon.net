@@ -38,16 +38,16 @@ Savegames are fully compatible between all versions.
 
 Edition | Windows 64-bit portable download | Release notes
 --- | --- | ---
-**Immersive UI v1.0.1** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.1/Ambermoon.net-ImmersiveUI-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.1)
+**Immersive UI v1.0.2** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.2/Ambermoon.net-ImmersiveUI-1.0.2-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.2)
 **Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
 
 Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive UI to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
 These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
-**New in Immersive UI v1.0.1:** Selecting Original now keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections.
+**New in Immersive UI v1.0.2:** Fixed inventory selection and transfer cancellation locks, included the targeted upstream inventory crash correction, and fixed carpets covering the player during smooth 2D movement. **F7 quicksaves** during exploration without overwriting other saves; load through the normal menu. **Advanced's normal clock runs about 30% slower** while moving or standing still. Original's clock and explicit waits remain unchanged. The engine remains 1.15.1; this is not a full update to upstream 1.15.2. [Inventory investigation](docs/inventory-input-lock.md).
 
-This release also adds smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action-menu fixes. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded remains at v1.0.0.
+Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded remains at v1.0.0.
 
 ## Immersive UI
 
