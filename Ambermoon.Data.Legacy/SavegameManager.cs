@@ -1,6 +1,7 @@
 ﻿using Ambermoon.Data.Legacy.Serialization;
 using Ambermoon.Data.Serialization;
 using Ambermoon.Data.Serialization.FileSystem;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -243,6 +244,18 @@ namespace Ambermoon.Data.Legacy
             partyTextContainer = legacyGameData.Files["Party_texts.amb"];
             savegameSerializer.Read(savegame, savegameFiles, partyTextContainer);
             return savegame;
+        }
+
+        public bool SaveSlotExists(IGameData gameData, int saveSlot)
+        {
+            string slotName = $"Save.{saveSlot:00}";
+            string slotPath = Path.Combine(path, slotName);
+
+            // Protect even incomplete or unreadable copies; testing by loading
+            // would miss damaged saves and can run mod loading hooks.
+            return Directory.Exists(slotPath) || File.Exists(slotPath) ||
+                gameData is not ILegacyGameData legacyGameData ||
+                legacyGameData.Files.Keys.Any(name => name.StartsWith(slotName + "/", StringComparison.OrdinalIgnoreCase));
         }
 
         public bool HasCrashSavegame() => Directory.Exists(Path.Combine(path, "Save.99"));

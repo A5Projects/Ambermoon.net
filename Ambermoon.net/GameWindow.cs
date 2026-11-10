@@ -372,7 +372,11 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         }
         else if (key == Silk.NET.Input.Key.F7)
         {
-            if (Game != null && !Game.BattleRoundActive)
+            if (Game?.BattleActive != true)
+            {
+                Game?.OnKeyDown(Key.F7, GetModifiers(keyboard));
+            }
+            else if (!Game.BattleRoundActive)
             {
                 var gameConfiguration = GameConfiguration;
 

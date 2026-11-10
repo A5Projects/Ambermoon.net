@@ -146,8 +146,13 @@ namespace Ambermoon
     internal class SavegameTime : ITime
     {
         readonly Savegame savegame;
-        DateTime lastTickTime = DateTime.Now;
+        readonly bool slowerNormalTime;
+        readonly Func<DateTime> getTime;
+        readonly TimeSpan normalTimeSlotDuration;
+        DateTime lastTickTime;
         DateTime? pauseTime = null;
+        // Original counts whole moves; the slower clock counts tenths of a
+        // move so rounding cannot make some travel types disproportionately slow.
         uint currentMoveTicks = 0;
         bool preventTiredness;
 
@@ -175,21 +180,25 @@ namespace Ambermoon
             }
         }
 
-        public SavegameTime(Savegame savegame)
+        public SavegameTime(Savegame savegame, bool slowerNormalTime = false, Func<DateTime>? getTime = null)
         {
             this.savegame = savegame;
+            this.slowerNormalTime = slowerNormalTime;
+            this.getTime = getTime ?? (() => DateTime.Now);
+            normalTimeSlotDuration = TimeSpan.FromSeconds(SecondsPerTimeSlot / (slowerNormalTime ? 0.7 : 1.0));
+            lastTickTime = this.getTime();
         }
 
         public void Pause()
         {
-            pauseTime = DateTime.Now;
+            pauseTime = getTime();
         }
 
         public void Resume()
         {
             if (pauseTime != null)
             {
-                var now = DateTime.Now;
+                var now = getTime();
                 var elapsed = now - lastTickTime;
                 var paused = now - pauseTime;
                 lastTickTime = now - (elapsed - paused.Value);
@@ -201,16 +210,18 @@ namespace Ambermoon
 
         public void Update()
         {
-            if (DateTime.Now - lastTickTime > TimeSpan.FromSeconds(SecondsPerTimeSlot))
+            if (getTime() - lastTickTime > normalTimeSlotDuration)
                 Tick();
         }
 
         public void ResetTickTimer()
         {
-            lastTickTime = DateTime.Now;
+            lastTickTime = getTime();
         }
 
-        public void Tick()
+        public void Tick() => Tick(0);
+
+        void Tick(uint remainingMoveTicks)
         {
             savegame.Minute += 5;
             MinuteChanged?.Invoke(5);
@@ -223,7 +234,7 @@ namespace Ambermoon
                 PostIncreaseUpdate();
             }
 
-            currentMoveTicks = 0;
+            currentMoveTicks = remainingMoveTicks;
             ResetTickTimer();
             HandleTimePassed(0, 5);
         }
@@ -252,21 +263,15 @@ namespace Ambermoon
 
         public void MoveTick(Map map, TravelType travelType)
         {
-            ++currentMoveTicks;
+            uint stepsPerTick;
 
-            if (map.Type == MapType.Map3D)
+            if (map.Type == MapType.Map3D || map.Flags.HasFlag(MapFlags.Indoor))
             {
-                if (currentMoveTicks == 5)
-                    Tick();
-            }
-            else if (map.Flags.HasFlag(MapFlags.Indoor))
-            {
-                if (currentMoveTicks == 5)
-                    Tick();
+                stepsPerTick = 5;
             }
             else
             {
-                uint stepsPerTick = travelType switch
+                stepsPerTick = travelType switch
                 {
                     TravelType.Walk => 2,
                     TravelType.Horse => 3,
@@ -282,10 +287,25 @@ namespace Ambermoon
                     TravelType.Wasp => 6,
                     _ => 2
                 };
-
-                if (currentMoveTicks == stepsPerTick)
-                    Tick();
             }
+
+            if (!slowerNormalTime)
+            {
+                // Keep Original's movement-clock behavior unchanged.
+                if (++currentMoveTicks == stepsPerTick)
+                    Tick();
+                return;
+            }
+
+            // Only ordinary travel is slowed. Keep the remainder across these
+            // ticks, while direct Tick/Ticks calls and idle ticks retain the
+            // normal reset behavior. Sub-tick progress remains session-only,
+            // as it already was for the original movement clock.
+            currentMoveTicks += 7;
+            uint threshold = stepsPerTick * 10;
+
+            if (currentMoveTicks >= threshold)
+                Tick(currentMoveTicks % threshold);
         }
 
         public event Action<uint>? MinuteChanged;

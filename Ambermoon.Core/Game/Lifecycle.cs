@@ -368,7 +368,7 @@ partial class GameCore
 
         Ingame = true;
         CurrentSavegame = savegame;
-        GameTime = new SavegameTime(savegame) { PreventTiredness = PreventTiredness };
+        GameTime = new SavegameTime(savegame, ImmersiveBalance.Enabled) { PreventTiredness = PreventTiredness };
         lastSwimDamageHour = GameTime.Hour;
         lastSwimDamageMinute = GameTime.Minute;
         GameTime.GotTired += GameTime_GotTired;

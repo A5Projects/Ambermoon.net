@@ -496,8 +496,14 @@ partial class GameCore
         bool wasPressed = keys[(int)key];
         // Record toggles even when a dialog consumes them. Holding a key while
         // that dialog closes must not turn a repeat into a new toggle.
-        if (key is Key.C or Key.CapsLock or Key.LeftShift or Key.RightShift)
+        if (key is Key.C or Key.CapsLock or Key.F7 or Key.LeftShift or Key.RightShift)
             keys[(int)key] = true;
+        if (key == Key.F7)
+        {
+            if (!wasPressed && modifiers == KeyModifiers.None)
+                QuickSave();
+            return;
+        }
         // Shift is a held movement modifier, not a map action. Other shortcuts
         // continue to receive the original KeyModifiers on their own key event.
         if (key is Key.LeftShift or Key.RightShift)

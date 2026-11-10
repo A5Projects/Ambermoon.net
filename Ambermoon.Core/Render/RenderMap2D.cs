@@ -717,7 +717,7 @@ namespace Ambermoon.Render
                 foregroundTileSprites[spriteIndex].CurrentFrame = 0;
                 foregroundTileSprites[spriteIndex].Alternate = frontTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation);
                 foregroundTileSprites[spriteIndex].Visible = true;
-                foregroundTileSprites[spriteIndex].BaseLineOffset = frontTile.BringToFront ? TILE_HEIGHT + 2 : frontTile.Background ? -1 : 0;
+                foregroundTileSprites[spriteIndex].BaseLineOffset = frontTile.BringToFront ? (Map!.UseTravelTypes ? TILE_HEIGHT : 2 * TILE_HEIGHT) + 2 : frontTile.Background ? -TILE_HEIGHT : 0;
             }
         }
 
@@ -786,7 +786,10 @@ namespace Ambermoon.Render
                         foregroundTileSprites[index].CurrentFrame = 0;
                         foregroundTileSprites[index].Visible = true;
                         foregroundTileSprites[index].Alternate = frontTile.Flags.HasFlag(Tileset.TileFlags.WaveAnimation);
-                        foregroundTileSprites[index].BaseLineOffset = frontTile.BringToFront ? (Map.UseTravelTypes ? TILE_HEIGHT : 2 * TILE_HEIGHT) + 2 : frontTile.Background ? -1 : 0;
+                        // Ground overlays (carpets, paths) sort at the tile's top edge. A -1 offset
+                        // only works with tile-aligned characters: during smooth movement the next
+                        // floor row otherwise covers their feet. Raised foreground keeps its depth.
+                        foregroundTileSprites[index].BaseLineOffset = frontTile.BringToFront ? (Map.UseTravelTypes ? TILE_HEIGHT : 2 * TILE_HEIGHT) + 2 : frontTile.Background ? -TILE_HEIGHT : 0;
                     }
 
                     ++index;

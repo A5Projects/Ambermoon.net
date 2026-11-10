@@ -69,6 +69,9 @@ internal class ModSavegameManager(ISavegameManager baseManager, string saveDirec
 
     public bool HasCrashSavegame() => baseManager.HasCrashSavegame();
 
+    public bool SaveSlotExists(IGameData gameData, int saveSlot)
+        => baseManager.SaveSlotExists(gameData, saveSlot) || File.Exists(ModDataPath(saveSlot));
+
     public bool RemoveCrashedSavegame()
     {
         try

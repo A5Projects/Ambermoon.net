@@ -39,6 +39,11 @@ Spells and other Advanced features
   remain. Individual enemy stats and initial party skill/attribute data remain.
 
 Convenience changes (Advanced only in this immersive build)
+- Normal time passes at about 70% of its original rate, both while standing
+  still and while travelling. Explicit waiting, resting, and scripted time
+  advances retain their stated durations. Original keeps its original clock.
+  Travel time follows distance: sprinting advances the clock faster per real
+  second, but the same route takes about the same game time as walking.
 - Carrying capacity is four kilograms per effective strength point, instead of
   one. The original 999-gram rounding allowance, inventory slots, stack limits,
   strength itself, and stat caps are unchanged.

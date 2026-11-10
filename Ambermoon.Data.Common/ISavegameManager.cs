@@ -6,6 +6,9 @@ namespace Ambermoon.Data
     {
         Savegame LoadInitial(IGameData gameData, ISavegameSerializer savegameSerializer);
         Savegame Load(IGameData gameData, ISavegameSerializer savegameSerializer, int saveSlot, int totalSavegames);
+        // Slot names can be missing after saves are copied between installations.
+        // Unknown storage implementations must conservatively protect their data.
+        bool SaveSlotExists(IGameData gameData, int saveSlot) => true;
         bool HasCrashSavegame();
         bool RemoveCrashedSavegame();
         void SaveCrashedGame(ISavegameSerializer savegameSerializer, Savegame savegame);

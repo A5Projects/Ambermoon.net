@@ -8,7 +8,7 @@ Input | Action
 --- | ---
 1 to 6 | Select party member 1 to 6
 F1 to F6 | Open inventory of party member 1 to 6
-F7 | Change battle speed (use Ctrl, Shift or Alt to change backwards)
+F7 | Quicksave during exploration; in battle, change battle speed (use Ctrl, Shift or Alt to change backwards)
 F8 | Change graphic filter (use Ctrl, Shift or Alt to change backwards)
 F9 | Change graphic overlay (use Ctrl, Shift or Alt to change backwards)
 F10 | Change color effect (use Ctrl, Shift or Alt to change backwards)
@@ -34,6 +34,8 @@ NumPad 1 to 9 | Move while the exploration overlay is closed; select the corresp
 <div style="page-break-after: always"></div>
 
 ## Map
+
+**F7** saves exploration to a slot named **QuickSave F7**. The first use takes the last empty enabled slot; later uses replace that quicksave. It never replaces another named save automatically. If all slots are occupied, free a slot using the normal save menu first. Load the quicksave through the normal load menu. F7 does not save during combat, dialogs, inventory, or unfinished item actions. Battle speed remains adjustable in the options menu and with F7 during combat.
 
 Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape closes an existing window or popup first. A right click inside the overlay also closes it. The overlay sits against the bottom-right corner and provides interactions, spells, resting, the automap, battle positions, and options (including save/load). It stays open after actions and returns after temporary screens close; loading or starting a game resets it to closed. Holding movement keys or mouse arrows works while it is visible. Mouse-look releases the cursor for clicking the buttons; actual dialogs and options still block movement. Opening it does not resize or recenter the world.
 

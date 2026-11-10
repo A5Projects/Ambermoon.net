@@ -25,6 +25,63 @@ partial class GameCore
         Provider_ContinueGameSlotUpdater()?.Invoke(slot);
     }
 
+    const string QuickSaveName = "QuickSave F7";
+
+    // Use an explicitly named quicksave, or claim an empty slot at the end of
+    // the enabled list. Never silently replace a player's normal save.
+    static int FindQuickSaveSlot(string[] names, Func<int, bool> slotExists)
+    {
+        int existing = Array.FindIndex(names, name => name == QuickSaveName);
+        if (existing >= 0)
+            return existing + 1;
+
+        for (int index = names.Length - 1; index >= 0; --index)
+        {
+            if (string.IsNullOrWhiteSpace(names[index]) && !slotExists(index + 1))
+                return index + 1;
+        }
+        return 0;
+    }
+
+    void QuickSave()
+    {
+        // Saving is only safe during normal exploration, including when its
+        // non-modal action grid is visible. Do not save half-finished actions.
+        if (!IdleOnMap || !mouseLookFocused || mouseLookFullscreenChanging ||
+            pickingNewLeader || pickingTargetPlayer || pickingTargetInventory ||
+            layout.IsDragging || layout.OptionMenuOpen || worldMapViewer != null || QuestLog?.Open == true ||
+            nextClickHandler != null || GameOverButtonsVisible || UI.TextInput.FocusedInput != null)
+            return;
+
+        var names = SavegameManager.GetSavegameNames(renderView.GameData, out _, NumBaseSavegameSlots);
+        if (CoreConfiguration.ExtendedSavegameSlots)
+            names = names.Concat(AdditionalSavegameNames).ToArray();
+
+        int slot = FindQuickSaveSlot(names, slot => SavegameManager.SaveSlotExists(renderView.GameData, slot));
+        if (slot == 0)
+        {
+            string message = GameLanguage switch
+            {
+                GameLanguage.German => "Kein freier Speicherplatz für F7.",
+                GameLanguage.French => "Aucun emplacement libre pour F7.",
+                GameLanguage.Polish => "Brak wolnego miejsca zapisu dla F7.",
+                GameLanguage.Czech => "Neni volne misto pro ulozeni F7.",
+                _ => "No free save slot for F7."
+            };
+            ShowBriefMessagePopup(message, TimeSpan.FromMilliseconds(2000));
+            return;
+        }
+
+        SaveGame(slot, QuickSaveName);
+        SetAdditionalSavegamesContinueSlot(slot);
+        if (CoreConfiguration.ShowSaveLoadMessage)
+        {
+            ShowBriefMessagePopup(
+                string.Format(CustomTexts.GetText(GameLanguage, CustomTexts.Index.GameSaved), QuickSaveName),
+                TimeSpan.FromMilliseconds(1500));
+        }
+    }
+
     private protected void FixSavegameValues(Savegame savegame)
     {
         foreach (var member in savegame.PartyMembers.Values)
