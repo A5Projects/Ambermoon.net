@@ -4,9 +4,20 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views and compact overlays. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard balance. 
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views and compact overlays. Smoothed 2D movement. Optional 3D Mouse View controls in all versions. New Cheats. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard Ambermoon.net balance. Optional Mouse View controls in all versions. New Cheats. 
+### Immersive UI version (main):
+<p float="left">
+  <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="300" alt="3D town with the action menu" /></a>
+  <a href="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f"><img src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" width="300" alt="2D interior with the menu hidden" /></a>
+</p>
 
+### Expanded Base(simpler): <br>
+<img width="240" alt="Screenshot_04-11-2026 00-43-23" src="https://github.com/user-attachments/assets/18e196d5-c4e5-46f4-b897-c807ccbe02d5" />
+<br>
+
+
+crude little showcase video https://youtu.be/JBkPtCe59hE
 ### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (The immersive UI edition).
 Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
 <br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
@@ -14,7 +25,8 @@ Heavily inspired (and justified) by Albion, the official successor to Ambermoon,
 
 ## Finally, ai disclaimer and background: 
 when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mostly on Ultra.  This project was done only with my input and my decisions. All changes and choices done (or not) are mine!
-<br> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
+<br>
+<b> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
 <br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).
 
 ## back to offical readme:
@@ -52,21 +64,17 @@ This release also adds smooth 2D scrolling, 3D movement smoothing, hold-to-sprin
 
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 
-
+### video: https://youtu.be/JBkPtCe59hE
 ### Immersive UI (Main branch, most changed version). Screenshots:
 
 Click any image to view it at full size.
 
 <p float="left">
-  <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="400" alt="3D town with the action menu" /></a>
-  <a href="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5"><img src="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5" width="400" alt="2D outdoor map with the action menu" /></a>
-</p>
-<p float="left">
   <a href="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794"><img src="https://github.com/user-attachments/assets/2c922c5e-0cca-42d1-887a-b7ed15efc794" width="400" alt="2D outdoor map with the menu hidden" /></a>
   <a href="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f"><img src="https://github.com/user-attachments/assets/a147a13d-067b-4c5e-8426-912848f5c02f" width="400" alt="2D interior with the action menu" /></a>
 </p>
 <p float="left">
-  <a href="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f"><img src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" width="400" alt="2D interior with the menu hidden" /></a>
+  <a href="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5"><img src="https://github.com/user-attachments/assets/ff3c435e-0366-4b98-953c-01f64114b9a5" width="400" alt="2D outdoor map with the action menu" /></a>
   <a href="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93"><img src="https://github.com/user-attachments/assets/97893d68-2122-4aeb-91d5-7bb5dde1ed93" width="400" alt="3D interior with the menu hidden" /></a>
 </p>
 <p float="left">
