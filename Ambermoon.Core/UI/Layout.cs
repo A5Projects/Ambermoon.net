@@ -541,6 +541,7 @@ namespace Ambermoon.UI
         readonly ButtonGrid buttonGrid;
         Popup? activePopup = null;
         bool ignoreNextMouseUp = false;
+        Action? abortItemSelection;
         public bool PopupActive => activePopup != null;
         public bool PopupDisableButtons => activePopup?.DisableButtons == true;
         public bool PopupClickCursor => activePopup?.ClickCursor == true;
@@ -3841,8 +3842,23 @@ namespace Ambermoon.UI
             }
         }
 
+        public bool CancelItemSelection()
+        {
+            var abort = abortItemSelection;
+            if (abort == null)
+                return false;
+
+            // Clear ownership first: cleanup or the selected action may open
+            // another window or start another item selection.
+            abortItemSelection = null;
+            abort();
+            return true;
+        }
+
         void PickChestItemForAction(Action<ItemGrid, int, ItemSlot> itemAction, string message)
         {
+            CancelItemSelection();
+            var chestGrid = itemGrids[0];
             ButtonsDisabled = true;
             ShowChestMessage(message);
             var itemArea = new Rect(16, 139, 151, 53);
@@ -3850,10 +3866,11 @@ namespace Ambermoon.UI
 
             void ItemChosen(ItemGrid? itemGrid, int slot, ItemSlot? itemSlot)
             {
+                abortItemSelection = null;
                 ShowChestMessage(null);
-                itemGrids[0].DisableDrag = false;
-                itemGrids[0].ItemClicked -= ItemChosen;
-                itemGrids[0].RightClicked -= Aborted;
+                chestGrid.DisableDrag = false;
+                chestGrid.ItemClicked -= ItemChosen;
+                chestGrid.RightClicked -= Aborted;
                 game.UntrapMouse();
                 ButtonsDisabled = false;
 
@@ -3863,17 +3880,20 @@ namespace Ambermoon.UI
 
             bool Aborted()
             {
-                ItemChosen(null, 0, null);
-                return true;
+                return CancelItemSelection();
             }
 
-            itemGrids[0].DisableDrag = true;
-            itemGrids[0].ItemClicked += ItemChosen;
-            itemGrids[0].RightClicked += Aborted;
+            abortItemSelection = () => ItemChosen(null, 0, null);
+            chestGrid.DisableDrag = true;
+            chestGrid.ItemClicked += ItemChosen;
+            chestGrid.RightClicked += Aborted;
         }
 
         void PickInventoryItemForAction(Action<ItemGrid, int, ItemSlot> itemAction, bool includeEquipment, string message)
         {
+            CancelItemSelection();
+            var inventoryGrid = itemGrids[0];
+            var equipmentGrid = itemGrids[1];
             ButtonsDisabled = true;
             SetInventoryMessage(message);
 
@@ -3882,13 +3902,14 @@ namespace Ambermoon.UI
 
             void ItemChosen(ItemGrid? itemGrid, int slot, ItemSlot? itemSlot)
             {
+                abortItemSelection = null;
                 SetInventoryMessage(null);
-                itemGrids[0].DisableDrag = false;
-                itemGrids[1].DisableDrag = false;
-                itemGrids[0].ItemClicked -= ItemChosen;
-                itemGrids[1].ItemClicked -= ItemChosen;
-                itemGrids[0].RightClicked -= Aborted;
-                itemGrids[1].RightClicked -= Aborted;
+                inventoryGrid.DisableDrag = false;
+                equipmentGrid.DisableDrag = false;
+                inventoryGrid.ItemClicked -= ItemChosen;
+                equipmentGrid.ItemClicked -= ItemChosen;
+                inventoryGrid.RightClicked -= Aborted;
+                equipmentGrid.RightClicked -= Aborted;
                 game.UntrapMouse();
                 ButtonsDisabled = false;
 
@@ -3896,7 +3917,7 @@ namespace Ambermoon.UI
                 {
                     // Catch two-handed weapon left hand slot click
                     if (itemSlot.ItemIndex == 0 &&
-                        itemGrid == itemGrids[1] && // equip
+                        itemGrid == equipmentGrid &&
                         (EquipmentSlot)(slot + 1) == EquipmentSlot.LeftHand)
                     {
                         slot -= 2;
@@ -3909,16 +3930,16 @@ namespace Ambermoon.UI
 
             bool Aborted()
             {
-                ItemChosen(null, 0, null);
-                return true;
+                return CancelItemSelection();
             }
 
-            itemGrids[0].DisableDrag = true;
-            itemGrids[1].DisableDrag = true;
-            itemGrids[0].ItemClicked += ItemChosen;
-            itemGrids[1].ItemClicked += ItemChosen;
-            itemGrids[0].RightClicked += Aborted;
-            itemGrids[1].RightClicked += Aborted;
+            abortItemSelection = () => ItemChosen(null, 0, null);
+            inventoryGrid.DisableDrag = true;
+            equipmentGrid.DisableDrag = true;
+            inventoryGrid.ItemClicked += ItemChosen;
+            equipmentGrid.ItemClicked += ItemChosen;
+            inventoryGrid.RightClicked += Aborted;
+            equipmentGrid.RightClicked += Aborted;
         }
 
         public void Destroy()
@@ -3983,6 +4004,9 @@ namespace Ambermoon.UI
 
         public void Reset(bool keepInventoryMessage = false, bool keepExplorationActions = true)
         {
+            // A picker owns its button lock and item-grid handlers. End it
+            // before replacing those grids, including character switches.
+            CancelItemSelection();
             OptionMenuOpen = false;
             ResetExplorationActions(keepExplorationActions);
             ResetExplorationHud();
@@ -5031,6 +5055,15 @@ namespace Ambermoon.UI
             sprite.Visible = true;
         }
 
+        void FinishGoldOrFoodTransfer(uint amount)
+        {
+            var finish = draggedGoldOrFoodRemover;
+            // Success and cancellation share cleanup, but must never remove
+            // currency or run a transfer callback twice.
+            draggedGoldOrFoodRemover = null;
+            finish?.Invoke(amount);
+        }
+
         public void CancelDrag()
         {
             if (draggedItem != null)
@@ -5044,7 +5077,7 @@ namespace Ambermoon.UI
             {
                 draggedGold = 0;
                 draggedFood = 0;
-                draggedGoldOrFoodRemover = null;
+                FinishGoldOrFoodTransfer(0);
                 DropItem();
                 game.UntrapMouse();
             }
@@ -5748,7 +5781,7 @@ namespace Ambermoon.UI
                             if (partyMember.MaxGoldToTake >= draggedGold && partyMember.Race != Race.Animal)
                             {
                                 partyMember.AddGold(draggedGold);
-                                draggedGoldOrFoodRemover?.Invoke(draggedGold);
+                                FinishGoldOrFoodTransfer(draggedGold);
                                 CancelDrag();
                                 game.CursorType = CursorType.Sword;
                             }
@@ -5757,7 +5790,7 @@ namespace Ambermoon.UI
                         }
                         else if (buttons == MouseButtons.Right)
                         {
-                            draggedGoldOrFoodRemover?.Invoke(0);
+                            FinishGoldOrFoodTransfer(0);
                             CancelDrag();
                             game.CursorType = CursorType.Sword;
                         }
@@ -5771,7 +5804,7 @@ namespace Ambermoon.UI
                             if (partyMember.MaxFoodToTake >= draggedFood && partyMember.Race != Race.Animal)
                             {
                                 partyMember.AddFood(draggedFood);
-                                draggedGoldOrFoodRemover?.Invoke(draggedFood);
+                                FinishGoldOrFoodTransfer(draggedFood);
                                 CancelDrag();
                                 game.CursorType = CursorType.Sword;
                             }
@@ -5780,7 +5813,7 @@ namespace Ambermoon.UI
                         }
                         else if (buttons == MouseButtons.Right)
                         {
-                            draggedGoldOrFoodRemover?.Invoke(0);
+                            FinishGoldOrFoodTransfer(0);
                             CancelDrag();
                             game.CursorType = CursorType.Sword;
                         }
