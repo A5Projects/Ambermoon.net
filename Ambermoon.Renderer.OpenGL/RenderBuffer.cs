@@ -613,6 +613,8 @@ public class RenderBuffer : IDisposable
         if (alphaBuffer != null)
         {
             byte alpha = (byte)(surface.Alpha ? 1 : surface.Type == Ambermoon.Render.SurfaceType.Wall ? 2 : 0);
+            if (surface.Type == Ambermoon.Render.SurfaceType.Floor)
+                alpha |= Texture3DShader.FloorSurfaceFlag;
             int alphaBufferIndex = alphaBuffer.Add(alpha, index);
             alphaBuffer.Add(alpha, alphaBufferIndex + 1);
             alphaBuffer.Add(alpha, alphaBufferIndex + 2);

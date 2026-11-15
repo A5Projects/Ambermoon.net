@@ -1111,4 +1111,10 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetFog(fogColor, distance, outdoorFade);
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetFog(fogColor, distance, outdoorFade);
     }
+
+    public void SetSmoothDistantFloor(bool enabled)
+    {
+        // Floor/ceiling and walls share this shader; only explicitly tagged floors use the filter.
+        (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSmoothDistantFloor(enabled);
+    }
 }

@@ -60,7 +60,7 @@ $branchDocs = @('Controls.md', 'Configuration.md', 'CustomMusic.md', 'CARRYWEIGH
     'docs\action_buttons_0.png', 'docs\action_buttons_1.png', 'docs\amount_popup.png')
 if ($Edition -eq 'immersive') {
     $branchDocs += @('ImmersiveEdition.md', 'ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\immersive-edition-1.1.0.md',
-        'docs\outdoor-fog.md', 'docs\upstream-review-2026-11-15.md', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
+        'docs\outdoor-fog.md', 'docs\distant-floor-filter.md', 'docs\upstream-review-2026-11-15.md', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
         'tools\CameraTimingProbe\README.md', 'tools\CameraTimingProbe\CameraTimingProbe.csproj',
         'tools\CameraTimingProbe\Program.cs')
 } else {

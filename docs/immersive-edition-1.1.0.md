@@ -15,6 +15,7 @@ Based on **Ambermoon.net 1.15.1**, with selected fixes backported from **1.15.2*
 - The original font now has gentle edge smoothing, retaining its dimensions and wrapping. Large reading panels are darker with a lighter shadow; world labels keep their strong protective shadow.
 - Fresh settings enable the traditional Thalion/game intro and disable the other intro/logo sequences. Existing preferences are preserved.
 - Outdoor fog has a subdued sky-derived colour and a farther fade, hiding the mountain backdrop in full daylight haze. Only the Baron's palace has its indoor fog removed. Other interiors retain their previous fog. Closing Options with EXIT, Escape or right-click applies changed settings reliably.
+- **Smooth distant floor**, enabled by default on settings page 4, gradually averages eight colour samples as the floor texture becomes compressed. This trades distant detail for less shimmer while retaining nearby pixels and the original artwork. Switch it off to compare with the previous rendering. See [floor filtering](distant-floor-filter.md).
 
 No save format, saved character stats, XP thresholds, bundled game data or 3D movement timing is changed. The Expanded branch is outside this batch. The earlier inventory-lock fixes remain in both local branches.
 

@@ -29,6 +29,8 @@ partial class GameCore
 
     internal void NotifyConfigurationChange(bool windowChange)
     {
+        // Also apply while in 2D so the next 3D map uses the selected setting.
+        renderView.SetSmoothDistantFloor(CoreConfiguration.SmoothDistantFloor);
         if (Is3D)
         {
             renderMap3D?.UpdateFloorAndCeilingVisibility(CoreConfiguration.ShowFloor, CoreConfiguration.ShowCeiling);

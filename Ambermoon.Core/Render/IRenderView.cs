@@ -91,4 +91,5 @@ public interface IGameRenderView : IRenderView
     PaletteFading PaletteFading { get; set; }
     // Without an outdoor fade range, preserve the original dungeon/night fog curve.
     void SetFog(Color fogColor, float distance, (float Start, float End, float Blend)? outdoorFade = null);
+    void SetSmoothDistantFloor(bool enabled);
 }

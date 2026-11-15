@@ -1241,7 +1241,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 25;
+        const int OptionCount = 26;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1278,7 +1278,8 @@ namespace Ambermoon.UI
                     "Info beim Speichern/Laden",
                     "Cheats aktivieren",
                     "Auto-Kampf",
-                    "Maussteuerung 3D"
+                    "Maussteuerung 3D",
+                    "3D Boden glätten"
                 }
             },
             {
@@ -1313,7 +1314,8 @@ namespace Ambermoon.UI
                     "Show save/load info",
                     "Enable cheats",
                     "Auto-Battle",
-                    "3D mouse"
+                    "3D mouse",
+                    "Smooth distant floor"
                 }
             },
             {
@@ -1348,7 +1350,8 @@ namespace Ambermoon.UI
                     "Messages de sauvegarde",
                     "Activer les cheats",
                     "Combat automatique",
-                    "Souris 3D"
+                    "Souris 3D",
+                    "Sol lointain lissé"
                 }
             },
             {
@@ -1383,7 +1386,8 @@ namespace Ambermoon.UI
                     "Pokaż inf. zapis/odczyt",
                     "Włącz cheaty",
                     "Automatyczna walka",
-                    "Mysz 3D"
+                    "Mysz 3D",
+                    "Wygładź daleki grunt"
                 }
             },
             {
@@ -1418,7 +1422,8 @@ namespace Ambermoon.UI
                     "Info o uložení/nahrání",
                     "Povolit cheaty",
                     "Automatický boj",
-                    "Myš ve 3D"
+                    "Myš ve 3D",
+                    "Vyhladit vzdálený terén"
                 }
             }
         }.ToImmutableDictionary();
@@ -1685,6 +1690,7 @@ namespace Ambermoon.UI
             AddOption((index, _) => ToggleCheats());
             AddOption((index, _) => ToggleAutoBattle());
             AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleMouseLook3D());
+            AddOption((index, _) => ToggleSmoothDistantFloor());
 
             void UpdateFullscreenOption()
             {
@@ -1770,6 +1776,7 @@ namespace Ambermoon.UI
             void SetCheats() => SetOptionString(22, cheatsEnabled ? on : off);
             void SetAutoBattle() => SetOptionString(23, AutoBattleOptions[game.GameLanguage][Util.Limit(0, game.CoreConfiguration.AutoBattleRounds / 5, 3)]);
             void SetMouseLook3D() => SetOptionString(24, MouseLook3DValues[game.GameLanguage][game.CoreConfiguration.MouseLook3D ? 1 : 0]);
+            void SetSmoothDistantFloor() => SetOptionString(25, game.CoreConfiguration.SmoothDistantFloor ? on : off);
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1810,6 +1817,7 @@ namespace Ambermoon.UI
                         SetCheats();
                         SetAutoBattle();
                         SetMouseLook3D();
+                        SetSmoothDistantFloor();
                         break;
                 }
             }
@@ -1913,6 +1921,12 @@ namespace Ambermoon.UI
             {
                 game.SetMouseLook3D(!game.CoreConfiguration.MouseLook3D);
                 SetMouseLook3D();
+                changedConfiguration = true;
+            }
+            void ToggleSmoothDistantFloor()
+            {
+                game.CoreConfiguration.SmoothDistantFloor = !game.CoreConfiguration.SmoothDistantFloor;
+                SetSmoothDistantFloor();
                 changedConfiguration = true;
             }
             void TogglePlayerStatsTooltips()

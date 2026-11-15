@@ -27,6 +27,9 @@ using Data;
 // for color replacements.
 internal class Texture3DShader : ColorShader
 {
+    // The low two bits retain the existing alpha modes; only real floor surfaces
+    // carry this marker. Ceilings share the draw layer but must stay unfiltered.
+    internal const byte FloorSurfaceFlag = 4;
     internal static readonly string DefaultTexCoordName = TextureShader.DefaultTexCoordName;
     internal static readonly string DefaultSamplerName = TextureShader.DefaultSamplerName;
     internal static readonly string DefaultAtlasSizeName = TextureShader.DefaultAtlasSizeName;
@@ -46,6 +49,7 @@ internal class Texture3DShader : ColorShader
     internal static readonly string DefaultFogFadeRangeName = "fogFadeRange";
     internal static readonly string DefaultFogDepthName = "fogDepth";
     internal static readonly string DefaultFadeName = "fade";
+    internal static readonly string DefaultSmoothDistantFloorName = "smoothDistantFloor";
 
     // The palette has a size of 32xNumPalettes pixels.
     // Each row represents one palette of 32 colors.
@@ -56,6 +60,7 @@ internal class Texture3DShader : ColorShader
         GetFragmentShaderHeader(state),
         $"uniform sampler2D {DefaultSamplerName};",
         $"uniform sampler2D {DefaultPaletteName};",
+        $"uniform uvec2 {DefaultAtlasSizeName};",
         $"uniform float {DefaultLightName};",
         $"uniform float {DefaultPaletteCountName};",
         $"uniform vec4 {DefaultColorReplaceName}[16];",
@@ -66,15 +71,37 @@ internal class Texture3DShader : ColorShader
         $"uniform float {DefaultFogDistanceName};",
         $"uniform vec3 {DefaultFogFadeRangeName};",
         $"uniform float {DefaultFadeName};",
+        $"uniform float {DefaultSmoothDistantFloorName};",
         $"in vec2 varTexCoord;",
         $"in float dist;",
         $"flat in float palIndex;",
         $"flat in vec2 varTextureEndCoord;",
         $"flat in vec2 varTextureSize;",
         $"flat in float alphaEnabled;",
+        $"flat in float floorSurface;",
+        $"",
+        // Sample palette colours, not palette numbers. Every displaced tap wraps
+        // within this tile, including negative offsets at the first repetition.
+        $"vec3 sampleFloorColor(vec2 coord)",
+        $"{{",
+        $"    vec2 first = varTextureEndCoord - varTextureSize;",
+        $"    vec2 halfTexel = vec2(0.5f) / vec2({DefaultAtlasSizeName});",
+        $"    vec2 wrapped = first + mod(coord - first, varTextureSize);",
+        $"    wrapped = clamp(wrapped, first + halfTexel, varTextureEndCoord - halfTexel);",
+        $"    float index = textureLod({DefaultSamplerName}, wrapped, 0.0f).r * 255.0f;",
+        $"    vec4 color = {DefaultUseColorReplaceName} > 0.5f && index < 15.5f ? {DefaultColorReplaceName}[int(index + 0.5f)]",
+        $"        : textureLod({DefaultPaletteName}, vec2((index + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
+        $"    if (abs(index - {DefaultSkyColorIndexName}) < 0.5f)",
+        $"        return {DefaultSkyReplaceColorName}.rgb;",
+        $"    return max(vec3(0), color.rgb + vec3({DefaultLightName}) - vec3(1));",
+        $"}}",
         $"",
         $"void main()",
         $"{{",
+        // Derivatives must precede discard and varying control flow. Wrapped
+        // coordinates have discontinuities which would falsely enlarge the filter.
+        $"    vec2 floorDx = dFdx(varTexCoord);",
+        $"    vec2 floorDy = dFdy(varTexCoord);",
         $"    {DefaultFragmentOutColorName} = vec4(0);",
         $"    vec2 realTexCoord = varTexCoord;",
         $"    if (realTexCoord.x >= varTextureEndCoord.x)",
@@ -96,6 +123,29 @@ internal class Texture3DShader : ColorShader
         $"    }}",
         $"    else",
         $"        {DefaultFragmentOutColorName} = vec4(max(vec3(0), pixelColor.rgb + vec3({DefaultLightName}) - vec3(1)), pixelColor.a);",
+        $"    ",
+        $"    if ({DefaultSmoothDistantFloorName} > 0.5f && floorSurface > 0.5f && alphaEnabled < 0.5f)",
+        $"    {{",
+        $"        float footprint = max(length(floorDx * vec2({DefaultAtlasSizeName})), length(floorDy * vec2({DefaultAtlasSizeName})));",
+        $"        float filterAmount = smoothstep(1.0f, 2.0f, footprint);",
+        $"        if (filterAmount > 0.0f)",
+        $"        {{",
+        // Eight symmetric stratified taps avoid time-varying noise and the strong
+        // directional pattern of a small regular grid. The slightly wider footprint
+        // trades distant detail for stability; magnified nearby texels are unchanged.
+        $"            vec2 dx = 1.5f * floorDx;",
+        $"            vec2 dy = 1.5f * floorDy;",
+        $"            vec3 filtered = sampleFloorColor(varTexCoord - 0.4375f * dx - 0.1875f * dy)",
+        $"                + sampleFloorColor(varTexCoord - 0.3125f * dx + 0.4375f * dy)",
+        $"                + sampleFloorColor(varTexCoord - 0.1875f * dx - 0.0625f * dy)",
+        $"                + sampleFloorColor(varTexCoord - 0.0625f * dx - 0.3125f * dy)",
+        $"                + sampleFloorColor(varTexCoord + 0.0625f * dx + 0.3125f * dy)",
+        $"                + sampleFloorColor(varTexCoord + 0.1875f * dx + 0.0625f * dy)",
+        $"                + sampleFloorColor(varTexCoord + 0.3125f * dx - 0.4375f * dy)",
+        $"                + sampleFloorColor(varTexCoord + 0.4375f * dx + 0.1875f * dy);",
+        $"            {DefaultFragmentOutColorName}.rgb = mix({DefaultFragmentOutColorName}.rgb, filtered * 0.125f, filterAmount);",
+        $"        }}",
+        $"    }}",
         $"    ",
         $"    if ({DefaultFogColorName}.a > 0.001f)",
         $"    {{",
@@ -137,6 +187,7 @@ internal class Texture3DShader : ColorShader
         $"flat out vec2 varTextureEndCoord;",
         $"flat out vec2 varTextureSize;",
         $"flat out float alphaEnabled;",
+        $"flat out float floorSurface;",
         $"",
         $"void main()",
         $"{{",
@@ -145,7 +196,8 @@ internal class Texture3DShader : ColorShader
         $"    palIndex = float({DefaultPaletteIndexName});",
         $"    varTextureEndCoord = atlasFactor * vec2({DefaultTexEndCoordName}.x, {DefaultTexEndCoordName}.y);",
         $"    varTextureSize = atlasFactor * vec2({DefaultTexSizeName}.x, {DefaultTexSizeName}.y);",
-        $"    alphaEnabled = float({DefaultAlphaName});",
+        $"    alphaEnabled = float({DefaultAlphaName} & 3u);",
+        $"    floorSurface = ({DefaultAlphaName} & {FloorSurfaceFlag}u) != 0u ? 1.0f : 0.0f;",
         $"    vec4 viewPosition = {DefaultModelViewMatrixName} * vec4({DefaultPositionName}, 1.0f);",
         $"    gl_Position = {DefaultProjectionMatrixName} * viewPosition;",
         $"    dist = dot({DefaultFogDepthName}, viewPosition.zw);",
@@ -193,6 +245,11 @@ internal class Texture3DShader : ColorShader
     public void SetLight(float light)
     {
         shaderProgram.SetInput(DefaultLightName, light);
+    }
+
+    public void SetSmoothDistantFloor(bool enabled)
+    {
+        shaderProgram.SetInput(DefaultSmoothDistantFloorName, enabled ? 1.0f : 0.0f);
     }
 
     public void SetPaletteReplacement(PaletteReplacement paletteReplacement)
