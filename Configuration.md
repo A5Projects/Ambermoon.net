@@ -45,7 +45,7 @@ Setting | Description | Possible values | Default value
 WindowX | X coordinate of the window in screen coordinates | Any positive integer | A value so the window is centered
 WindowY | Y coordinate of the window in screen coordinates | Any positive integer | A value so the window is centered
 MonitorIndex | Index of the monitor the application is on | 0 to the number of monitors minus 1 | 0 (main monitor)
-Expanded3DView | Retained for configuration compatibility; the Immersive UI branch always uses the full exploration viewport in both 2D and 3D. Use the expanded branch for the framed layout. | true or false | true
+Expanded3DView | Retained for configuration compatibility; the Immersive Edition branch always uses the full exploration viewport in both 2D and 3D. Use the expanded branch for the framed layout. | true or false | true
 SlowKeyboardMovement | Selects walking speed instead of 100% sprint; Caps Lock toggles and saves this in-game setting independently of the keyboard's Caps Lock light. Holding either Shift key temporarily uses 100% without changing the saved selection. | true or false | true
 KeyboardMovementSpeed | Keyboard walking and turning speed as a percentage of full speed. In 2D this controls elapsed-time tile-step frequency. 3D retains its earlier update-dependent cadence. Caps Lock sprint and held Shift use 100%; mouse movement is unaffected. | Integer from 10 to 100 (values outside this range are clamped) | 60
 MouseLook3D | Enables horizontal mouse-look during 3D exploration. C, middle-click, or the clickable 3D mouse setting on settings page 4 toggles it; menus, dialogs, 2D maps, and focus loss release the pointer. | true or false | false

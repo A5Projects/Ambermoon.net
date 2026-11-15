@@ -10,7 +10,7 @@ namespace Ambermoon.Data
     {
         public static bool Enabled { get; private set; }
         public static uint GoldWeight => Enabled ? 1u : 5u;
-        public static uint CarryWeightPerStrength => Enabled ? 4000u : 1000u;
+        public static uint CarryWeightPerStrength => Enabled ? 2000u : 1000u;
 
         public static bool UsesRelaxedBalance(Features features) =>
             features.HasFlag(Features.AdjustedEPFactors) && !features.HasFlag(Features.Mod);

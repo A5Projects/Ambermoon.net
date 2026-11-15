@@ -6,15 +6,17 @@
 	<LangVersion>13</LangVersion>
     <RootNamespace>Ambermoon</RootNamespace>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
-    <Version>1.15.1</Version>
+    <!-- Fork version; keep in sync with Ambermoon.Core/EditionInfo.cs. -->
+    <Version>1.1.0</Version>
+    <Product>Ambermoon Immersive Edition</Product>
     <Copyright>Copyright (C) 2020-2026 by Robert Schneckenhaus</Copyright>
     <Company>Robert Schneckenhaus</Company>
     <Authors>Robert Schneckenhaus</Authors>
-    <PackageProjectUrl>https://github.com/Pyrdacor/Ambermoon.net</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/Pyrdacor/Ambermoon.net</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/A5Projects/Ambermoon.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/A5Projects/Ambermoon.net</RepositoryUrl>
     <RepositoryType>github</RepositoryType>
     <PackageTags>Ambermoon</PackageTags>
-    <Description>Rework of the Amiga game Ambermoon</Description>
+    <Description>Ambermoon Immersive Edition, based on Ambermoon.net 1.15.1 with selected upstream backports</Description>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Configurations>Debug;Release;DebugAndroid;ReleaseAndroid;ReleaseNative;DebugES;ReleaseES</Configurations>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>

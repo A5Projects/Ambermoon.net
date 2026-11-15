@@ -71,7 +71,7 @@ file class CheatConsole : IConsole
 
 partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenarioScriptHost
 {
-    string gameVersion = "Ambermoon.net";
+    string gameVersion = EditionInfo.DisplayName;
     Configuration configuration;
     GameRenderView renderView;
     IWindow window;
@@ -1176,8 +1176,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
                         gameCreator = () =>
                         {
-                            var version = Assembly.GetEntryAssembly().GetName().Version;
-                            string versionString = $"Ambermoon.net V{version.Major}.{version.Minor}.{version.Build:00}";
+                            string versionString = EditionInfo.DisplayName;
                             // Mods can provide defaults for some options. They are stored in an own config file per mod.
                             gameConfiguration = features.HasFlag(Features.Mod) && activeMod?.Manifest.Options?.Count > 0
                                 ? new ModConfiguration(configuration, Mod.ModOptions.Load(activeMod.Manifest,
@@ -1652,7 +1651,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                 if (OperatingSystem.IsWindows())
                     patcherPath += ".exe";
 
-                bool hasPatcher = File.Exists(patcherPath);
+                bool hasPatcher = EditionInfo.SupportsUpstreamPatcher && File.Exists(patcherPath);
 
                 if (hasPatcher && configuration.UsePatcher != false && !commandLineOptions.NoPatcher)
                 {
@@ -1812,6 +1811,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void Window_Load()
     {
+        // Some backends reset the pre-load caption to the entry assembly name.
+        window.Title = EditionInfo.DisplayName;
         Cheats.Initialize(new CheatConsole());
 
         if (window.Native.Glfw is null)
@@ -2322,8 +2323,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 #else
         var api = GraphicsAPI.Default;
 #endif
-        var version = Assembly.GetExecutingAssembly().GetName().Version;
-        gameVersion = $"Ambermoon.net v{version.Major}.{version.Minor}.{version.Build}";
+        gameVersion = EditionInfo.DisplayName;
         //VideoMode videoMode = VideoMode.Default;// new VideoMode(60);
         var options = new WindowOptions(true, new WindowDimension(100, 100),
             new WindowDimension(Width, Height), 60.0, 120.0, api, gameVersion,

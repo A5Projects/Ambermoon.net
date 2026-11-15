@@ -572,6 +572,9 @@ partial class GameCore
                         }
                         else
                         {
+                            // The copy contributes weight immediately, just like an acquired item.
+                            InventoryItemAdded(item, 1, CurrentInventory);
+                            UpdateCharacterInfo();
                             finishAction?.Invoke();
                         }
                     });

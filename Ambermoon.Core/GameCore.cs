@@ -92,7 +92,7 @@ public abstract partial class GameCore
         layout.BattleFieldSlotClicked += BattleFieldSlotClicked;
         places = renderView.GameData.Places;
         DataNameProvider = renderView.GameData.DataNameProvider;
-        fullVersion = version + $"^{GameVersion.RemakeReleaseDate}^^{DataNameProvider.DataVersionString}^{DataNameProvider.DataInfoString}";
+        fullVersion = $"{EditionInfo.DisplayName}^Ambermoon.net base {EditionInfo.UpstreamBaseVersion}^{EditionInfo.BackportInfo}^^{DataNameProvider.DataVersionString}^{DataNameProvider.DataInfoString}";
         this.textDictionary = textDictionary;
         this.lightEffectProvider = renderView.GameData.LightEffectProvider;
         camera3D = renderView.Camera3D;

@@ -250,6 +250,8 @@ public class Game : GameCore
     void ShowOutro()
     {
         showMobileTouchPadHandler?.Invoke(false);
+        // Hidden throughout the outro and credits; a new game restores it.
+        QuestLogIconVisible = false;
 
         ClosePopup();
         CloseWindow();

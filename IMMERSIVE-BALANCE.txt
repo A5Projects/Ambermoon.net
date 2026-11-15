@@ -1,7 +1,7 @@
-Immersive UI - balance by game-data edition
+Ambermoon Immersive Edition v1.1.0 - balance by game-data edition
 
 Based on the installed Original 1.22 / Advanced 1.33 data, running in the
-Ambermoon.net 1.15.1 immersive branch. No versions.dat or save files are patched.
+Ambermoon Immersive Edition (Ambermoon.net base 1.15.1 with selected backports). No versions.dat or save files are patched.
 
 Original 1.22
 - The Original startup selection uses original balance: one kilogram of carry
@@ -44,7 +44,7 @@ Convenience changes (Advanced only in this immersive build)
   advances retain their stated durations. Original keeps its original clock.
   Travel time follows distance: sprinting advances the clock faster per real
   second, but the same route takes about the same game time as walking.
-- Carrying capacity is four kilograms per effective strength point, instead of
+- Carrying capacity is two kilograms per effective strength point, instead of
   one. The original 999-gram rounding allowance, inventory slots, stack limits,
   strength itself, and stat caps are unchanged.
 - Gold weighs one gram per coin instead of five (20% of original weight).
@@ -61,10 +61,22 @@ Convenience changes (Advanced only in this immersive build)
   both sides. Armor, shields, later special weapons and already-broken items
   are unchanged. No automatic repair is performed.
 
+Restored upstream combat behaviour (both startup editions)
+- Monsters choosing no other action can parry using their existing Parry skill
+  if their conditions permit it. This is a separate defence check; the Advanced
+  party attack-roll floor remains 85% before penalties and does not guarantee damage.
+- Monsters unable to attack or move can still choose spells when able to cast.
+  Passive monsters never attack, move or flee, but can cast. A group cannot
+  advance while a remaining monster is passive, unable to move, mad or panicked.
+- These are upstream restorations/mechanics fixes, not new monster stat tables.
+
 Compatibility
 - No save format changes, level recalculation, skill reset, point refunds, or
   retroactive level-up rewards. The existing save files are not rewritten during
   installation. Future saves use the existing format and store newly earned gains.
+- Advanced capacity was 4 kg per strength point through v1.0.2; it is now 2 kg.
+  Existing inventories are retained, so heavily loaded characters may need to
+  store items or use the temporary carryweight cheat. Strength and caps are unchanged.
 - Original saves from earlier Immersive builds remain readable. Gold weight is
   recalculated on load; reduced normal capacity may leave characters overloaded.
   Existing character progress is retained. The optional carryweight command can

@@ -17,7 +17,7 @@ internal partial class Layout
             GameLanguage.Czech => "3D C/stisk kolečka: režim myši^Caps: 60%/100%  Držet Shift: 100%^Esc/Enter: nabídka akcí^F11: celá obrazovka",
             _ => "3D C/wheel click: switch mouse mode^Caps: 60%/100%  Hold Shift: 100%^Esc/Enter: open action menu^F11: toggle fullscreen"
         };
-        string content = $"Immersive UI V1^{game.GetFullVersion()}^^{hints}";
+        string content = $"{game.GetFullVersion()}^^{hints}";
         const int boxWidth = 240;
         const int padding = 4;
         var text = RenderView.TextProcessor.WrapText(RenderView.TextProcessor.CreateText(content),

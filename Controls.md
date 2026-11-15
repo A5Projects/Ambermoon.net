@@ -1,6 +1,6 @@
 # Controls
 
-The Immersive UI branch uses a full exploration view below the party portraits in both 2D and 3D. Inventory, conversations, shops, and battles keep their original interfaces.
+The Immersive Edition branch uses a full exploration view below the party portraits in both 2D and 3D. Inventory, conversations, shops, and battles keep their original interfaces.
 
 ## General (work everywhere)
 

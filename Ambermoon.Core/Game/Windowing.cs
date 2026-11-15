@@ -148,6 +148,12 @@ partial class GameCore
                 inventory = false;
         }
 
+        // Right-clicking a battle portrait (or battlefield character) opens its
+        // inventory on mouse-down. Release the target picker before the fade,
+        // which can consume mouse-up and otherwise leave its mouse trap active.
+        if (currentWindow.Window == Window.Battle && PlayerIsPickingABattleAction)
+            CancelSpecificPlayerAction();
+
         void OpenInventory()
         {
             if (currentWindow.Window == Window.Automap)

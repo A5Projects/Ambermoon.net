@@ -1,5 +1,7 @@
 # Upstream review — 2026-11-15
 
+**Follow-up:** the user approved the reviewed small fixes, restored combat behaviour and both optional additions for local **Ambermoon Immersive Edition v1.1.0**. The lists below preserve the original review; see [the current implementation and credits](immersive-edition-1.1.0.md). Save-option migration remains deferred. Nothing has been published from this work.
+
 Latest published release checked online: [v1.15.2](https://github.com/Pyrdacor/Ambermoon.net/releases/tag/v1.15.2), published November 8, 2026.
 Upstream master was `96bc6e48ebc84a5c46614ebfd719dd8f8eb3bd62`, one gameplay commit beyond the local `462fe22a` checkout.
 This review does not merge the upstream release or its game data.
@@ -31,4 +33,4 @@ This review does not merge the upstream release or its game data.
 - [96bc6e4](https://github.com/Pyrdacor/Ambermoon.net/commit/96bc6e48ebc84a5c46614ebfd719dd8f8eb3bd62): unreleased passive-monster, group-advance, and monster-parrying changes. These overlap our deliberate balance choices.
 - Android scrolling, Czech tooltip wording, authoring scripts, and upstream packaging/CI changes are outside the current Windows fog work.
 
-Other than the options-close correction, the candidates above remain unimplemented in this change.
+At the time of the fog-only change, only the options-close correction had been implemented. The follow-up linked above records what was subsequently included.

@@ -1,12 +1,14 @@
-# Ambermoon.net — Immersive UI fork
+# Ambermoon Immersive Edition
 
-[A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
+[A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1 with selected fixes backported from 1.15.2 and later upstream commits. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
+
+**Current local development version: Ambermoon Immersive Edition v1.1.0.** This is the new name for the former Immersive UI edition. Publication is pending; the downloads below remain the previous releases. [Changes and upstream credits](docs/immersive-edition-1.1.0.md).
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views and compact overlays. Smoothed 2D movement. Optional 3D Mouse View controls in all versions. New Cheats. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays. Smoothed 2D movement. Optional 3D Mouse View controls in all versions. New Cheats. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard Ambermoon.net balance. Optional Mouse View controls in all versions. New Cheats. 
-### Immersive UI version (main):
+### Immersive Edition (main):
 <p float="left">
   <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="300" alt="3D town with the action menu" /></a>
   <a href="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f"><img src="https://github.com/user-attachments/assets/4c824184-cb94-404c-a8d8-3b0c3df0151f" width="300" alt="2D interior with the menu hidden" /></a>
@@ -18,7 +20,7 @@ Branch | Version in this fork
 
 
 crude little showcase video https://youtu.be/JBkPtCe59hE
-### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (The immersive UI edition).
+### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (now Ambermoon Immersive Edition).
 Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
 <br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
 ### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
@@ -34,14 +36,14 @@ Both branches retain the startup selector for **Original 1.22** and **Ambermoon 
 <br> Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).<br>
 Savegames are fully compatible between all versions.
 
-## Download this fork
+## Published downloads
 
 Edition | Windows 64-bit portable download | Release notes
 --- | --- | ---
-**Immersive UI v1.0.2** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.2/Ambermoon.net-ImmersiveUI-1.0.2-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.2)
+**Immersive UI v1.0.2 (previous name)** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.2/Ambermoon.net-ImmersiveUI-1.0.2-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.2)
 **Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
 
-Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive UI to Expanded. See [save transfer](CARRYWEIGHT.txt).
+Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
 These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
@@ -49,23 +51,23 @@ These first fork releases are for Windows x64. The downloads and build badges in
 
 Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded remains at v1.0.0.
 
-## Immersive UI
+## Immersive Edition
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
 - 2D movement scrolls between tile positions using the original pixel art, including continuous crossings between neighboring world-map sections. Gameplay remains on the original tile grid; teleports, entering locations and opening interfaces settle immediately.
 - A compact action overlay opens at the bottom right without moving or resizing the world view. It stays open after actions, returns after temporary screens close, and allows held keyboard or mouse-arrow movement.
 - One translucent top bar holds the left-aligned location, centered scrolling compass, clock, and other acquired indicators. The compass appears only after activation in the game. A thin black strip closes the gap beneath the portrait names.
 - Optional horizontal mouse-look works with the existing keyboard controls. **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4 switches modes.
-- Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: four times carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
+- Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: twice the normal carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
 
-**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. Keyboard movement defaults to **60% walk speed**; **Caps Lock** toggles **100% sprint**, and **holding Shift** temporarily sprints. The saved Caps Lock mode is independent of the keyboard's lock light. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive UI details](ImmersiveUI.md).
+**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. Keyboard movement defaults to **60% walk speed**; **Caps Lock** toggles **100% sprint**, and **holding Shift** temporarily sprints. The saved Caps Lock mode is independent of the keyboard's lock light. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive Edition details](ImmersiveEdition.md).
 
 2D movement uses elapsed time, with bounded catch-up after stalls. 3D retains the earlier movement cadence after a timing experiment caused uneven camera motion. Its speed can depend on update frequency; see the [3D timing investigation](docs/3d-movement-timing.md) for the findings, rollback, and possible future solutions.
 
 Both branches include the optional session cheats `noencounters`, `notired`, and `carryweight`. Enable the cheat console in settings, then use `help <command>` for details. [Carry capacity and save transfer](CARRYWEIGHT.txt) explains the shared save format and weight correction.
 
 ### video: https://youtu.be/JBkPtCe59hE
-### Immersive UI (Main branch, most changed version). Screenshots:
+### Immersive Edition (main branch). Screenshots:
 
 Click any image to view it at full size.
 
@@ -79,7 +81,7 @@ Click any image to view it at full size.
 </p>
 <p float="left">
   <a href="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4"><img src="https://github.com/user-attachments/assets/b40196b5-0cdc-42b1-8189-c6b51c6583e4" width="400" alt="3D interior with the action menu" /></a>
-  <a href="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091"><img src="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091" width="400" alt="Immersive UI controls and options" /></a>
+  <a href="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091"><img src="https://github.com/user-attachments/assets/d95697b2-a5e8-4748-889d-3debff867091" width="400" alt="Immersive Edition controls and options" /></a>
 </p>
 <p float="left">
   <a href="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79"><img src="https://github.com/user-attachments/assets/9d735232-acd5-467c-9f61-d43073b04c79" width="400" alt="Additional cheat commands" /></a>
@@ -104,7 +106,7 @@ Ambermoon.net is a full C# rewrite of Ambermoon and will run at least on Windows
 
 ### Download
 
-Version 1.15.1 is the most recent version from November 3rd, 2026. It includes [original version 1.22](https://github.com/Pyrdacor/Ambermoon) and also [Ambermoon Advanced 1.33](https://github.com/Pyrdacor/Ambermoon-Advanced).
+This retained upstream section describes base version 1.15.1, released November 3rd, 2026. It is historical base documentation, not the current fork release number. It includes [original version 1.22](https://github.com/Pyrdacor/Ambermoon) and also [Ambermoon Advanced 1.33](https://github.com/Pyrdacor/Ambermoon-Advanced).
 
 You can also download the game on my website at www.pyrdacor.net!
 

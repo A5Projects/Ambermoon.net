@@ -5850,6 +5850,10 @@ namespace Ambermoon.UI
                                 }
                                 return true;
                             }
+                            else if (game.PickBattleFriendTargetByPortrait(i))
+                            {
+                                return true;
+                            }
 
                             game.SetActivePartyMember(i);
                         }

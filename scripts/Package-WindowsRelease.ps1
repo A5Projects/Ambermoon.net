@@ -2,7 +2,7 @@
 .SYNOPSIS
 Build a clean, self-contained Windows x64 ZIP for either fork branch.
 .EXAMPLE
-./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.0.2 -OutputDirectory ../release-immersive
+./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.1.0 -OutputDirectory ../release-immersive
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
@@ -35,21 +35,32 @@ if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[0-9a-f]{40}$') {
     throw 'Cannot determine the source Git commit.'
 }
 $sourceCommit = $sourceCommit.Trim()
-$editionName = if ($Edition -eq 'immersive') { 'Immersive UI' } else { 'Expanded UI' }
+$editionName = if ($Edition -eq 'immersive') { 'Immersive Edition' } else { 'Expanded UI' }
 if ($Tag -notmatch "^$Edition-v([0-9]+\.[0-9]+\.[0-9]+(?:[-.][A-Za-z0-9.-]+)?)$") {
     throw "Tag must use the form $Edition-v1.0.0 (an optional prerelease suffix is allowed)."
 }
 $releaseVersion = $Matches[1]
-$artifactEdition = if ($Edition -eq 'immersive') { 'ImmersiveUI' } else { 'Expanded' }
-$folderName = "Ambermoon.net-$artifactEdition-$releaseVersion-Windows-x64"
+$artifactEdition = if ($Edition -eq 'immersive') { 'ImmersiveEdition' } else { 'Expanded' }
+$productName = if ($Edition -eq 'immersive') { 'Ambermoon' } else { 'Ambermoon.net' }
+$folderName = "$productName-$artifactEdition-$releaseVersion-Windows-x64"
 $payload = Join-Path $outputRoot $folderName
 $payloadPrefix = $payload.TrimEnd('\') + '\'
 $project = Join-Path $repoRoot 'Ambermoon.net\Ambermoon.net.csproj'
+if ($Edition -eq 'immersive') {
+    [xml]$projectXml = Get-Content -LiteralPath $project -Raw
+    $versionNode = $projectXml.SelectSingleNode('/Project/PropertyGroup/Version')
+    if ($null -eq $versionNode) { throw 'The desktop project has no edition Version property.' }
+    $projectVersion = $versionNode.InnerText
+    if ($releaseVersion -ne $projectVersion) {
+        throw "Tag version $releaseVersion does not match the edition's executable version $projectVersion."
+    }
+}
 
 $branchDocs = @('Controls.md', 'Configuration.md', 'CustomMusic.md', 'CARRYWEIGHT.txt',
     'docs\action_buttons_0.png', 'docs\action_buttons_1.png', 'docs\amount_popup.png')
 if ($Edition -eq 'immersive') {
-    $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
+    $branchDocs += @('ImmersiveEdition.md', 'ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\immersive-edition-1.1.0.md',
+        'docs\outdoor-fog.md', 'docs\upstream-review-2026-11-15.md', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
         'tools\CameraTimingProbe\README.md', 'tools\CameraTimingProbe\CameraTimingProbe.csproj',
         'tools\CameraTimingProbe\Program.cs')
 } else {
@@ -136,11 +147,11 @@ $sourceUrl = "https://github.com/A5Projects/Ambermoon.net/tree/$sourceCommit"
 $releaseUrl = 'https://github.com/A5Projects/Ambermoon.net/releases/tag/' + [Uri]::EscapeDataString($Tag)
 $editionHelp = if ($Edition -eq 'immersive') {
 @'
-Immersive UI fills the area below the portraits during 2D and 3D exploration.
+Ambermoon Immersive Edition fills the area below the portraits in 2D and 3D.
 Esc/Enter/Tab or MENU opens the compact action overlay; Esc closes other windows
-first. See Documentation/ImmersiveUI.md and Controls.md for the complete controls.
+first. See Documentation/ImmersiveEdition.md and Controls.md for complete controls.
 The Original selection keeps original balance, including misses and weapon breaks.
-Advanced uses relaxed balance, including a normal clock about 30% slower while
+Advanced has twice normal carrying capacity and relaxed balance, including a clock about 30% slower while
 travelling or standing still. Original's clock and explicit waits are unchanged.
 See Documentation/IMMERSIVE-BALANCE.txt for the full rules.
 F7 quicksaves during exploration to QuickSave F7 without replacing other saves.
@@ -159,14 +170,20 @@ $movementHelp = if ($Edition -eq 'immersive') {
 } else {
     'Caps Lock switches keyboard movement to/from 60% speed.'
 }
+$upstreamSummary = if ($Edition -eq 'immersive') {
+    'Ambermoon.net base 1.15.1, with selected fixes from 1.15.2 and later upstream commits. See Documentation/docs/immersive-edition-1.1.0.md for changes and credits.'
+} else {
+    'Ambermoon.net base 1.15.1.'
+}
 $quickStart = @"
-Ambermoon.net - $editionName
+$productName $editionName v$releaseVersion
 Release: $Tag
 Source commit: $sourceCommit
 Source: $sourceUrl
 Release and downloads: $releaseUrl
 
-This is the A5Projects fork of Ambermoon.net 1.15.1 by Pyrdacor and contributors.
+This is the A5Projects fork of Ambermoon.net by Pyrdacor and contributors.
+$upstreamSummary
 The included LICENSE is the GNU GPL v3. Original documentation and credits are
 preserved under Documentation/Upstream. Runtime notices are under
 Documentation/Licenses.
@@ -194,7 +211,7 @@ from https://github.com/A5Projects/Ambermoon.net/releases.
 Extract updates into a fresh folder rather than mixing different builds.
 To import saves, back up and copy your Saves folder and select the same game-data
 edition and language. Do not transfer Original saves into Advanced or vice versa.
-Our two UI editions share a save format; balance and carried-weight limits differ.
+Our two editions share a save format; balance and carried-weight limits differ.
 User settings and saves are not included in this download.
 "@
 [IO.File]::WriteAllText((Join-Path $payload 'START-HERE.txt'), $quickStart, [Text.UTF8Encoding]::new($false))
