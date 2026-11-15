@@ -1,6 +1,6 @@
 # Packaging fork releases
 
-The fork releases are portable, self-contained Windows x64 ZIPs. **Ambermoon Immersive Edition v1.1.0** is the current local development version, previously named Immersive UI. Its upstream base is Ambermoon.net 1.15.1 with selected fixes from 1.15.2 and later commits; this is not a full upstream update. Expanded retains its separate version and standard balance. The currently published downloads remain Immersive UI v1.0.2 and Expanded v1.0.0 until a release is explicitly published.
+The fork releases are portable, self-contained Windows x64 ZIPs. **Ambermoon Immersive Edition v1.1.0** is the current release, previously named Immersive UI. Its upstream base is Ambermoon.net 1.15.1 with selected fixes from 1.15.2 and later commits; this is not a full upstream update. **Expanded v1.0.1** retains its separate version and standard balance. See the [published releases](https://github.com/A5Projects/Ambermoon.net/releases) for downloads and checksums.
 
 Use the `main` branch for Immersive Edition and `expanded` for Expanded. Commit the intended source and documentation before packaging so the binary and `START-HERE.txt` identify the correct source commit. Keep the desktop project Version and `EditionInfo.Version` aligned; the immersive packaging command rejects a mismatching tag version.
 
@@ -13,7 +13,7 @@ Install a .NET 9 SDK and Git, then run PowerShell from the chosen branch. The ou
 ./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.1.0 -OutputDirectory ../release-immersive
 
 # Or, on expanded:
-./scripts/Package-WindowsRelease.ps1 -Edition expanded -Tag expanded-v1.0.0 -OutputDirectory ../release-expanded
+./scripts/Package-WindowsRelease.ps1 -Edition expanded -Tag expanded-v1.0.1 -OutputDirectory ../release-expanded
 ```
 
 Use `-DotnetPath` for a private SDK and `-NoRestore` only when this checkout has already restored its Windows x64 dependencies. Normal packaging restores dependencies. The bundled `Ambermoon.net/versions.dat` and `diffs.dat` must be present; they supply the startup game-data choices and save migration patches.

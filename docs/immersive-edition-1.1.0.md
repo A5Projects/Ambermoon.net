@@ -1,6 +1,6 @@
 # Ambermoon Immersive Edition v1.1.0
 
-Local development build; not yet published. Previously named **Immersive UI**.
+[Windows x64 release and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.1.0). Previously named **Immersive UI**.
 
 Based on **Ambermoon.net 1.15.1**, with selected fixes backported from **1.15.2** and later upstream commits. This is the fork's version number, independent of both the upstream engine and the Original 1.22 / Advanced 1.33 game data. It is not a full upstream update.
 
@@ -17,7 +17,7 @@ Based on **Ambermoon.net 1.15.1**, with selected fixes backported from **1.15.2*
 - Outdoor fog has a subdued sky-derived colour and a farther fade, hiding the mountain backdrop in full daylight haze. Only the Baron's palace has its indoor fog removed. Other interiors retain their previous fog. Closing Options with EXIT, Escape or right-click applies changed settings reliably.
 - **Smooth distant floor**, enabled by default on settings page 4, gradually averages eight colour samples as the floor texture becomes compressed. This trades distant detail for less shimmer while retaining nearby pixels and the original artwork. Switch it off to compare with the previous rendering. See [floor filtering](distant-floor-filter.md).
 
-No save format, saved character stats, XP thresholds, bundled game data or 3D movement timing is changed. The Expanded branch is outside this batch. The earlier inventory-lock fixes remain in both local branches.
+No save format, saved character stats, XP thresholds, bundled game data or 3D movement timing is changed. Expanded is released separately and keeps its standard balance and existing presentation. Both branches include the inventory-lock fixes.
 
 ## Upstream credits
 
@@ -38,8 +38,10 @@ Thanks to **Pyrdacor (Robert Schneckenhaus)** and the Ambermoon.net contributors
 
 Save-option bit migration and remembered map/rune acquisition are deferred for separate cross-version save testing. Android, authoring scripts and upstream CI/packaging changes are not included. See [the original review](upstream-review-2026-11-15.md) and [fog notes](outdoor-fog.md).
 
-## Local verification
+## Verification
 
 Windowed native checks passed with both German Original and Advanced data: 326 combat/balance checks, 114 focused bug-fix checks, 86 portrait-targeting/animation checks, 22 branding/defaults/layout checks and 132 inventory-lock regression checks. These include the independent attack/parry rolls, 2x/1x capacity and edition switching, real duplication and weight serialization, actual scaled credits glyphs, failed transfers and Escape cancellation, and entering inventory during battle targeting. The bundled data scan found no separate walking frames in its 61 Original and 96 Advanced monsters; the existing animation fallback was verified along with synthetic separate frames. Packaging version parsing and source whitespace checks also passed.
 
-These automated checks supplement playtesting; they do not establish that every encounter or rare input sequence has been exercised. Personal saves and configuration are excluded from test fixtures and installation.
+The floor filter passed an additional 195 native checks in each startup edition. With filtering disabled, captured images matched the previous build exactly in four scenes; nearby floor pixels and non-floor surfaces stayed unchanged when enabled. Motion playtesting reported no visible floor shimmer in the tested scene. This does not guarantee its removal at every distance or resolution; walls retain their previous sampling. See [floor verification and limitations](distant-floor-filter.md).
+
+These automated checks supplement playtesting; they do not establish that every encounter or rare input sequence has been exercised. Personal saves and configuration are excluded from test fixtures and release packages.

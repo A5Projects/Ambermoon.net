@@ -1,6 +1,6 @@
 # Distant floor filtering
 
-This local Immersive Edition change addresses shimmer in the repeated 3D floor texture while moving. At increasing distance, several source texels occupy one rendered pixel; the original nearest sampling picks different colours from frame to frame. The point where the pattern becomes unstable therefore follows the camera.
+This Immersive Edition feature addresses shimmer in the repeated 3D floor texture while moving. At increasing distance, several source texels occupy one rendered pixel; the original nearest sampling picks different colours from frame to frame. The point where the pattern becomes unstable therefore follows the camera.
 
 ## Comparing the two modes
 
@@ -23,7 +23,7 @@ The setting is passed to the shared shader on game creation and whenever Options
 
 Windowed Windows OpenGL checks passed for both Original and Advanced (195 checks each). These covered the option and saved preference, all three Options closing methods, outdoor and indoor scenes, fog, Smooth/Blur/CRT, and transitions to 2D. Hidden-floor comparisons confirmed that walls, ceilings, objects and the UI are unchanged. A temporary GPU-only atlas fixture checked that samples do not bleed from neighbouring assets; no game textures were changed on disk.
 
-With the option off, complete captured images from Illien, Spannenberg, a dungeon and the Baron's palace were byte-identical to the previous build. With it on, 32 paired camera positions showed less frame-to-frame change in the distant floor; nearby floor pixels stayed identical. This image-difference measure also reflects reduced detail and is not a percentage measurement of shimmer removal. Final motion quality still needs playtesting.
+With the option off, complete captured images from Illien, Spannenberg, a dungeon and the Baron's palace were byte-identical to the previous build. With it on, 32 paired camera positions showed less frame-to-frame change in the distant floor; nearby floor pixels stayed identical. This image-difference measure also reflects reduced detail and is not a percentage measurement of shimmer removal. Subsequent motion playtesting reported no visible floor shimmer in the tested scene; other distances, patterns and resolutions may still show residual aliasing.
 
 Synchronized frame timings were similar in this windowed test but appear refresh-limited; they do not establish the GPU cost at higher resolutions. Existing OpenGL error flags were also reproduced in the previous build, with no additional errors from switching this filter on.
 

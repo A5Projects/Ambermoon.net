@@ -2,12 +2,12 @@
 
 [A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1 with selected fixes backported from 1.15.2 and later upstream commits. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
 
-**Current local development version: Ambermoon Immersive Edition v1.1.0.** This is the new name for the former Immersive UI edition. Publication is pending; the downloads below remain the previous releases. [Changes and upstream credits](docs/immersive-edition-1.1.0.md).
+**Current release: Ambermoon Immersive Edition v1.1.0.** This is the new name for the former Immersive UI edition. [Download and release notes](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.1.0) · [Changes and upstream credits](docs/immersive-edition-1.1.0.md).
 
 Branch | Version in this fork
 --- | ---
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays. Smoothed 2D movement. Optional 3D Mouse View controls in all versions. New Cheats. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard Ambermoon.net balance. Optional Mouse View controls in all versions. New Cheats. 
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard Ambermoon.net balance. Optional Mouse View controls in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
 <p float="left">
   <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="300" alt="3D town with the action menu" /></a>
@@ -20,7 +20,7 @@ Branch | Version in this fork
 
 
 crude little showcase video https://youtu.be/JBkPtCe59hE
-### Personal words, Background, motivation, Decisions: The "expqanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes it holds up remarkably well, and decided to go all in, with a more radical visual and control overhaul (now Ambermoon Immersive Edition).
+### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes, Ambermoon holds up remarkably well (the age of pixel art...), and decided to go all in, with a more radical visual  and control overhaul, while retaining the games looks and art unchanged.  (The much more evolved Ambermoon Immersive Edition).
 Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
 <br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
 ### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
@@ -40,16 +40,18 @@ Savegames are fully compatible between all versions.
 
 Edition | Windows 64-bit portable download | Release notes
 --- | --- | ---
-**Immersive UI v1.0.2 (previous name)** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.2/Ambermoon.net-ImmersiveUI-1.0.2-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.2)
-**Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
+**Immersive Edition v1.1.0** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.1.0/Ambermoon-ImmersiveEdition-1.1.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.1.0)
+**Expanded v1.0.1** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 
 Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
-These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
+These fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
-**New in Immersive UI v1.0.2:** Fixed inventory selection and transfer cancellation locks, included the targeted upstream inventory crash correction, and fixed carpets covering the player during smooth 2D movement. **F7 quicksaves** during exploration without overwriting other saves; load through the normal menu. **Advanced's normal clock runs about 30% slower** while moving or standing still. Original's clock and explicit waits remain unchanged. The engine remains 1.15.1; this is not a full update to upstream 1.15.2. [Inventory investigation](docs/inventory-input-lock.md).
+**New in Immersive Edition v1.1.0:** Gentler font edges and clearer reading panels, revised outdoor fog, optional distant-floor smoothing, and selected upstream fixes and additions. Advanced now has **twice** normal carrying capacity (previously four times); Original keeps normal capacity. Restored monster defence remains separate from Advanced's improved party hit chance. Friendly combat spells and items can target portraits. [Full changes and credits](docs/immersive-edition-1.1.0.md).
 
-Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded remains at v1.0.0.
+**Retained from Immersive UI v1.0.2:** Inventory selection and transfer cancellation lock fixes, the targeted upstream inventory crash correction, and corrected carpet ordering during smooth 2D movement. **F7 quicksaves** during exploration without overwriting other saves; load through the normal menu. **Advanced's normal clock runs about 30% slower** while moving or standing still. Original's clock and explicit waits remain unchanged. [Inventory investigation](docs/inventory-input-lock.md).
+
+Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded v1.0.1 adds the inventory-lock fixes while retaining its existing movement, appearance and standard balance.
 
 ## Immersive Edition
 
