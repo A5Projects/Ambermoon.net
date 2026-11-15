@@ -28,6 +28,7 @@ These first fork releases are for Windows x64. The downloads and build badges in
 - **Caps Lock** switches keyboard movement between 60% and full speed by default.
 - Standard balance is retained: this branch does not include the Immersive UI changes to party growth, spell costs, hit chances, weapon breakage, gold weight, or normal carrying capacity.
 - Optional session cheats `noencounters`, `notired`, and `carryweight` remain available. They default off and do not change the save format. Both builds correct cached companion weights when loading transferred saves.
+- Inventory selection and transfer cancellation release their temporary button locks; the focused upstream inventory crash correction is also included. See [inventory fixes](docs/inventory-input-lock.md).
 
 See [Controls](Controls.md), [exploration cheats](EXPLORATION-CHEATS.txt), and [carry capacity/save transfer](CARRYWEIGHT.txt). Choose [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) for full exploration views, compact overlays, and relaxed balance.
 

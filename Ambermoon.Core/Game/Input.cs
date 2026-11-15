@@ -508,7 +508,14 @@ partial class GameCore
         if (allInputDisabled || pickingNewLeader || GameOverButtonsVisible)
             return;
 
-        if (currentBattle != null && !currentBattle.RoundActive && trapMouseArea != null)
+        if (key == Key.Escape && !layout.PopupActive && layout.CancelItemSelection())
+        {
+            CursorType = CursorType.Sword;
+            return;
+        }
+
+        if (currentWindow.Window == Window.Battle && !layout.PopupActive &&
+            currentBattle != null && !currentBattle.RoundActive && trapMouseArea != null)
         {
             if (key == Key.Escape)
                 CancelSpecificPlayerAction();
@@ -1053,7 +1060,8 @@ partial class GameCore
 
         var position = renderView.ScreenToGame(GetMousePosition(cursorPosition));
 
-        if (currentBattle != null && buttons == MouseButtons.Right)
+        if (currentWindow.Window == Window.Battle && !layout.PopupActive &&
+            currentBattle != null && buttons == MouseButtons.Right)
         {
             if (CheckBattleRightClick())
                 return;
