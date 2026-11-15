@@ -2032,14 +2032,8 @@ namespace Ambermoon.UI
             exitButton.InstantAction = false;
             exitButton.LeftClickAction = () =>
             {
-                FullscreenOptionUpdateRequested -= UpdateFullscreenOption;
                 ClosePopup();
                 CloseOptionMenu();
-                if (changedConfiguration)
-                {
-                    game.CoreConfiguration.EnableCheats = cheatsEnabled;
-                    game.NotifyConfigurationChange(windowChange);
-                }
             };
             exitButton.Visible = true;
 
@@ -2101,6 +2095,15 @@ namespace Ambermoon.UI
                 BattleSpeedChanged -= SetBattleSpeed;
                 MusicChanged -= SetMusic;
                 VolumeChanged -= SetVolume;
+                FullscreenOptionUpdateRequested -= UpdateFullscreenOption;
+
+                // Apply options on every close path, including Escape and right-click.
+                // Keep the existing EXIT behavior of also closing the outer menu.
+                if (changedConfiguration)
+                {
+                    game.CoreConfiguration.EnableCheats = cheatsEnabled;
+                    game.NotifyConfigurationChange(windowChange);
+                }
             };
         }
 

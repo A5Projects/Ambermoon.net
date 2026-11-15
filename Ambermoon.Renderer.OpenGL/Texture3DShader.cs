@@ -43,6 +43,7 @@ internal class Texture3DShader : ColorShader
     internal static readonly string DefaultPaletteCountName = TextureShader.DefaultPaletteCountName;
     internal static readonly string DefaultFogColorName = "fogColor";
     internal static readonly string DefaultFogDistanceName = "fogDist";
+    internal static readonly string DefaultFogFadeRangeName = "fogFadeRange";
     internal static readonly string DefaultFogDepthName = "fogDepth";
     internal static readonly string DefaultFadeName = "fade";
 
@@ -63,6 +64,7 @@ internal class Texture3DShader : ColorShader
         $"uniform vec4 {DefaultSkyReplaceColorName};",
         $"uniform vec4 {DefaultFogColorName};",
         $"uniform float {DefaultFogDistanceName};",
+        $"uniform vec3 {DefaultFogFadeRangeName};",
         $"uniform float {DefaultFadeName};",
         $"in vec2 varTexCoord;",
         $"in float dist;",
@@ -98,7 +100,16 @@ internal class Texture3DShader : ColorShader
         $"    if ({DefaultFogColorName}.a > 0.001f)",
         $"    {{",
         $"        float fogFactor = {DefaultFogColorName}.a * min({DefaultSkyColorIndexName} < 31.5f ? 0.8f : 1.0f, dist / {DefaultFogDistanceName});",
+        $"        float originalAlpha = {DefaultFragmentOutColorName}.a;",
+        $"        if ({DefaultFogFadeRangeName}.z > 0.0f)",
+        $"        {{",
+        $"            float distantFog = {DefaultFogColorName}.a * smoothstep({DefaultFogFadeRangeName}.x, {DefaultFogFadeRangeName}.y, max(0.0f, dist));",
+        $"            fogFactor = mix(fogFactor, distantFog, {DefaultFogFadeRangeName}.z);",
+        $"        }}",
         $"        {DefaultFragmentOutColorName} = {DefaultFragmentOutColorName} * (1.0f - fogFactor) + fogFactor * {DefaultFogColorName};",
+        // The new distance haze changes colour, not the opacity of the surface.
+        $"        if ({DefaultFogFadeRangeName}.z > 0.0f)",
+        $"            {DefaultFragmentOutColorName}.a = mix({DefaultFragmentOutColorName}.a, originalAlpha, {DefaultFogFadeRangeName}.z);",
         $"    }}",
         $"    if ({DefaultFadeName} < 0.9999f)",
         $"    {{",
@@ -212,11 +223,14 @@ internal class Texture3DShader : ColorShader
         shaderProgram.SetInput(DefaultPaletteCountName, (float)count);
     }
 
-    public void SetFog(Render.Color fogColor, float distance)
+    public void SetFog(Render.Color fogColor, float distance, (float Start, float End, float Blend)? outdoorFade = null)
     {
         shaderProgram.SetInputVector4(DefaultFogColorName, fogColor.R / 255.0f,
             fogColor.G / 255.0f, fogColor.B / 255.0f, fogColor.A / 255.0f);
         shaderProgram.SetInput(DefaultFogDistanceName, distance);
+        // A zero blend keeps the legacy equation, including its billboard taper.
+        var fade = outdoorFade ?? (Start: 0.0f, End: 1.0f, Blend: 0.0f);
+        shaderProgram.SetInputVector3(DefaultFogFadeRangeName, fade.Start, fade.End, fade.Blend);
     }
 
     public void SetFade(float fade)

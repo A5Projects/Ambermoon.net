@@ -22,4 +22,6 @@ Text uses gentle edge smoothing throughout the interface while retaining the ori
 
 Fresh installations enable the traditional Thalion/game intro and disable the fantasy intro, Pyrdacor logo, and Advanced logo. All remain available in the options menu, and existing saved preferences are preserved.
 
+Optional outdoor distance fog uses a muted sky-derived colour and a smooth fade farther from the camera, including a distant midday haze. Night and dungeon fog retain their previous behavior. Only the permanently lit Baron's palace has its indoor haze removed; other interiors retain theirs. Fog and other changed options apply consistently when closing Options with EXIT, Escape, or right-click. See [fog behavior and verification](docs/outdoor-fog.md) and the [upstream review](docs/upstream-review-2026-11-15.md).
+
 The existing action icons and right-click interaction behavior remain. A new context menu, redesigned dialogs, adaptive portrait sizes, and widescreen logical resolution are not part of this version. The game still scales its 320x200 logical canvas to the window.

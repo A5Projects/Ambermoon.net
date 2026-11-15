@@ -1106,9 +1106,9 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSkyColorReplacement(skyColor, replaceColor);
     }
 
-    public void SetFog(Color fogColor, float distance)
+    public void SetFog(Color fogColor, float distance, (float Start, float End, float Blend)? outdoorFade = null)
     {
-        (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetFog(fogColor, distance);
-        (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetFog(fogColor, distance);
+        (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetFog(fogColor, distance, outdoorFade);
+        (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetFog(fogColor, distance, outdoorFade);
     }
 }

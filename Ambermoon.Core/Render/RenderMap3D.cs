@@ -1054,9 +1054,13 @@ namespace Ambermoon.Render
         {
             Color fogColor;
             float fogDistance;
+            (float Start, float End, float Blend)? outdoorFade = null;
             bool lightActive = !lightOff && game.CurrentSavegame!.IsSpellActive(ActiveSpellType.Light);
 
-            if (game.CoreConfiguration.ShowFog && game.CanSee())
+            // Map 427 is the permanently lit Baron's palace in both Original and
+            // Advanced. Other interiors retain their established fog/darkness.
+            bool clearPalace = map.Index == 427 && map.Flags.HasFlag(MapFlags.Indoor);
+            if (game.CoreConfiguration.ShowFog && game.CanSee() && !clearPalace)
             {
                 if (map.Flags.HasFlag(MapFlags.Sky))
                 {
@@ -1096,10 +1100,40 @@ namespace Ambermoon.Render
                     }
                     byte r = Map!.World == World.Morag ? (byte)Math.Min(component * 3 / 2, 255) : component;
                     byte g = Map.World != World.Lyramion ? (byte)Math.Min(component * 3 / 2, 255) : component;
-                    fogColor = new Color(r, g, component, alpha);                    
+                    fogColor = new Color(r, g, component, alpha);
+                    float lightDistanceBonus = 0.0f;
                     if (lightActive && fogDistance < 7.5f)
-                        fogDistance += game.CurrentSavegame!.GetActiveSpellLevel(ActiveSpellType.Light) * 2.0f - 1.0f;
+                    {
+                        lightDistanceBonus = game.CurrentSavegame!.GetActiveSpellLevel(ActiveSpellType.Light) * 2.0f - 1.0f;
+                        fogDistance += lightDistanceBonus;
+                    }
                     fogDistance *= Global.DistancePerBlock;
+
+                    // Daylight haze leaves nearby scenery clear and suppresses
+                    // far texture contrast. Fade it in/out around dawn/dusk so
+                    // the original night fog and Light spell behavior remain.
+                    float hour = game.GameTime.Hour + game.GameTime.Minute / 60.0f;
+                    float daylightBlend = Math.Clamp(Math.Min((hour - 6.0f) / 2.0f, (19.0f - hour) / 2.0f), 0.0f, 1.0f);
+                    if (daylightBlend > 0.0f && map.Flags.HasFlag(MapFlags.Outdoor))
+                    {
+                        // The gradient continues behind the mountain backdrop;
+                        // its last band can be warm brown and never visible.
+                        // Sample the lowest visible band above that backdrop.
+                        int visibleSkyBottom = horizonFog?.Y ?? ViewArea.Y + ceilingColor!.Height;
+                        var sky = skyColors?.LastOrDefault(part => part.Height > 0 && part.Y < visibleSkyBottom)?.Color
+                            ?? ceilingColor!.Color;
+                        float gray = (sky.R + sky.G + sky.B) / 3.0f;
+                        int HazeComponent(byte channel) => Util.Round((0.75f * channel + 0.25f * gray) * 0.9f);
+                        int BlendComponent(byte current, int target) => Util.Round(current + daylightBlend * (target - current));
+                        fogColor = new Color(BlendComponent(fogColor.R, HazeComponent(sky.R)),
+                            BlendComponent(fogColor.G, HazeComponent(sky.G)),
+                            BlendComponent(fogColor.B, HazeComponent(sky.B)),
+                            BlendComponent(fogColor.A, 235));
+
+                        float clarity = Math.Clamp(Math.Min((hour - 8.0f) / 4.0f, (19.0f - hour) / 3.0f), 0.0f, 1.0f);
+                        outdoorFade = ((4.0f + 3.0f * clarity + lightDistanceBonus) * Global.DistancePerBlock,
+                            (14.0f + 8.0f * clarity + lightDistanceBonus) * Global.DistancePerBlock, daylightBlend);
+                    }
                 }
                 else if (map.Flags.HasFlag(MapFlags.Indoor))
                 {
@@ -1114,7 +1148,15 @@ namespace Ambermoon.Render
 
                 if (horizonFog != null)
                 {
-                    horizonFog.Color = new Color(fogColor, (byte)(Util.Min(fogColor.A / 2, 32 + fogColor.R, 32 + fogColor.G, 32 + fogColor.B)));
+                    int horizonAlpha = Util.Min(fogColor.A / 2, 32 + fogColor.R, 32 + fogColor.G, 32 + fogColor.B);
+                    if (outdoorFade is { } fade)
+                    {
+                        // The mountain backdrop lies beyond all nearby geometry.
+                        // Full daytime haze obscures it, rather than leaving sharp
+                        // distant peaks visible through already-faded terrain.
+                        horizonAlpha = Util.Round(horizonAlpha + fade.Blend * (255 - horizonAlpha));
+                    }
+                    horizonFog.Color = new Color(fogColor, (byte)horizonAlpha);
                     horizonFog.Visible = fogColor.A != 0;
                 }
             }
@@ -1126,7 +1168,7 @@ namespace Ambermoon.Render
                     horizonFog.Visible = false;
             }
 
-            renderView!.SetFog(fogColor, fogDistance);
+            renderView!.SetFog(fogColor, fogDistance, outdoorFade);
         }
 
         public static float GetFloorY() => -0.25f * ReferenceWallHeight / BlockSize;
