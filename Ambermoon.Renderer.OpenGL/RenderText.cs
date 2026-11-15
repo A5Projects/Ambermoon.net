@@ -39,6 +39,7 @@ internal class RenderText : RenderNode, IRenderText
     byte paletteIndex;
     TextColor textColor;
     bool shadow;
+    byte shadowOpacity = 255;
     IText text;
     Rect bounds;
     TextAlign textAlign = TextAlign.Left;
@@ -163,6 +164,20 @@ internal class RenderText : RenderNode, IRenderText
 
             shadow = value;
             UpdateTextSprites();
+        }
+    }
+
+    public byte ShadowOpacity
+    {
+        get => shadowOpacity;
+        set
+        {
+            if (shadowOpacity == value)
+                return;
+
+            shadowOpacity = value;
+            foreach (var sprite in characterShadowSprites)
+                sprite.Opacity = value;
         }
     }
 
@@ -433,6 +448,7 @@ internal class RenderText : RenderNode, IRenderText
                     virtualScreen, DisplayLayer)
                 {
                     TextColorIndex = ShadowColorIndex,
+                    Opacity = ShadowOpacity,
                     X = characterSprite.X + 1,
                     Y = characterSprite.Y + 1,
                     Layer = Layer,

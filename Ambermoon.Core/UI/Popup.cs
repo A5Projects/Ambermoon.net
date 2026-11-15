@@ -51,7 +51,7 @@ namespace Ambermoon.UI
         public event Action<bool>? Scrolled;
 
         public Popup(GameCore game, IGameRenderView renderView, Position position, int columns, int rows,
-            bool transparent, byte displayLayerOffset = 0)
+            bool transparent, byte displayLayerOffset = 0, bool readingPanel = false)
         {
             if (columns < 3 || rows < 3)
                 throw new AmbermoonException(ExceptionScope.Application, "Popups must at least have 3 columns and 3 rows.");
@@ -98,7 +98,7 @@ namespace Ambermoon.UI
                 // fill
                 // TODO: use named palette color
                 fill = renderView.ColoredRectFactory.Create((columns - 2) * 16, (rows - 2) * 16,
-                    game.GetUIColor(28), DisplayLayer);
+                    readingPanel ? ReadingTextStyle.Background(game.GetUIColor(28)) : game.GetUIColor(28), DisplayLayer);
                 fill.Layer = renderView.GetLayer(Layer.UI);
                 fill.X = position.X + 16;
                 fill.Y = position.Y + 16;

@@ -490,7 +490,23 @@ internal class AnimatedLayerSprite : AnimatedSprite, IAnimatedLayerSprite
 
 internal class TextCharacterSprite : LayerSprite
 {
+    byte opacity = 255;
+
     public byte TextColorIndex { get; set; }
+
+    public byte Opacity
+    {
+        get => opacity;
+        set
+        {
+            if (opacity == value)
+                return;
+
+            opacity = value;
+            if (drawIndex != -1)
+                (Layer as RenderLayer).UpdateTextOpacity(drawIndex, value);
+        }
+    }
 
     public TextCharacterSprite(int width, int height, int textureAtlasX, int textureAtlasY, Rect virtualScreen, byte displayLayer)
         : base(width, height, textureAtlasX, textureAtlasY, displayLayer, virtualScreen)

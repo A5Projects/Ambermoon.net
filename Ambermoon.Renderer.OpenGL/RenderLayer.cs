@@ -245,17 +245,17 @@ public class RenderLayer : IRenderLayer, IDisposable
         { Layer.Text, new ()
         {
             BaseZ = 0.70f,
-            EnableBlending = false
+            EnableBlending = true
         } },
         { Layer.SubPixelText, new ()
         {
             BaseZ = 0.70f,
-            EnableBlending = false
+            EnableBlending = true
         } },
         { Layer.SmallDigits, new ()
         {
             BaseZ = 0.70f,
-            EnableBlending = false
+            EnableBlending = true
         } },
         { Layer.MobileOverlays, new ()
         {
@@ -638,6 +638,15 @@ public class RenderLayer : IRenderLayer, IDisposable
             }
         }
 
+        if (Layer == Layer.Text || Layer == Layer.SubPixelText || Layer == Layer.SmallDigits)
+        {
+            // Shadows must be drawn before the foreground when glyph edges are
+            // translucent. Preserve coverage alpha when drawing to the UI FBO.
+            EnsureCorrectRenderOrder(RenderBuffer);
+            state.Gl.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
+                BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+        }
+
         RenderBuffer?.Render();
 
         if (renderBufferSemiTransparent != null)
@@ -763,6 +772,11 @@ public class RenderLayer : IRenderLayer, IDisposable
     public void UpdateTextColorIndex(int index, byte textColorIndex)
     {
         RenderBuffer.UpdateTextColorIndex(index, textColorIndex);
+    }
+
+    public void UpdateTextOpacity(int index, byte opacity)
+    {
+        RenderBuffer.UpdateAlpha(index, opacity);
     }
 
     public void UpdateFOWCenter(int index, Position center)

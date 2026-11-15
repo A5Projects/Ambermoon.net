@@ -61,6 +61,12 @@ namespace Ambermoon.UI
             set => renderText.PaletteIndex = value;
         }
 
+        public byte ShadowOpacity
+        {
+            get => renderText.ShadowOpacity;
+            set => renderText.ShadowOpacity = value;
+        }
+
         /// <summary>
         /// The boolean gives information if the
         /// text was scrolled to the end. It is
@@ -85,7 +91,7 @@ namespace Ambermoon.UI
 
         public UIText(IGameRenderView renderView, byte paletteIndex, IText text, Rect bounds, byte displayLayer = 1,
             TextColor textColor = TextColor.BrightGray, bool shadow = true, TextAlign textAlign = TextAlign.Left,
-            bool allowScrolling = false, Action<TimeSpan, Action>? timedEventCreator = null)
+            bool allowScrolling = false, Action<TimeSpan, Action>? timedEventCreator = null, byte shadowOpacity = 255)
         {
             this.renderView = renderView;
             this.text = renderView.TextProcessor.WrapText(text, bounds, new Size(Global.GlyphWidth, Global.GlyphLineHeight));
@@ -97,6 +103,7 @@ namespace Ambermoon.UI
                 this.text, textColor, shadow, bounds, textAlign);
             renderText.DisplayLayer = displayLayer;
             renderText.PaletteIndex = paletteIndex;
+            renderText.ShadowOpacity = shadowOpacity;
             renderText.Visible = true;
             defaultTextColor = textColor;
             numVisibleLines = (bounds.Height + 1) / Global.GlyphLineHeight;

@@ -864,7 +864,7 @@ partial class GameCore
             Resume();
             ResetCursor();
             responseHandler?.Invoke(PopupTextEvent.Response.Close);
-        }, true, true);
+        }, true, true, readingPanel: true);
         CursorType = CursorType.Click;
     }
 
@@ -882,11 +882,12 @@ partial class GameCore
             layout.AddEventPicture(imageIndex, out currentUIPaletteIndex);
             layout.UpdateUIPalette(currentUIPaletteIndex);
             cursor.UpdatePalette(this);
-            layout.FillArea(new Rect(16, 138, 288, 55), GetUIColor(28), false);
+            layout.FillArea(new Rect(16, 138, 288, 55), ReadingTextStyle.Background(GetUIColor(28)), false);
 
             // Position = 18,139, max 40 chars per line and 7 lines.
             var textArea = new Rect(18, 139, 285, 49);
-            var scrollableText = layout.AddScrollableText(textArea, text, TextColor.BrightGray);
+            var scrollableText = layout.AddScrollableText(textArea, text, TextColor.BrightGray,
+                shadowOpacity: ReadingTextStyle.ShadowOpacity);
 
             ShowMobileClickIndicator(Global.VirtualScreenWidth / 2 - 8, Global.VirtualScreenHeight - 16 + (gameOver ? -8 : 3));
 

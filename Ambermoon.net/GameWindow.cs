@@ -1309,12 +1309,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
                 void ShowMainMenu(bool fromIntro)
                 {
-                    // When starting for the first time the intro is played automatically.
-                    // But then is disabled. It can still be viewed from the main menu
-                    // and there is also an option to show it always in the option menu.
-                    if (configuration.FirstStart)
-                        configuration.ShowIntro = false;
-
+                    // Keep the selected intro preference after the first launch.
+                    // New installations default to the original Thalion/game intro.
                     this.ShowMainMenu(renderView, cursor, fromIntro, IntroData.GraphicPalettes, introFontLarge,
                         introData.Texts.Skip(8).Take(4).Select(t => t.Value).ToArray(), canContinue, continueGame =>
                         {

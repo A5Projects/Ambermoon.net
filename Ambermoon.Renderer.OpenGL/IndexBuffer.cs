@@ -91,16 +91,13 @@ internal class IndexBuffer : BufferObject<uint>
             return result;
         });
 
-        int bufferIndex = 0;
+        int quadIndex = 0;
 
         foreach (var quad in quads)
         {
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 0);
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 1);
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 2);
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 3);
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 0);
-            Buffer[bufferIndex++] = (uint)(quad.Value * 4 + 2);
+            // Use Update so a new order is uploaded even when existing sprite
+            // slots were reused and the index buffer did not grow.
+            Update(InsertIndexData, quadIndex++, (uint)(quad.Value * 4));
         }
     }
 }

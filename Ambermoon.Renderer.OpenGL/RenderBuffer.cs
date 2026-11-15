@@ -48,6 +48,8 @@ public class RenderBuffer : IDisposable
     readonly IndexBuffer indexBuffer = null;
     readonly ByteBuffer paletteIndexBuffer = null;
     readonly ByteBuffer textColorIndexBuffer = null;
+    readonly PositionBuffer glyphOriginBuffer = null;
+    readonly PositionBuffer glyphEndBuffer = null;
     readonly PositionBuffer textureEndCoordBuffer = null;
     readonly PositionBuffer textureSizeBuffer = null;
     readonly VectorBuffer billboardCenterBuffer = null;
@@ -178,7 +180,7 @@ public class RenderBuffer : IDisposable
             positionBuffer = new FloatPositionBuffer(state, false);
         indexBuffer = new IndexBuffer(state);
 
-        if (texturesWithAlpha || imageWithoutPalette)
+        if (texturesWithAlpha || imageWithoutPalette || isText)
             alphaBuffer = new ByteBuffer(state, false);
 
         if (fow)
@@ -208,8 +210,12 @@ public class RenderBuffer : IDisposable
             if (isText)
             {
                 textColorIndexBuffer = new ByteBuffer(state, true);
+                glyphOriginBuffer = new PositionBuffer(state, true);
+                glyphEndBuffer = new PositionBuffer(state, true);
 
                 vertexArrayObject.AddBuffer(TextShader.DefaultTextColorIndexName, textColorIndexBuffer);
+                vertexArrayObject.AddBuffer(TextShader.DefaultGlyphOriginName, glyphOriginBuffer);
+                vertexArrayObject.AddBuffer(TextShader.DefaultGlyphEndName, glyphEndBuffer);
             }
 
             if (!isText && !is3D && !imageWithoutPalette)
@@ -261,7 +267,7 @@ public class RenderBuffer : IDisposable
             vertexArrayObject.AddBuffer(ColorShader.DefaultPositionName, positionBuffer);
         vertexArrayObject.AddBuffer("index", indexBuffer);
 
-        if (texturesWithAlpha || imageWithoutPalette)
+        if (texturesWithAlpha || imageWithoutPalette || isText)
             vertexArrayObject.AddBuffer(AlphaTextureShader.DefaultAlphaName, alphaBuffer);
 
         if (!fow && !noTexture)
@@ -397,6 +403,7 @@ public class RenderBuffer : IDisposable
         var spriteSize = new Size(sprite.Width, sprite.Height);
         var textureAtlasOffset = new Position(sprite.TextureAtlasOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
+        int clipTextureFactor = textColorIndexBuffer == null ? 1 : (int)textureFactor;
 
         if (sprite.ClipArea != null)
         {
@@ -408,8 +415,8 @@ public class RenderBuffer : IDisposable
             int oldHeight = spriteSize.Height;
             sprite.ClipArea.ClipRect(position, spriteSize);
             textureAtlasOffset.Y += sprite.MirrorY
-                ? Util.Round((oldY + oldHeight - position.Y - spriteSize.Height) / textureHeightFactor)
-                : Util.Round((position.Y - oldY) / textureHeightFactor);
+                ? clipTextureFactor * Util.Round((oldY + oldHeight - position.Y - spriteSize.Height) / textureHeightFactor)
+                : clipTextureFactor * Util.Round((position.Y - oldY) / textureHeightFactor);
             textureSize.Width -= Util.Round((oldWidth - spriteSize.Width) / textureWidthFactor);
             textureSize.Height -= Util.Round((oldHeight - spriteSize.Height) / textureHeightFactor);
 
@@ -417,11 +424,11 @@ public class RenderBuffer : IDisposable
             {
                 float oldRight = oldX + oldWidth;
                 float newRight = position.X + spriteSize.Width;
-                textureAtlasOffset.X += Util.Round((oldRight - newRight) / textureWidthFactor);
+                textureAtlasOffset.X += clipTextureFactor * Util.Round((oldRight - newRight) / textureWidthFactor);
             }
             else
             {
-                textureAtlasOffset.X += Util.Round((position.X - oldX) / textureWidthFactor);
+                textureAtlasOffset.X += clipTextureFactor * Util.Round((position.X - oldX) / textureWidthFactor);
             }
         }
 
@@ -504,11 +511,25 @@ public class RenderBuffer : IDisposable
             textColorIndexBuffer.Add(textColorIndex.Value, textColorIndexBufferIndex + 1);
             textColorIndexBuffer.Add(textColorIndex.Value, textColorIndexBufferIndex + 2);
             textColorIndexBuffer.Add(textColorIndex.Value, textColorIndexBufferIndex + 3);
+
+            // Bounds describe the complete glyph, even when its quad is clipped.
+            // Filter taps outside it must not read the next packed atlas entry.
+            var glyphSize = sprite.TextureSize ?? new Size(sprite.Width, sprite.Height);
+            short left = (short)sprite.TextureAtlasOffset.X;
+            short top = (short)sprite.TextureAtlasOffset.Y;
+            short right = (short)(left + glyphSize.Width * textureFactor);
+            short bottom = (short)(top + glyphSize.Height * textureFactor);
+            for (int i = 0; i < 4; ++i)
+            {
+                glyphOriginBuffer.Add(left, top, index + i);
+                glyphEndBuffer.Add(right, bottom, index + i);
+            }
         }
 
         if (alphaBuffer != null)
         {
-            byte alpha = sprite is AlphaSprite alphaSprite ? alphaSprite.Alpha : (byte)0xff;
+            byte alpha = sprite is TextCharacterSprite textSprite ? textSprite.Opacity
+                : sprite is AlphaSprite alphaSprite ? alphaSprite.Alpha : (byte)0xff;
             int alphaBufferIndex = alphaBuffer.Add(alpha, index);
             alphaBuffer.Add(alpha, alphaBufferIndex + 1);
             alphaBuffer.Add(alpha, alphaBufferIndex + 2);
@@ -844,6 +865,7 @@ public class RenderBuffer : IDisposable
         var spriteSize = new Size(sprite.Width, sprite.Height);
         var textureAtlasOffset = new Position(sprite.TextureAtlasOffset);
         var textureSize = new Size(sprite.TextureSize ?? spriteSize);
+        int clipTextureFactor = textColorIndexBuffer == null ? 1 : (int)textureFactor;
 
         if (sprite.ClipArea != null)
         {
@@ -855,8 +877,8 @@ public class RenderBuffer : IDisposable
             int oldHeight = spriteSize.Height;
             sprite.ClipArea.ClipRect(position, spriteSize);
             textureAtlasOffset.Y += sprite.MirrorY
-                ? Util.Round((oldY + oldHeight - position.Y - spriteSize.Height) / textureHeightFactor)
-                : Util.Round((position.Y - oldY) / textureHeightFactor);
+                ? clipTextureFactor * Util.Round((oldY + oldHeight - position.Y - spriteSize.Height) / textureHeightFactor)
+                : clipTextureFactor * Util.Round((position.Y - oldY) / textureHeightFactor);
             textureSize.Width -= Util.Round((oldWidth - spriteSize.Width) / textureWidthFactor);
             textureSize.Height -= Util.Round((oldHeight - spriteSize.Height) / textureHeightFactor);
 
@@ -864,11 +886,11 @@ public class RenderBuffer : IDisposable
             {
                 float oldRight = oldX + oldWidth;
                 float newRight = position.X + spriteSize.Width;
-                textureAtlasOffset.X += Util.Round((oldRight - newRight) / textureWidthFactor);
+                textureAtlasOffset.X += clipTextureFactor * Util.Round((oldRight - newRight) / textureWidthFactor);
             }
             else
             {
-                textureAtlasOffset.X += Util.Round((position.X - oldX) / textureWidthFactor);
+                textureAtlasOffset.X += clipTextureFactor * Util.Round((position.X - oldX) / textureWidthFactor);
             }
         }
 
@@ -882,6 +904,18 @@ public class RenderBuffer : IDisposable
         textureAtlasOffsetBuffer.Update(index + 1, right, top);
         textureAtlasOffsetBuffer.Update(index + 2, right, bottom);
         textureAtlasOffsetBuffer.Update(index + 3, left, bottom);
+
+        if (glyphOriginBuffer != null)
+        {
+            var glyphSize = sprite.TextureSize ?? new Size(sprite.Width, sprite.Height);
+            for (int i = 0; i < 4; ++i)
+            {
+                glyphOriginBuffer.Update(index + i, (short)sprite.TextureAtlasOffset.X, (short)sprite.TextureAtlasOffset.Y);
+                glyphEndBuffer.Update(index + i,
+                    (short)(sprite.TextureAtlasOffset.X + glyphSize.Width * textureFactor),
+                    (short)(sprite.TextureAtlasOffset.Y + glyphSize.Height * textureFactor));
+            }
+        }
     }
 
     public void UpdateTextureAtlasOffset(int index, Render.ISurface3D surface)
@@ -954,6 +988,7 @@ public class RenderBuffer : IDisposable
     {
         if (layerBuffer != null)
         {
+            indexOrderChecked = false;
             layerBuffer.Update(index, displayLayer);
             layerBuffer.Update(index + 1, displayLayer);
             layerBuffer.Update(index + 2, displayLayer);
@@ -1096,6 +1131,8 @@ public class RenderBuffer : IDisposable
             if (textColorIndexBuffer != null)
             {
                 textColorIndexBuffer.Remove(index + i);
+                glyphOriginBuffer.Remove(index + i);
+                glyphEndBuffer.Remove(index + i);
             }
 
             if (alphaBuffer != null)
@@ -1230,6 +1267,8 @@ public class RenderBuffer : IDisposable
             positionBuffer?.Dispose();                
             radiusBuffer?.Dispose();                
             textColorIndexBuffer?.Dispose();
+            glyphOriginBuffer?.Dispose();
+            glyphEndBuffer?.Dispose();
             textureAtlasOffsetBuffer?.Dispose();
             textureEndCoordBuffer?.Dispose();
             textureSizeBuffer?.Dispose();

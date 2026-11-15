@@ -853,7 +853,7 @@ partial class GameCore
             ShowMap(false);
             layout.Reset();
 
-            layout.FillArea(new Rect(15, 43, 177, 80), GetUIColor(28), false);
+            layout.FillArea(new Rect(15, 43, 177, 80), ReadingTextStyle.Background(GetUIColor(28)), false);
             layout.FillArea(new Rect(15, 136, 152, 57), GetUIColor(28), false);
 
             DisplayCharacterInfo(character, true);
@@ -885,7 +885,8 @@ partial class GameCore
             ShowCreatedItems();
 
             // Note: Mouse handling in Layout assumes this is the last text (text[^1]) so ensure that.
-            conversationText = layout.AddScrollableText(textArea, ProcessText(""), TextColor.BrightGray);
+            conversationText = layout.AddScrollableText(textArea, ProcessText(""), TextColor.BrightGray,
+                shadowOpacity: ReadingTextStyle.ShadowOpacity);
             conversationText.Visible = false;
 
             if (showInitialText)

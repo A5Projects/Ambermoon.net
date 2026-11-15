@@ -866,7 +866,7 @@ namespace Ambermoon.UI
         internal Popup OpenTextPopup(IText text, Position position, int maxWidth, int maxTextHeight,
             bool disableButtons = true, bool closeOnClick = true, bool transparent = false,
             TextColor textColor = TextColor.BrightGray, Action? closeAction = null, TextAlign textAlign = TextAlign.Left,
-            byte displayLayerOffset = 0, byte? paletteOverride = null)
+            byte displayLayerOffset = 0, byte? paletteOverride = null, bool readingPanel = false)
         {
             buttonGrid?.HideTooltips();
             ClosePopup(false);
@@ -881,12 +881,17 @@ namespace Ambermoon.UI
                 textBounds.Position.Y += ((popupRows - 2) * 16 - textBounds.Height) / 2;
 
             bool scrolling = textBounds.Height / Global.GlyphLineHeight < processedText.LineCount;
-            activePopup = new Popup(game, RenderView, position, transparent ? maxWidth / Global.GlyphWidth : 18, popupRows, transparent, displayLayerOffset)
+            activePopup = new Popup(game, RenderView, position, transparent ? maxWidth / Global.GlyphWidth : 18,
+                popupRows, transparent, displayLayerOffset, readingPanel)
             {
                 DisableButtons = disableButtons,
                 CloseOnClick = closeOnClick
             };
             var uiText = activePopup.AddText(textBounds, processedText, textColor, textAlign, true, 1, scrolling, this);
+
+            // World overlays need their full shadow; soften it only over an opaque reading panel.
+            if (readingPanel && !transparent)
+                uiText.ShadowOpacity = ReadingTextStyle.ShadowOpacity;
 
             if (activePopup.CloseOnClick && scrolling)
                 activePopup.CloseOnClick = false;
@@ -905,7 +910,8 @@ namespace Ambermoon.UI
 
         internal Popup OpenTextPopup(IText text, Action? closeAction, bool disableButtons = false,
             bool closeOnClick = true, bool transparent = false, TextAlign textAlign = TextAlign.Left,
-            byte displayLayerOffset = 0, byte? paletteOverride = null, Position? offset = null)
+            byte displayLayerOffset = 0, byte? paletteOverride = null, Position? offset = null,
+            bool readingPanel = false)
         {
             const int maxTextWidth = 256;
             const int maxTextHeight = 112;
@@ -913,7 +919,7 @@ namespace Ambermoon.UI
             offset ??= new();
 
             var popup = OpenTextPopup(text, new Position(16 + offset.X, 53 + offset.Y), maxTextWidth, maxTextHeight, disableButtons,
-                closeOnClick, transparent, TextColor.BrightGray, closeAction, textAlign, displayLayerOffset, paletteOverride);
+                closeOnClick, transparent, TextColor.BrightGray, closeAction, textAlign, displayLayerOffset, paletteOverride, readingPanel);
             return popup;
         }
 
@@ -2839,7 +2845,7 @@ namespace Ambermoon.UI
                 game.InputEnable = true;
                 game.Resume();
                 game.ResetCursor();
-            });
+            }, readingPanel: true);
             game.CursorType = CursorType.Click;
 
             return true;
@@ -4969,18 +4975,19 @@ namespace Ambermoon.UI
         }
 
         public UIText AddScrollableText(Rect rect, IText text, TextColor color = TextColor.White,
-            TextAlign textAlign = TextAlign.Left, byte displayLayer = 2)
+            TextAlign textAlign = TextAlign.Left, byte displayLayer = 2, byte shadowOpacity = 255)
         {
-            var scrollableText = CreateScrollableText(rect, text, color, textAlign, displayLayer);
+            var scrollableText = CreateScrollableText(rect, text, color, textAlign, displayLayer, shadowOpacity: shadowOpacity);
             texts.Add(scrollableText);
             return scrollableText;
         }
 
         public UIText CreateScrollableText(Rect rect, IText text, TextColor color = TextColor.White,
-            TextAlign textAlign = TextAlign.Left, byte displayLayer = 2, bool shadow = true, byte? paletteIndex = null)
+            TextAlign textAlign = TextAlign.Left, byte displayLayer = 2, bool shadow = true, byte? paletteIndex = null,
+            byte shadowOpacity = 255)
         {
             var scrollableText = new UIText(RenderView, paletteIndex ?? game.UIPaletteIndex, text, GetTextRect(rect),
-                displayLayer, color, shadow, textAlign, true, game.AddTimedEvent);
+                displayLayer, color, shadow, textAlign, true, game.AddTimedEvent, shadowOpacity);
             scrollableText.FreeScrollingStarted += () =>
             {
                 freeScrolledText = scrollableText;

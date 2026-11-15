@@ -32,6 +32,7 @@ namespace Ambermoon.Render
         TextColor TextColor { get; set; }
         TextAlign TextAlign { get; set; }
         bool Shadow { get; set; }
+        byte ShadowOpacity { get; set; }
         IText Text { get; set; }
         byte DisplayLayer { get; set; }
         byte PaletteIndex { get; set; }

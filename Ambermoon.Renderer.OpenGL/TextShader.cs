@@ -24,6 +24,8 @@ namespace Ambermoon.Renderer.OpenGL;
 internal class TextShader : TextureShader
 {
     internal static readonly string DefaultTextColorIndexName = "textColorIndex";
+    internal static readonly string DefaultGlyphOriginName = "glyphOrigin";
+    internal static readonly string DefaultGlyphEndName = "glyphEnd";
 
     // The palette has a size of 32xNumPalettes pixels.
     // Each row represents one palette of 32 colors.
@@ -36,31 +38,41 @@ internal class TextShader : TextureShader
         $"uniform float {DefaultPaletteCountName};",
         $"uniform sampler2D {DefaultSamplerName};",
         $"uniform sampler2D {DefaultPaletteName};",
+        $"uniform uvec2 {DefaultAtlasSizeName};",
         $"in vec2 varTexCoord;",
         $"flat in float palIndex;",
         $"flat in float textColIndex;",
+        $"flat in float opacity;",
+        $"flat in vec2 glyphStart;",
+        $"flat in vec2 glyphStop;",
+        $"",
+        $"vec4 glyphPixel(vec2 pixel)",
+        $"{{",
+        $"    if (any(lessThan(pixel, glyphStart)) || any(greaterThanEqual(pixel, glyphStop)))",
+        $"        return vec4(0.0f);",
+        $"    vec4 color = textureLod({DefaultSamplerName}, (pixel + vec2(0.5f)) / vec2({DefaultAtlasSizeName}), 0.0f);",
+        $"    if ({DefaultUsePaletteName} > 0.5f)",
+        $"        return vec4(step(0.5f, color.r * 255.0f));",
+        $"    return vec4(color.rgb * color.a, color.a);",
+        $"}}",
         $"",
         $"void main()",
         $"{{",
-        $"    if ({DefaultUsePaletteName} > 0.5f)",
-        $"    {{",
-        $"        float alpha = textureLod({DefaultSamplerName}, varTexCoord, 0.0f).r * 255.0f;",
-        $"        if (alpha < 0.5f)",
-        $"            discard;",
-        $"        else",
-        $"            {DefaultFragmentOutColorName} = textureLod({DefaultPaletteName}, vec2((textColIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
-        $"    }}",
-        $"    else",
-        $"    {{",
-        $"        vec4 pixelColor = textureLod({DefaultSamplerName}, varTexCoord, 0.0f);",
-        $"        if (pixelColor.a < 0.5f)",
-        $"            discard;",
-        $"        else",
-        $"        {{",
-        $"            vec4 textColor = textureLod({DefaultPaletteName}, vec2((textColIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
-        $"            {DefaultFragmentOutColorName} = pixelColor * vec4(textColor.rgb, 1.0f);",
-        $"        }}",
-        $"    }}",
+        // Keep original bitmap interiors sharp. Only the immediate edge gets a
+        // roughly 1.25 framebuffer-pixel transition, independent of UI scaling.
+        // Explicit mask sampling leaves the palette-index atlas nearest-filtered.
+        $"    vec2 pixel = varTexCoord * vec2({DefaultAtlasSizeName}) - vec2(0.5f);",
+        $"    vec2 base = floor(pixel);",
+        $"    vec2 edgeWidth = clamp(fwidth(pixel) * 1.25f, vec2(0.01f), vec2(1.0f));",
+        $"    vec2 weight = smoothstep(vec2(0.5f) - edgeWidth * 0.5f, vec2(0.5f) + edgeWidth * 0.5f, fract(pixel));",
+        $"    vec4 upper = mix(glyphPixel(base), glyphPixel(base + vec2(1.0f, 0.0f)), weight.x);",
+        $"    vec4 lower = mix(glyphPixel(base + vec2(0.0f, 1.0f)), glyphPixel(base + vec2(1.0f)), weight.x);",
+        $"    vec4 glyph = mix(upper, lower, weight.y);",
+        $"    float coverage = glyph.a * opacity;",
+        $"    if (coverage < 0.0039f)",
+        $"        discard;",
+        $"    vec4 textColor = textureLod({DefaultPaletteName}, vec2((textColIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
+        $"    {DefaultFragmentOutColorName} = vec4(glyph.rgb / glyph.a * textColor.rgb, coverage * textColor.a);",
         $"}}"
     ];
 
@@ -72,6 +84,9 @@ internal class TextShader : TextureShader
         $"in uint {DefaultLayerName};",
         $"in uint {DefaultPaletteIndexName};",
         $"in uint {DefaultTextColorIndexName};",
+        $"in uint {AlphaTextureShader.DefaultAlphaName};",
+        $"in ivec2 {DefaultGlyphOriginName};",
+        $"in ivec2 {DefaultGlyphEndName};",
         $"uniform uvec2 {DefaultAtlasSizeName};",
         $"uniform float {DefaultZName};",
         $"uniform mat4 {DefaultProjectionMatrixName};",
@@ -79,6 +94,9 @@ internal class TextShader : TextureShader
         $"out vec2 varTexCoord;",
         $"flat out float palIndex;",
         $"flat out float textColIndex;",
+        $"flat out float opacity;",
+        $"flat out vec2 glyphStart;",
+        $"flat out vec2 glyphStop;",
         $"",
         $"void main()",
         $"{{",
@@ -87,6 +105,9 @@ internal class TextShader : TextureShader
         $"    varTexCoord = atlasFactor * vec2({DefaultTexCoordName}.x, {DefaultTexCoordName}.y);",
         $"    palIndex = float({DefaultPaletteIndexName});",
         $"    textColIndex = float({DefaultTextColorIndexName});",
+        $"    opacity = float({AlphaTextureShader.DefaultAlphaName}) / 255.0f;",
+        $"    glyphStart = vec2({DefaultGlyphOriginName});",
+        $"    glyphStop = vec2({DefaultGlyphEndName});",
         $"    gl_Position = {DefaultProjectionMatrixName} * {DefaultModelViewMatrixName} * vec4(pos, 1.0f - {DefaultZName} - float({DefaultLayerName}) * 0.00001f, 1.0f);",
         $"}}"
     ];

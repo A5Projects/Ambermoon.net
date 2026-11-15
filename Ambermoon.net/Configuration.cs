@@ -85,7 +85,9 @@ internal class Configuration : IConfiguration
     public bool AutoDerune { get; set; } = true;
     public bool EnableCheats { get; set; } = false;
     public bool ShowButtonTooltips { get; set; } = true;
-    public bool ShowFantasyIntro { get; set; } = true;
+    // New installations start with the original Thalion/game intro only.
+    // Explicit values in an existing configuration still override these defaults.
+    public bool ShowFantasyIntro { get; set; } = false;
     public bool ShowIntro { get; set; } = true;
     [Obsolete("Use GraphicFilter instead.")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -94,8 +96,8 @@ internal class Configuration : IConfiguration
     public GraphicFilterOverlay GraphicFilterOverlay { get; set; } = GraphicFilterOverlay.None;
     public Effects Effects { get; set; } = Effects.None;
     public bool ShowPlayerStatsTooltips { get; set; } = true;
-    public bool ShowPyrdacorLogo { get; set; } = true;
-    public bool ShowAdvancedLogo { get; set; } = true;        
+    public bool ShowPyrdacorLogo { get; set; } = false;
+    public bool ShowAdvancedLogo { get; set; } = false;
     [Obsolete("Now the fantasy intro is shown instead.")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public bool? ShowThalionLogo { get; set; } = null;
