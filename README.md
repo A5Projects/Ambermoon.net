@@ -4,7 +4,7 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive UI:** larger exploration views, compact overlays, and relaxed balance.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views, compact overlays, rendering improvements, and relaxed Advanced balance.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) — this branch | **Expanded:** enlarged 3D view with the original interface, mouse view and standard balance.
 
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant; it is separate from the Advanced game-data edition.
@@ -14,19 +14,19 @@ Both branches retain the startup selector for **Original 1.22** and **Ambermoon 
 
 Edition | Windows 64-bit portable download | Release notes
 --- | --- | ---
-**Immersive UI v1.0.0** — full exploration view and relaxed balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.0.0/Ambermoon.net-ImmersiveUI-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.0.0)
-**Expanded v1.0.0** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.0/Ambermoon.net-Expanded-1.0.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.0)
+**Immersive Edition v1.1.0** — full exploration view, rendering improvements and relaxed Advanced balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.1.0/Ambermoon-ImmersiveEdition-1.1.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.1.0)
+**Expanded v1.0.1** — enlarged 3D view, standard balance and inventory fixes | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 
-Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive UI to Expanded. See [save transfer](CARRYWEIGHT.txt).
+Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
-These first fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
+These fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 
 ## Expanded interface
 
 - The enlarged 3D viewport uses more of the left-hand section while retaining the original interface, portrait bar, and right-hand controls. The stone header joins the side borders.
 - Optional horizontal mouse-look is available through **C**, a mouse-wheel click, or the clickable **3D mouse** setting on settings page 4. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [mouse-look controls](MOUSELOOK.txt).
 - **Caps Lock** switches keyboard movement between 60% and full speed by default.
-- Standard balance is retained: this branch does not include the Immersive UI changes to party growth, spell costs, hit chances, weapon breakage, gold weight, or normal carrying capacity.
+- Standard balance is retained: this branch does not include the Immersive Edition changes to party growth, spell costs, hit chances, weapon breakage, gold weight, or normal carrying capacity.
 - Optional session cheats `noencounters`, `notired`, and `carryweight` remain available. They default off and do not change the save format. Both builds correct cached companion weights when loading transferred saves.
 - Inventory selection and transfer cancellation release their temporary button locks; the focused upstream inventory crash correction is also included. See [inventory fixes](docs/inventory-input-lock.md).
 

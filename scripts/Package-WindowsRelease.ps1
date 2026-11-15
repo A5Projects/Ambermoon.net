@@ -50,7 +50,7 @@ $branchDocs = @('Controls.md', 'Configuration.md', 'CARRYWEIGHT.txt')
 if ($Edition -eq 'immersive') {
     $branchDocs += @('ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt')
 } else {
-    $branchDocs += @('MOUSELOOK.txt', 'EXPLORATION-CHEATS.txt')
+    $branchDocs += @('MOUSELOOK.txt', 'EXPLORATION-CHEATS.txt', 'docs\inventory-input-lock.md')
 }
 foreach ($relative in (@('LICENSE', 'Ambermoon.net\versions.dat', 'Ambermoon.net\diffs.dat') + $branchDocs)) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $relative) -PathType Leaf)) {
