@@ -36,9 +36,11 @@ partial class GameWindow
             else
                 cursor.CursorMode = CursorMode.Hidden;
 
-            mouse.Position = mouseLookWarpFallback
-                ? new MousePosition(window.Size.X / 2, window.Size.Y / 2)
-                : new MousePosition(position.X, position.Y);
+            // Disabled mode already supplies an unbounded virtual position.
+            if (mouseLookWarpFallback)
+                mouse.Position = new MousePosition(window.Size.X / 2, window.Size.Y / 2);
+            else if (!captured)
+                mouse.Position = new MousePosition(position.X, position.Y);
             mouseLookLastPosition = mouse.Position;
             mouseLookIgnoreNextMove = captured;
         }
@@ -47,12 +49,19 @@ partial class GameWindow
 
     void HandleMouseLookMove(MousePosition position)
     {
-        var delta = position - mouseLookLastPosition;
-        mouseLookLastPosition = position;
         if (mouseLookIgnoreNextMove)
+        {
+            // A queued event may still carry coordinates from before capture
+            // or a deliberate cursor warp. Anchor to the device's live position.
+            mouseLookLastPosition = mouse.Position;
             mouseLookIgnoreNextMove = false;
+        }
         else
+        {
+            var delta = position - mouseLookLastPosition;
+            mouseLookLastPosition = position;
             Game?.ApplyMouseLookDelta(delta.X, delta.Y);
+        }
 
         if (mouseLookCaptured && mouseLookWarpFallback)
         {

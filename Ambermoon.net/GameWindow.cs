@@ -576,7 +576,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void Mouse_MouseMove(IMouse mouse, MousePosition position)
     {
+        bool wasCaptured = mouseLookCaptured;
         Game?.UpdateMouseLookCapture();
+        if (mouseLookCaptured != wasCaptured)
+            return; // This event came from the previous cursor mode.
         if (mouseLookCaptured)
         {
             HandleMouseLookMove(position);
