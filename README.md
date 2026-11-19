@@ -6,7 +6,7 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game. Now with installer (Win),
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
 <p float="left">
@@ -18,7 +18,7 @@ Branch | Version in this fork
 <img width="240" alt="Screenshot_04-11-2026 00-43-23" src="https://github.com/user-attachments/assets/18e196d5-c4e5-46f4-b897-c807ccbe02d5" />
 <br>
 
-### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as visual enhancements in 3d rendering and movement (much better already, but still wip) and 2d (good). <br>
+### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as visual enhancements in 3d rendering and movement (good now) and 2D movement (also good). <br>
 crude little showcase video https://youtu.be/JBkPtCe59hE
 ### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did, removing the weird gaps in the UI and fixing the awful 3D mode controls. Then i played it for a bit, and decided to go all in, with a more radical visual and control overhaul, while retaining the games looks and art unchanged. Leading to the much more evolved Ambermoon Immersive Edition).
 Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the same semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
@@ -29,7 +29,7 @@ Heavily inspired (and justified) by Albion, the official successor to Ambermoon,
 when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mostly on Ultra.  This project was done only with my input and my decisions. All changes and choices done (or not) are mine!
 <br>
 <b> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
-<br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).
+<br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).   (btw, wouldn't mind that star if you use/like)
 
 ## back to offical readme:
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant and control changes, "expanded" slightly from the Ambermoon.net main UI. (removed gaps around the world view, mouse view); 
