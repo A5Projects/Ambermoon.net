@@ -83,6 +83,7 @@ public abstract partial class GameCore
         nameProvider = new NameProvider(this);
         this.renderView = renderView;
         renderView.SetSmoothDistantFloor(configuration.SmoothDistantFloor);
+        renderView.SetSmoothWalls(configuration.SmoothWalls);
         renderView.Map3DViewArea = Global.GetMap3DViewArea(configuration.Expanded3DView);
         AudioOutput = audioOutput;
         this.songManager = songManager;

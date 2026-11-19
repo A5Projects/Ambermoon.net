@@ -50,6 +50,7 @@ internal class Texture3DShader : ColorShader
     internal static readonly string DefaultFogDepthName = "fogDepth";
     internal static readonly string DefaultFadeName = "fade";
     internal static readonly string DefaultSmoothDistantFloorName = "smoothDistantFloor";
+    internal static readonly string DefaultSmoothWallsName = "smoothWalls";
 
     // The palette has a size of 32xNumPalettes pixels.
     // Each row represents one palette of 32 colors.
@@ -72,6 +73,7 @@ internal class Texture3DShader : ColorShader
         $"uniform vec3 {DefaultFogFadeRangeName};",
         $"uniform float {DefaultFadeName};",
         $"uniform float {DefaultSmoothDistantFloorName};",
+        $"uniform float {DefaultSmoothWallsName};",
         $"in vec2 varTexCoord;",
         $"in float dist;",
         $"flat in float palIndex;",
@@ -79,6 +81,70 @@ internal class Texture3DShader : ColorShader
         $"flat in vec2 varTextureSize;",
         $"flat in float alphaEnabled;",
         $"flat in float floorSurface;",
+        $"",
+        $$"""
+        vec4 paletteColor(float index)
+        {
+            return {{DefaultUseColorReplaceName}} > 0.5 && index < 15.5 ? {{DefaultColorReplaceName}}[int(index + 0.5)]
+                : textureLod({{DefaultPaletteName}}, vec2((index + 0.5) / 32.0, (palIndex + 0.5) / {{DefaultPaletteCountName}}), 0.0);
+        }
+
+        // RGB is accumulated with the weight in .a. Keyed or transparent texels
+        // contribute no weight, so a hedge opening cannot tint adjacent leaves.
+        vec4 wallSample(ivec2 texel, ivec2 first, ivec2 last)
+        {
+            float index = texelFetch({{DefaultSamplerName}}, clamp(texel, first, last), 0).r * 255.0;
+            if (abs(index - {{DefaultSkyColorIndexName}}) < 0.5)
+                return vec4(0.0);
+            vec4 color = paletteColor(index);
+            if (color.a < 0.5)
+                return vec4(0.0);
+            return vec4(max(vec3(0.0), color.rgb + vec3({{DefaultLightName}}) - vec3(1.0)), 1.0);
+        }
+
+        vec3 smoothWallColor(vec3 centerColor, vec2 dx, vec2 dy)
+        {
+            vec2 atlas = vec2({{DefaultAtlasSizeName}});
+            ivec2 last = ivec2(round(varTextureEndCoord * atlas)) - ivec2(1);
+            ivec2 first = last + ivec2(1) - ivec2(round(varTextureSize * atlas));
+            vec2 position = varTexCoord * atlas;
+            float distant = smoothstep(1.0, 2.0, max(length(dx), length(dy)));
+            vec3 closeColor = centerColor;
+            if (distant < 1.0)
+            {
+                // Only mix a neighbour if this screen pixel straddles a texel edge.
+                vec2 fromCenter = fract(position) - 0.5;
+                vec2 span = max(abs(dx) + abs(dy), vec2(0.000001));
+                vec2 w = clamp(0.5 + (abs(fromCenter) - 0.5) / span, 0.0, 0.5);
+                if (w.x > 0.0 || w.y > 0.0)
+                {
+                    ivec2 here = ivec2(floor(position));
+                    ivec2 neighbor = ivec2(2.0 * step(vec2(0.0), fromCenter) - 1.0);
+                    vec4 sum = (1.0 - w.x) * (1.0 - w.y) * vec4(centerColor, 1.0);
+                    if (w.x > 0.0)
+                        sum += w.x * (1.0 - w.y) * wallSample(here + ivec2(neighbor.x, 0), first, last);
+                    if (w.y > 0.0)
+                        sum += (1.0 - w.x) * w.y * wallSample(here + ivec2(0, neighbor.y), first, last);
+                    if (w.x > 0.0 && w.y > 0.0)
+                        sum += w.x * w.y * wallSample(here + neighbor, first, last);
+                    closeColor = sum.rgb / sum.a;
+                }
+            }
+            if (distant <= 0.0)
+                return closeColor;
+
+            // Same symmetric positions as the floor filter, across one pixel footprint.
+            const vec2 taps[8] = vec2[8](vec2(-7,-3), vec2(-5,7), vec2(-3,-1), vec2(-1,-5),
+                                         vec2(1,5), vec2(3,1), vec2(5,-7), vec2(7,3));
+            vec4 sum = vec4(0.0);
+            for (int i = 0; i < 8; ++i)
+            {
+                vec2 samplePosition = position + (taps[i].x * dx + taps[i].y * dy) / 16.0;
+                sum += wallSample(ivec2(floor(samplePosition)), first, last);
+            }
+            return mix(closeColor, sum.a > 0.0 ? sum.rgb / sum.a : centerColor, distant);
+        }
+        """,
         $"",
         // Sample palette colours, not palette numbers. Every displaced tap wraps
         // within this tile, including negative offsets at the first repetition.
@@ -89,8 +155,7 @@ internal class Texture3DShader : ColorShader
         $"    vec2 wrapped = first + mod(coord - first, varTextureSize);",
         $"    wrapped = clamp(wrapped, first + halfTexel, varTextureEndCoord - halfTexel);",
         $"    float index = textureLod({DefaultSamplerName}, wrapped, 0.0f).r * 255.0f;",
-        $"    vec4 color = {DefaultUseColorReplaceName} > 0.5f && index < 15.5f ? {DefaultColorReplaceName}[int(index + 0.5f)]",
-        $"        : textureLod({DefaultPaletteName}, vec2((index + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
+        $"    vec4 color = paletteColor(index);",
         $"    if (abs(index - {DefaultSkyColorIndexName}) < 0.5f)",
         $"        return {DefaultSkyReplaceColorName}.rgb;",
         $"    return max(vec3(0), color.rgb + vec3({DefaultLightName}) - vec3(1));",
@@ -100,8 +165,8 @@ internal class Texture3DShader : ColorShader
         $"{{",
         // Derivatives must precede discard and varying control flow. Wrapped
         // coordinates have discontinuities which would falsely enlarge the filter.
-        $"    vec2 floorDx = dFdx(varTexCoord);",
-        $"    vec2 floorDy = dFdy(varTexCoord);",
+        $"    vec2 texCoordDx = dFdx(varTexCoord);",
+        $"    vec2 texCoordDy = dFdy(varTexCoord);",
         $"    {DefaultFragmentOutColorName} = vec4(0);",
         $"    vec2 realTexCoord = varTexCoord;",
         $"    if (realTexCoord.x >= varTextureEndCoord.x)",
@@ -109,8 +174,7 @@ internal class Texture3DShader : ColorShader
         $"    if (realTexCoord.y >= varTextureEndCoord.y)",
         $"        realTexCoord.y -= floor((varTextureSize.y + realTexCoord.y - varTextureEndCoord.y) / varTextureSize.y) * varTextureSize.y;",
         $"    float colorIndex = textureLod({DefaultSamplerName}, realTexCoord, 0.0f).r * 255.0f;",
-        $"    vec4 pixelColor = {DefaultUseColorReplaceName} > 0.5f && colorIndex < 15.5f ? {DefaultColorReplaceName}[int(colorIndex + 0.5f)]",
-        $"        : textureLod({DefaultPaletteName}, vec2((colorIndex + 0.5f) / 32.0f, (palIndex + 0.5f) / {DefaultPaletteCountName}), 0.0f);",
+        $"    vec4 pixelColor = paletteColor(colorIndex);",
         $"    ",
         $"    if (alphaEnabled > 0.5f && alphaEnabled < 1.5f && (colorIndex < 0.5f || pixelColor.a < 0.5f) || {DefaultLightName} < 0.01f)",
         $"        discard;",
@@ -126,15 +190,15 @@ internal class Texture3DShader : ColorShader
         $"    ",
         $"    if ({DefaultSmoothDistantFloorName} > 0.5f && floorSurface > 0.5f && alphaEnabled < 0.5f)",
         $"    {{",
-        $"        float footprint = max(length(floorDx * vec2({DefaultAtlasSizeName})), length(floorDy * vec2({DefaultAtlasSizeName})));",
+        $"        float footprint = max(length(texCoordDx * vec2({DefaultAtlasSizeName})), length(texCoordDy * vec2({DefaultAtlasSizeName})));",
         $"        float filterAmount = smoothstep(1.0f, 2.0f, footprint);",
         $"        if (filterAmount > 0.0f)",
         $"        {{",
         // Eight symmetric stratified taps avoid time-varying noise and the strong
         // directional pattern of a small regular grid. The slightly wider footprint
         // trades distant detail for stability; magnified nearby texels are unchanged.
-        $"            vec2 dx = 1.5f * floorDx;",
-        $"            vec2 dy = 1.5f * floorDy;",
+        $"            vec2 dx = 1.5f * texCoordDx;",
+        $"            vec2 dy = 1.5f * texCoordDy;",
         $"            vec3 filtered = sampleFloorColor(varTexCoord - 0.4375f * dx - 0.1875f * dy)",
         $"                + sampleFloorColor(varTexCoord - 0.3125f * dx + 0.4375f * dy)",
         $"                + sampleFloorColor(varTexCoord - 0.1875f * dx - 0.0625f * dy)",
@@ -147,6 +211,10 @@ internal class Texture3DShader : ColorShader
         $"        }}",
         $"    }}",
         $"    ",
+        // RenderBuffer assigns alpha mode 2 exclusively to opaque walls; explicit
+        // transparent walls keep their existing centre sampling and discard rules.
+        $"    if ({DefaultSmoothWallsName} > 0.5f && alphaEnabled > 1.5f && pixelColor.a >= 0.5f)",
+        $"        {DefaultFragmentOutColorName}.rgb = smoothWallColor({DefaultFragmentOutColorName}.rgb, texCoordDx * vec2({DefaultAtlasSizeName}), texCoordDy * vec2({DefaultAtlasSizeName}));",
         $"    if ({DefaultFogColorName}.a > 0.001f)",
         $"    {{",
         $"        float fogFactor = {DefaultFogColorName}.a * min({DefaultSkyColorIndexName} < 31.5f ? 0.8f : 1.0f, dist / {DefaultFogDistanceName});",
@@ -250,6 +318,11 @@ internal class Texture3DShader : ColorShader
     public void SetSmoothDistantFloor(bool enabled)
     {
         shaderProgram.SetInput(DefaultSmoothDistantFloorName, enabled ? 1.0f : 0.0f);
+    }
+
+    public void SetSmoothWalls(bool enabled)
+    {
+        shaderProgram.SetInput(DefaultSmoothWallsName, enabled ? 1.0f : 0.0f);
     }
 
     public void SetPaletteReplacement(PaletteReplacement paletteReplacement)

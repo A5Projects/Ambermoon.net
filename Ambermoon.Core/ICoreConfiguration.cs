@@ -139,6 +139,7 @@ public interface ICoreConfiguration
     bool MouseLook3D { get; set; }
     bool Smooth3DMovement { get; set; }
     bool SmoothDistantFloor { get; set; }
+    bool SmoothWalls { get; set; }
     int MouseLookSensitivity { get; set; }
     GameLanguage Language { get; set; }
     bool ShowCompletedQuests { get; set; }

@@ -31,6 +31,7 @@ partial class GameCore
     {
         // Also apply while in 2D so the next 3D map uses the selected setting.
         renderView.SetSmoothDistantFloor(CoreConfiguration.SmoothDistantFloor);
+        renderView.SetSmoothWalls(CoreConfiguration.SmoothWalls);
         if (Is3D)
         {
             renderMap3D?.UpdateFloorAndCeilingVisibility(CoreConfiguration.ShowFloor, CoreConfiguration.ShowCeiling);

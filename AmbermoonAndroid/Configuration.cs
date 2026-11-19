@@ -113,6 +113,7 @@ namespace AmbermoonAndroid
 		public bool MouseLook3D { get; set; } = false;
 		public bool Smooth3DMovement { get; set; } = true;
 		public bool SmoothDistantFloor { get; set; } = true;
+		public bool SmoothWalls { get; set; } = true;
 		public int MouseLookSensitivity { get; set; } = 100;
 		public bool TurnWithArrowKeys { get; set; } = true;
 		public GameLanguage Language { get; set; } = (CultureInfo.DefaultThreadCurrentCulture ?? CultureInfo.CurrentCulture)?.Name?.ToLower() switch

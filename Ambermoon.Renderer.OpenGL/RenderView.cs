@@ -1117,4 +1117,9 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         // Floor/ceiling and walls share this shader; only explicitly tagged floors use the filter.
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSmoothDistantFloor(enabled);
     }
+
+    public void SetSmoothWalls(bool enabled)
+    {
+        (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSmoothWalls(enabled);
+    }
 }
