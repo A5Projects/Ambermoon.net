@@ -1,6 +1,6 @@
 # Packaging fork releases
 
-The fork releases are portable, self-contained Windows x64 ZIPs. **Ambermoon Immersive Edition v1.2.0** is the current release, previously named Immersive UI. Its upstream base is Ambermoon.net 1.15.1 with selected fixes from 1.15.2 and later commits; this is not a full upstream update. **Expanded v1.0.1** retains its separate version and standard balance. See the [published releases](https://github.com/A5Projects/Ambermoon.net/releases) for downloads and checksums.
+Both editions ship as self-contained Windows x64 ZIPs. Immersive Edition also offers a Windows installer built from the release ZIP. **Ambermoon Immersive Edition v1.2.0** is the current release, previously named Immersive UI. Its upstream base is Ambermoon.net 1.15.1 with selected fixes from 1.15.2 and later commits; this is not a full upstream update. **Expanded v1.0.1** retains its separate version and standard balance. See the [published releases](https://github.com/A5Projects/Ambermoon.net/releases) for downloads and checksums.
 
 Use the `main` branch for Immersive Edition and `expanded` for Expanded. Commit the intended source and documentation before packaging so the binary and `START-HERE.txt` identify the correct source commit. Keep the desktop project Version and `EditionInfo.Version` aligned; the immersive packaging command rejects a mismatching tag version.
 
@@ -20,6 +20,18 @@ Use `-DotnetPath` for a private SDK and `-NoRestore` only when this checkout has
 
 The script publishes the game and runtime, preserves upstream documentation and licenses, adds branch-specific controls and a quick-start, and writes a ZIP plus a SHA-256 checksum. It excludes personal settings, saves, test files, debug symbols, and the upstream updater launcher. The updater DLL remains a required assembly dependency. Immersive Edition also disables upstream patching in code so local builds with a leftover launcher cannot compare its independent version number to upstream or replace the fork.
 
+## Build the Immersive Windows installer
+
+With Inno Setup 7 installed, run the following from `main`. Place the release ZIP and its `.zip.sha256` together. Supply `-Compiler` with the path to `ISCC.exe` if it is outside `PATH`.
+
+```powershell
+./scripts/Package-WindowsInstaller.ps1 -Archive ../release-immersive/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip
+```
+
+The script verifies the ZIP checksum and game version, then writes `-Setup.exe` and `-Setup.exe.sha256` beside the ZIP. Use the published ZIP when adding an installer to an existing release. Upload both new files to the same tag.
+
+On a separate test copy, install over an older portable release containing saves and settings. Rerun setup to check the previous folder is offered and editable and the Start menu choice is remembered. After uninstall, compare the saved files with their original hashes and check that game files and the selected shortcut were removed.
+
 ## Verify and publish
 
 Extract the ZIP into a separate test folder. Never test in the pristine payload directory: the game and verification tools can create settings, saves, and screenshots.
@@ -28,4 +40,4 @@ Check that a normal launch opens windowed and offers Original and Advanced; star
 
 When publication is authorized, create a Git tag on the exact source commit used for packaging, and publish a release with that tag, the matching ZIP, and its `.sha256` file. Keep edition tags separate so Expanded retains its own standard-balance source history. Use the release title **Ambermoon Immersive Edition v1.2.0** and mark it as the repository's latest release. Update the README's published links at that time. Include the upstream base separately, controls, balance distinction, save-transfer guidance and [upstream backport credits](docs/immersive-edition-1.1.0.md). The new immersive artifact name is `Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip`; existing releases keep their names and URLs.
 
-Downloads must not include a player's configuration or saves. Install future releases in a fresh folder and copy backed-up saves using the same Original/Advanced edition and language. No fork automatic updater is provided.
+Downloads must exclude a player's configuration and saves. The installer supports in-place upgrades. For portable upgrades into a fresh folder, copy backed-up saves and choose the same Original/Advanced edition and language. No fork automatic updater is provided.

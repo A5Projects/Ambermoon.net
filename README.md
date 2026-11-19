@@ -38,12 +38,14 @@ Transfer saves between builds using the same game-data edition and language. See
 
 ## Published downloads
 
-Edition | Windows 64-bit portable download | Release notes
+Edition | Windows x64 downloads | Release notes
 --- | --- | ---
-**Immersive Edition v1.2.0** — full exploration view; Original balance or relaxed Advanced | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0)
+**Immersive Edition v1.2.0** — full exploration view; Original balance or relaxed Advanced | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0)
 **Expanded v1.0.1** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 
-Extract the whole ZIP into its own folder and run `Ambermoon.net.exe`. Both packages include the .NET runtime and Original/Advanced game data; no separate runtime or emulator installation is needed. The upstream automatic updater is omitted; install future fork releases into a fresh folder. Transfer saves using the same game-data edition and language; characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
+The Immersive installer lets you choose the folder and whether to create a Start menu shortcut. To update a portable copy in place, select its current folder. Later installer runs offer that folder again. Updating in place and uninstalling both preserve your saves, settings, and screenshots.
+
+For a portable installation, extract the whole ZIP into a fresh writable folder and run `Ambermoon.net.exe`. Both editions include the .NET runtime and Original/Advanced game data. Fork updates are manual. When switching folders, copy `Saves` and `ambermoon.cfg` to carry over your progress and settings. Use the same game-data edition and language. Characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
 These fork releases are for Windows x64. The downloads and build badges in the upstream documentation below refer to **upstream builds**, which do not include this fork's changes. [Build and packaging instructions](RELEASING.md) are available for contributors.
 

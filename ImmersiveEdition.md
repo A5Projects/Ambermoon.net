@@ -1,6 +1,6 @@
 # Ambermoon Immersive Edition v1.2.0
 
-[Download the Windows x64 release](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0). Extract the complete ZIP into a new folder and run `Ambermoon.net.exe`; the runtime and game data are included.
+The Windows x64 release includes the runtime and game data. Run the installer and choose your game folder, or extract the portable ZIP into a new folder and run `Ambermoon.net.exe`. [Downloads and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0).
 
 This is the default `main` branch of [A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net), based on Ambermoon.net 1.15.1 with selected fixes from 1.15.2 and later upstream commits. The edition was previously called Immersive UI. See [the v1.1.0 changes and credits](docs/immersive-edition-1.1.0.md). Exploration fills the 320x163 logical pixel area below the original party portrait bar in both 2D and 3D. Original dialogs, inventory, shops, and battle layouts remain available. See [Controls](Controls.md) for the overlay controls.
 
