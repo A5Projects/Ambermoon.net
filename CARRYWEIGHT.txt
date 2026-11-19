@@ -39,7 +39,7 @@ uses Saves/german and German Advanced uses Saves/advanced_german. A whole
 edition folder includes the Save.XX directories and the Saves and Saves.cfg
 slot indexes. Copy it into a fresh destination to retain the slot names and
 Continue selection. For slots above 10, enable additional slots on the
-receiving installation. An F7 quicksave loads through its normal slot.
+receiving installation. A quicksave loads through its normal slot.
 Round-trip checks covered German Original, German Advanced and English
 Advanced saves, including an F7 save in slot 30.
 

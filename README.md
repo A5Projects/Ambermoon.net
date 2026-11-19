@@ -49,7 +49,7 @@ These fork releases are for Windows x64. The downloads and build badges in the u
 
 **New in Immersive Edition v1.1.0:** Gentler font edges and clearer reading panels, revised outdoor fog, optional distant-floor smoothing, and selected upstream fixes and additions. Advanced now has **twice** normal carrying capacity (previously four times); Original keeps normal capacity. Restored monster defence remains separate from Advanced's improved party hit chance. Friendly combat spells and items can target portraits. [Full changes and credits](docs/immersive-edition-1.1.0.md).
 
-**Retained from Immersive UI v1.0.2:** Inventory selection and transfer cancellation lock fixes, the targeted upstream inventory crash correction, and corrected carpet ordering during smooth 2D movement. **F7 quicksaves** during exploration without overwriting other saves; load through the normal menu. **Advanced's normal clock runs about 30% slower** while moving or standing still. Original's clock and explicit waits remain unchanged. [Inventory investigation](docs/inventory-input-lock.md).
+**Retained from Immersive UI v1.0.2:** Inventory selection and transfer cancellation lock fixes, the targeted upstream inventory crash correction, and corrected carpet ordering during smooth 2D movement. The dedicated exploration quicksave loads through the normal menu. The local development build uses **Ctrl+S** and also recognizes the **QuickSave F7** slot from the published release. **Advanced's normal clock runs about 30% slower** while moving or standing still. Original's clock and explicit waits remain unchanged. [Inventory investigation](docs/inventory-input-lock.md).
 
 Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded v1.0.1 adds the inventory-lock fixes while retaining its existing movement, appearance and standard balance.
 
@@ -63,7 +63,7 @@ Since v1.0.1, selecting Original keeps original balance. Advanced retains the re
 - **Smooth distant floor** on settings page 4 reduces distant 3D floor shimmer while retaining sharp nearby pixels and the original artwork. It starts enabled and can be switched off for comparison. [Details](docs/distant-floor-filter.md).
 - Selecting **Original** keeps original balance, including carry limits, gold weight, misses, and weapon breakage. Selecting **Advanced** retains our relaxed balance: twice the normal carrying capacity, lighter gold, improved party hit chances, unbreakable ordinary starter weapons, and original party growth/spell costs where applicable. Advanced XP thresholds, existing character progress, quests, locations, and added world interactions remain. Both selections keep the immersive visuals and controls. See [the exact balance changes](IMMERSIVE-BALANCE.txt).
 
-**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. Keyboard movement defaults to **60% walk speed**; **Caps Lock** toggles **100% sprint**, and **holding Shift** temporarily sprints. The saved Caps Lock mode is independent of the keyboard's lock light. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive Edition details](ImmersiveEdition.md).
+**Esc**, **Enter**, **Tab**, or **MENU** toggles the exploration actions; Esc closes an existing window first. In the local development build on Windows, **Caps Lock off** walks at **60%** by default. **Caps Lock on** or **holding Shift** sprints at **85%**. **F7** opens or closes the quest log. **F11** cycles window modes. Select **QWEASD** for W/S movement, A/D strafing, and Q/E turning; **Space** interacts ahead. See [Controls](Controls.md) and [Immersive Edition details](ImmersiveEdition.md).
 
 2D movement uses elapsed time, with bounded catch-up after stalls. 3D retains the earlier movement cadence after a timing experiment caused uneven camera motion. Its speed can depend on update frequency; see the [3D timing investigation](docs/3d-movement-timing.md) for the findings, rollback, and possible future solutions.
 
@@ -243,6 +243,8 @@ ESC | Close ingame windows, stop item dragging/specific cursors/etc
 Num1-Num9 | Action buttons 1-9 (button panel in the lower right corner)
 1-6 | Set party member 1-6 as active
 F1-F6 | Open inventory of party member 1-6
+F7 | Open or close the quest log (Immersive development build)
+Ctrl + S | Quicksave during exploration (Immersive development build)
 Ctrl + 0-9 | Quicksave into save slot 1-10 (0 saves into slot 10)
 PrintScreen or Ctrl + P | Saves a screenshot to the folder "Screenshots" next to the program (or in config folder if you have no permissions to write there)
 

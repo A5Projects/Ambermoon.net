@@ -25,13 +25,16 @@ partial class GameCore
         Provider_ContinueGameSlotUpdater()?.Invoke(slot);
     }
 
-    const string QuickSaveName = "QuickSave F7";
+    const string QuickSaveName = "QuickSave Ctrl+S";
+    const string LegacyQuickSaveName = "QuickSave F7";
 
     // Use an explicitly named quicksave, or claim an empty slot at the end of
     // the enabled list. Never silently replace a player's normal save.
     static int FindQuickSaveSlot(string[] names, Func<int, bool> slotExists)
     {
-        int existing = Array.FindIndex(names, name => name == QuickSaveName);
+        int existing = Array.IndexOf(names, QuickSaveName);
+        if (existing < 0)
+            existing = Array.IndexOf(names, LegacyQuickSaveName);
         if (existing >= 0)
             return existing + 1;
 
@@ -62,11 +65,11 @@ partial class GameCore
         {
             string message = GameLanguage switch
             {
-                GameLanguage.German => "Kein freier Speicherplatz für F7.",
-                GameLanguage.French => "Aucun emplacement libre pour F7.",
-                GameLanguage.Polish => "Brak wolnego miejsca zapisu dla F7.",
-                GameLanguage.Czech => "Neni volne misto pro ulozeni F7.",
-                _ => "No free save slot for F7."
+                GameLanguage.German => "Kein freier Speicherplatz für Strg+S.",
+                GameLanguage.French => "Aucun emplacement libre pour Ctrl+S.",
+                GameLanguage.Polish => "Brak wolnego miejsca zapisu dla Ctrl+S.",
+                GameLanguage.Czech => "Neni volne misto pro ulozeni Ctrl+S.",
+                _ => "No free save slot for Ctrl+S."
             };
             ShowBriefMessagePopup(message, TimeSpan.FromMilliseconds(2000));
             return;

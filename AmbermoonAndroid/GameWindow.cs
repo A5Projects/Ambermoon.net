@@ -252,15 +252,7 @@ class GameWindow
 
         if (key == Silk.NET.Input.Key.F7)
         {
-            if (!Game.BattleRoundActive)
-            {
-                if (GetModifiers(keyboard) == KeyModifiers.None)
-                    configuration.BattleSpeed = configuration.BattleSpeed >= 100 ? 0 : configuration.BattleSpeed + 10;
-                else
-                    configuration.BattleSpeed = configuration.BattleSpeed <= 0 ? 100 : configuration.BattleSpeed - 10;
-
-                Game?.ExternalBattleSpeedChanged();
-            }
+            Game?.OnKeyDown(Key.F7, GetModifiers(keyboard));
         }
         else if (key == Silk.NET.Input.Key.F8)
         {

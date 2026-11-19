@@ -8,13 +8,14 @@ Input | Action
 --- | ---
 1 to 6 | Select party member 1 to 6
 F1 to F6 | Open inventory of party member 1 to 6
-F7 | Quicksave during exploration; in battle, change battle speed (use Ctrl, Shift or Alt to change backwards)
+F7 | Open or close the quest log
 F8 | Change graphic filter (use Ctrl, Shift or Alt to change backwards)
 F9 | Change graphic overlay (use Ctrl, Shift or Alt to change backwards)
 F10 | Change color effect (use Ctrl, Shift or Alt to change backwards)
 F11 | Cycle windowed, full-size window, and fullscreen modes
 PrintScreen | Take screenshot (stored in folder Screenshots)
 Ctrl + P | Take screenshot (stored in folder Screenshots)
+Ctrl + S | Quicksave during exploration
 Ctrl + M | Toggle music
 Ctrl + , | Lower volume
 Ctrl + . | Increase volume
@@ -35,7 +36,7 @@ NumPad 1 to 9 | Move while the exploration overlay is closed; select the corresp
 
 ## Map
 
-**F7** saves exploration to a slot named **QuickSave F7**. The first use takes the last empty enabled slot; later uses replace that quicksave. It never replaces another named save automatically. If all slots are occupied, free a slot using the normal save menu first. Load the quicksave through the normal load menu. F7 does not save during combat, dialogs, inventory, or unfinished item actions. Battle speed remains adjustable in the options menu and with F7 during combat.
+**Ctrl+S** saves during exploration. It reuses the existing **QuickSave F7** slot from earlier builds and updates its label to **QuickSave Ctrl+S**. For a new quicksave it takes the last empty enabled slot. If all slots are occupied, free one using the normal save menu. Load the quicksave through the normal load menu. Use **F7** to open or close the quest log and **Options** to adjust battle speed.
 
 Press **Escape**, **Tab**, **Return**, or click **MENU** at the top right to show or hide the action overlay. Escape closes an existing window or popup first. A right click inside the overlay also closes it. The overlay sits against the bottom-right corner and provides interactions, spells, resting, the automap, battle positions, and options (including save/load). It stays open after actions and returns after temporary screens close; loading or starting a game resets it to closed. Holding movement keys or mouse arrows works while it is visible. Mouse-look releases the cursor for clicking the buttons; actual dialogs and options still block movement. Opening it does not resize or recenter the world.
 
@@ -43,7 +44,7 @@ Use the arrow keys, WASD, or the numpad to move without opening any controls. In
 
 The location and acquired indicators share a slim translucent bar directly below the portraits. The horizontal compass stays centered: localized bearings and intermediate ticks slide beneath a fixed pointer as you turn. It remains hidden until activated in the game. The clock, daylight, monster, wind, and position indicators appear to its right; coordinates use a small second row when the top row is full. Hover a shortened location name to see it in full. Active spells remain near the bottom left. These indicators still require the corresponding items or spells.
 
-On desktop, keyboard movement defaults to **60% walk speed**. **Caps Lock** toggles between that configured walking speed and **100% sprint speed**. **Hold either Shift key** to sprint temporarily; releasing Shift restores the selected Caps Lock mode. This applies to arrow keys, WASD/QE and numpad movement, including turning in 3D. The location title briefly shows the mode selected by Caps Lock, even while Shift is held. The selection is remembered between sessions and is independent of the keyboard's Caps Lock light; Shift is never saved. Mouse movement keeps its normal behavior. In 2D, walking increases the time between tile steps. Existing Shift shortcuts in inventory and other windows still work.
+On Windows, the Caps Lock light selects keyboard speed in 2D and 3D. **Light off** means walking (60% by default). **Light on** means **85% sprint**. Holding either **Shift** key also sprints. Releasing it returns to the speed selected by Caps Lock. The game reads the keyboard state when you start playing and when you return after Alt-Tab. These speeds apply to arrow keys, WASD/QE and numpad movement, including keyboard turning in 3D.
 
 2D movement uses elapsed time at the game's nominal 60-tick rate, with catch-up limited to 100 milliseconds. 3D retains the earlier update-dependent movement cadence after the timing rollback. Original movement distances and collision checks are preserved. See the [3D timing investigation](docs/3d-movement-timing.md) for the findings and limitations.
 

@@ -187,7 +187,7 @@ directories. Run windowed, select the same Original/Advanced data, mouse-look,
 and Caps Lock speed, and use the same graphics filter. Walk forward, strafe in a
 circle around a nearby object, then weave between objects while turning with the
 mouse. Include walls and ground in the view. Avoid changing graphics settings or
-speed during a single comparison. The operating system's Caps Lock light does
+speed during a single comparison. In the historical comparison builds, the operating system's Caps Lock light does
 not identify the game's saved speed selection.
 
 For a deterministic regression test, exercise the actual scheduler and camera

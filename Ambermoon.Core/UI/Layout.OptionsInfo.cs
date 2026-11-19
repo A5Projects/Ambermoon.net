@@ -9,13 +9,15 @@ internal partial class Layout
 {
     void AddOptionMenuInfo()
     {
+        int walk = game.KeyboardWalkPercent;
+        const int sprint = GameCore.KeyboardSprintPercent;
         string hints = game.GameLanguage switch
         {
-            GameLanguage.German => "3D C/Mausrad-Klick: Mausmodus ändern^Caps: 60%/100%  Shift halten: 100%^Esc/Enter: Aktionsmenü öffnen^F11: Vollbild wechseln",
-            GameLanguage.French => "3D C/clic molette: mode souris^Caps: 60%/100%  Maintenir Shift: 100%^Esc/Entrée: menu d'actions^F11: plein écran",
-            GameLanguage.Polish => "3D C/klik rolki: tryb myszy^Caps: 60%/100%  Trzymaj Shift: 100%^Esc/Enter: menu akcji^F11: pełny ekran",
-            GameLanguage.Czech => "3D C/stisk kolečka: režim myši^Caps: 60%/100%  Držet Shift: 100%^Esc/Enter: nabídka akcí^F11: celá obrazovka",
-            _ => "3D C/wheel click: switch mouse mode^Caps: 60%/100%  Hold Shift: 100%^Esc/Enter: open action menu^F11: toggle fullscreen"
+            GameLanguage.German => $"3D C/Mausrad-Klick: Mausmodus ändern^Caps aus {walk}%, an {sprint}%  Shift halten {sprint}%^Strg+S: Schnellspeichern  F7: Tagebuch^Esc/Enter: Aktionsmenü öffnen^F11: Vollbild wechseln",
+            GameLanguage.French => $"3D C/clic molette: mode souris^Verr. Maj {walk}%/{sprint}%  Maj tenue: {sprint}%^Ctrl+S: sauvegarde rapide  F7: journal^Esc/Entrée: menu d'actions^F11: plein écran",
+            GameLanguage.Polish => $"3D C/klik rolki: tryb myszy^Caps wył. {walk}%, wł. {sprint}%  Shift: {sprint}%^Ctrl+S: szybki zapis  F7: dziennik^Esc/Enter: menu akcji^F11: pełny ekran",
+            GameLanguage.Czech => $"3D C/stisk kolečka: režim myši^Caps vyp. {walk}%, zap. {sprint}%  Shift: {sprint}%^Ctrl+S: rychle uložit  F7: deník^Esc/Enter: nabídka akcí^F11: celá obrazovka",
+            _ => $"3D C/wheel click: switch mouse mode^Caps off {walk}%, on {sprint}%  Hold Shift {sprint}%^Ctrl+S: quicksave  F7: quest log^Esc/Enter: open action menu^F11: toggle fullscreen"
         };
         string content = $"{game.GetFullVersion()}^^{hints}";
         const int boxWidth = 240;

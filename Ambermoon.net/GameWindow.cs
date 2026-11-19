@@ -101,12 +101,6 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
     bool checkPatcher = true;
     List<Mod.Packaging.ModPackage> mods = [];
     Mod.ModRuntime activeMod = null;
-    /// <summary>
-    /// The configuration of the running game. While a mod with option defaults is active,
-    /// this provides the mod defaults (see <see cref="ModConfiguration"/>).
-    /// </summary>
-    IConfiguration gameConfiguration = null;
-    IConfiguration GameConfiguration => gameConfiguration ?? configuration;
     Exception modLoadError = null;
     bool initialIntroEndedByClick = false;
     CommandLineOptions commandLineOptions = null;
@@ -366,27 +360,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
             Game?.PostFullscreenChanged();
         }
-        else if (key == Silk.NET.Input.Key.F6)
-        {
-            Game?.ToggleQuestLog();
-        }
         else if (key == Silk.NET.Input.Key.F7)
         {
-            if (Game?.BattleActive != true)
-            {
-                Game?.OnKeyDown(Key.F7, GetModifiers(keyboard));
-            }
-            else if (!Game.BattleRoundActive)
-            {
-                var gameConfiguration = GameConfiguration;
-
-                if (GetModifiers(keyboard) == KeyModifiers.None)
-                    gameConfiguration.BattleSpeed = gameConfiguration.BattleSpeed >= 100 ? 0 : gameConfiguration.BattleSpeed + 10;
-                else
-                    gameConfiguration.BattleSpeed = gameConfiguration.BattleSpeed <= 0 ? 100 : gameConfiguration.BattleSpeed - 10;
-
-                Game?.ExternalBattleSpeedChanged();
-            }
+            Game?.OnKeyDown(Key.F7, GetModifiers(keyboard));
+            Game?.UpdateMouseLookCapture();
         }
         else if (key == Silk.NET.Input.Key.F8)
         {
@@ -1178,7 +1155,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                         {
                             string versionString = EditionInfo.DisplayName;
                             // Mods can provide defaults for some options. They are stored in an own config file per mod.
-                            gameConfiguration = features.HasFlag(Features.Mod) && activeMod?.Manifest.Options?.Count > 0
+                            IConfiguration gameConfiguration = features.HasFlag(Features.Mod) && activeMod?.Manifest.Options?.Count > 0
                                 ? new ModConfiguration(configuration, Mod.ModOptions.Load(activeMod.Manifest,
                                     Path.Combine(Configuration.GetSavePath("mods"), "options", activeMod.Manifest.Id + ".json")))
                                 : configuration;
@@ -1187,6 +1164,9 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                                 musicManager, FullscreenChangeRequest, ChangeResolution, QueryPressedKeys,
                                 new OutroFactory(renderView, outroData, outroFont, outroFontLarge), features,
                                 Path.GetFileName(savePath), versionString, null, additionalSaveSlotProvider);
+
+                            if (OperatingSystem.IsWindows())
+                                game.CapsLockStateProvider = static () => Console.CapsLock;
 
                             if (features.HasFlag(Features.Mod))
                                 activeMod?.AttachGame(game);

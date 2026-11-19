@@ -142,10 +142,16 @@ partial class GameCore
             }
         }
     }
-    float BaseKeyboardMovementFactor => CoreConfiguration.IsMobile || !CoreConfiguration.SlowKeyboardMovement
-        ? 1.0f : Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, 100) / 100.0f;
-    internal float KeyboardMovementFactor => !CoreConfiguration.IsMobile && mouseLookFocused &&
-        (keys[(int)Key.LeftShift] || keys[(int)Key.RightShift]) ? 1.0f : BaseKeyboardMovementFactor;
+    internal const int KeyboardSprintPercent = 85;
+    internal int KeyboardWalkPercent => Math.Clamp(CoreConfiguration.KeyboardMovementSpeed, 10, KeyboardSprintPercent);
+    // Query the lock state on the window thread so changes made in other windows
+    // or while typing in a game dialog take effect when exploration resumes.
+    public Func<bool>? CapsLockStateProvider { get; set; }
+    int SelectedKeyboardSpeed => (CapsLockStateProvider?.Invoke() ?? !CoreConfiguration.SlowKeyboardMovement)
+        ? KeyboardSprintPercent : KeyboardWalkPercent;
+    internal float KeyboardMovementFactor => CoreConfiguration.IsMobile ? 1.0f :
+        (mouseLookFocused && (keys[(int)Key.LeftShift] || keys[(int)Key.RightShift])
+            ? KeyboardSprintPercent : SelectedKeyboardSpeed) / 100.0f;
     internal bool NumpadMovementHeld => Enumerable.Range((int)Key.Num1, 9).Any(index => keys[index]);
     static bool IsMovementKey(Key key) => key is Key.Left or Key.Right or Key.Up or Key.Down
         or Key.W or Key.A or Key.S or Key.D or Key.Q or Key.E
@@ -153,12 +159,15 @@ partial class GameCore
     bool KeyboardMovementHeld => keys.Where((pressed, index) => pressed && IsMovementKey((Key)index) &&
         !(layout.ExplorationActionsOpen && (Key)index >= Key.Num1 && (Key)index <= Key.Num9)).Any();
 
-    void ToggleKeyboardMovementSpeed()
+    void OnCapsLockPressed()
     {
-        CoreConfiguration.SlowKeyboardMovement = !CoreConfiguration.SlowKeyboardMovement;
-        CoreConfiguration.RequestSave();
-        // Report the saved toggle, even if Shift currently overrides it.
-        int percent = (int)Math.Round(BaseKeyboardMovementFactor * 100);
+        if (CapsLockStateProvider == null)
+        {
+            CoreConfiguration.SlowKeyboardMovement = !CoreConfiguration.SlowKeyboardMovement;
+            CoreConfiguration.RequestSave();
+        }
+        // Report the lock selection even if Shift is temporarily held.
+        int percent = SelectedKeyboardSpeed;
         string label = GameLanguage switch
         {
             GameLanguage.German => "Tastaturtempo",
@@ -217,7 +226,7 @@ partial class GameCore
         ResetKey(Key.Right);
         ResetKey(Key.W);
         ResetKey(Key.A);
-        ResetKey(Key.S);
+        keys[(int)Key.S] = !forceDisable && !quickSaveKeyHeld && pressedKeys?.Contains(Key.S) == true;
         ResetKey(Key.D);
         ResetKey(Key.Q);
         ResetKey(Key.E);

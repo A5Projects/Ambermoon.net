@@ -41,6 +41,7 @@ partial class GameCore
     bool allInputDisabled = false;
     bool inputEnable = true;
     bool clickMoveActive = false;
+    bool quickSaveKeyHeld;
     bool trappedAfterClickMoveActivation = false;
     Rect? trapMouseArea = null;
     Rect? trapMouseGameArea = null;
@@ -500,8 +501,20 @@ partial class GameCore
             keys[(int)key] = true;
         if (key == Key.F7)
         {
-            if (!wasPressed && modifiers == KeyModifiers.None)
-                QuickSave();
+            if (!wasPressed)
+                ToggleQuestLog();
+            return;
+        }
+        // Keep S out of the movement keys for the whole shortcut press,
+        // including repeats after Ctrl is released and while a popup closes.
+        if (key == Key.S && (quickSaveKeyHeld || modifiers.HasFlag(KeyModifiers.Control)))
+        {
+            if (!quickSaveKeyHeld && !wasPressed)
+            {
+                quickSaveKeyHeld = true;
+                if (modifiers == KeyModifiers.Control)
+                    QuickSave();
+            }
             return;
         }
         // Shift is a held movement modifier, not a map action. Other shortcuts
@@ -599,7 +612,7 @@ partial class GameCore
         if (key == Key.CapsLock)
         {
             if (!wasPressed && !WindowActive && !layout.PopupActive && !CoreConfiguration.IsMobile)
-                ToggleKeyboardMovementSpeed();
+                OnCapsLockPressed();
             return;
         }
 
@@ -804,6 +817,11 @@ partial class GameCore
     {
         // Clear even if a popup or world map opened between key-down and key-up.
         keys[(int)key] = false;
+        if (key == Key.S && quickSaveKeyHeld)
+        {
+            quickSaveKeyHeld = false;
+            return;
+        }
         if (key is Key.LeftShift or Key.RightShift)
             return;
         if (worldMapViewer != null)

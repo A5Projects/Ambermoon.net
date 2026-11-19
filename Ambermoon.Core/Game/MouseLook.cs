@@ -39,6 +39,7 @@ partial class GameCore
         {
             camera3D?.ResetMovementInterpolation();
             Array.Clear(keys, 0, keys.Length);
+            quickSaveKeyHeld = false;
             mouseLookToggleHeld = false;
             clickMoveActive = false;
             ResetMoveKeys(true);
