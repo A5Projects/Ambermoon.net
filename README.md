@@ -18,7 +18,7 @@ Branch | Version in this fork
 <img width="240" alt="Screenshot_04-11-2026 00-43-23" src="https://github.com/user-attachments/assets/18e196d5-c4e5-46f4-b897-c807ccbe02d5" />
 <br>
 
-### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as (respectful) visual enhancements in 3d (much better already, but still wip) and 2d (good). <br>
+### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as visual enhancements in 3d rendering and movement (much better already, but still wip) and 2d (good). <br>
 crude little showcase video https://youtu.be/JBkPtCe59hE
 ### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did, removing the weird gaps in the UI and fixing the awful 3D mode controls. Then i played it for a bit, and decided to go all in, with a more radical visual and control overhaul, while retaining the games looks and art unchanged. Leading to the much more evolved Ambermoon Immersive Edition).
 Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the same semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
