@@ -6,7 +6,7 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! Better 3D rendering. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
 <p float="left">
