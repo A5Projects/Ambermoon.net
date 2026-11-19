@@ -1,4 +1,4 @@
-Ambermoon Immersive Edition v1.1.0 - balance by game-data edition
+Ambermoon Immersive Edition v1.2.0 - balance by game-data edition
 
 Based on the installed Original 1.22 / Advanced 1.33 data, running in the
 Ambermoon Immersive Edition (Ambermoon.net base 1.15.1 with selected backports). No versions.dat or save files are patched.

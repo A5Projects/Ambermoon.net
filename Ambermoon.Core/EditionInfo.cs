@@ -5,7 +5,7 @@ public static class EditionInfo
 {
     public const string Name = "Ambermoon Immersive Edition";
     // Keep in sync with the desktop project's Version property.
-    public const string Version = "1.1.0";
+    public const string Version = "1.2.0";
     public const string UpstreamBaseVersion = "1.15.1";
     public const string DisplayName = Name + " v" + Version;
     public const string BackportInfo = "Selected fixes: 1.15.2 and later";

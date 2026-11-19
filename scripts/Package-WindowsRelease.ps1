@@ -2,7 +2,7 @@
 .SYNOPSIS
 Build a clean, self-contained Windows x64 ZIP for either fork branch.
 .EXAMPLE
-./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.1.0 -OutputDirectory ../release-immersive
+./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.2.0 -OutputDirectory ../release-immersive
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
@@ -154,9 +154,10 @@ The Original selection keeps original balance, including misses and weapon break
 Advanced has twice normal carrying capacity and relaxed balance, including a clock about 30% slower while
 travelling or standing still. Original's clock and explicit waits are unchanged.
 See Documentation/IMMERSIVE-BALANCE.txt for the full rules.
-F7 quicksaves during exploration to QuickSave F7 without replacing other saves.
-Reload through the normal load menu; no quick-load key is added. In combat F7
-keeps its battle-speed function. See Documentation/Controls.md.
+To reduce shimmer, enable Smooth 3D walls in Options on page 4. The floor has its own setting.
+Ctrl+S quicksaves during exploration and reuses the QuickSave F7 slot from earlier releases.
+Load it through the normal load menu. F7 opens or closes the quest log. Adjust
+combat speed in Options. See Documentation/Controls.md.
 '@
 } else {
 @'
@@ -166,7 +167,7 @@ Documentation/EXPLORATION-CHEATS.txt describes the optional session cheats.
 '@
 }
 $movementHelp = if ($Edition -eq 'immersive') {
-    'Keyboard movement defaults to 60% walking speed. Caps Lock toggles 100% sprint; holding Shift temporarily sprints.'
+    'On Windows, Caps Lock off walks at 60% by default. Caps Lock on or holding Shift sprints at 85%.'
 } else {
     'Caps Lock switches keyboard movement to/from 60% speed.'
 }

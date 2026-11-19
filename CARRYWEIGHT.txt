@@ -43,7 +43,7 @@ receiving installation. A quicksave loads through its normal slot.
 Round-trip checks covered German Original, German Advanced and English
 Advanced saves, including an F7 save in slot 30.
 
-This local Immersive build uses the same saved quest and item-acquisition
+Immersive Edition v1.2.0 uses the same saved quest and item-acquisition
 flags as upstream 1.16.0. Both remember obtaining the Map of Lyramion and the
 Rune Alphabet. Old saves recover the map from its quest flag or the item and
 recover the alphabet if a stored companion still has it.
@@ -61,7 +61,7 @@ to a new slot first. Characters can still be overloaded under upstream rules.
 Original balance in Immersive UI v1.0.1 and later
 
 The Original game-data selection now uses original capacity (1 kg per effective
-strength point) and gold weight (5 g per coin). Advanced in Immersive Edition v1.1.0 uses 2 kg per strength
+strength point) and gold weight (5 g per coin). Since Immersive Edition v1.1.0, Advanced uses 2 kg per strength
 point and 1 g per coin. The normal 999-gram allowance applies in either case. Advanced previously used
 4 kg through v1.0.2; upgrading can leave heavily loaded characters overloaded.
 No items are removed. Use the temporary carryweight command to reach storage.
