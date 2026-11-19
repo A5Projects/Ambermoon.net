@@ -6,8 +6,8 @@
 
 Branch | Version in this fork
 --- | ---
-[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays. Smoothed 2D movement. Optional 3D Mouse View controls in all versions. New Cheats. Original uses original balance; Advanced includes relaxed balance and a higher carrying limit.
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** enlarged 3D view, maximized within the original interface, and standard Ambermoon.net balance. Optional Mouse View controls in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
+[`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! Better 3D rendering. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
 <p float="left">
   <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="300" alt="3D town with the action menu" /></a>
@@ -18,10 +18,10 @@ Branch | Version in this fork
 <img width="240" alt="Screenshot_04-11-2026 00-43-23" src="https://github.com/user-attachments/assets/18e196d5-c4e5-46f4-b897-c807ccbe02d5" />
 <br>
 
-
+### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as (respectful) visual enhancements in 3d (much better already, but still wip) and 2d (good). <br>
 crude little showcase video https://youtu.be/JBkPtCe59hE
-### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did. Then i played it for a bit, discovered that with some changes, Ambermoon holds up remarkably well (the age of pixel art...), and decided to go all in, with a more radical visual  and control overhaul, while retaining the games looks and art unchanged.  (The much more evolved Ambermoon Immersive Edition).
-Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
+### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did, removing the weird gaps in the UI and fixing the awful 3D mode controls. Then i played it for a bit, and decided to go all in, with a more radical visual and control overhaul, while retaining the games looks and art unchanged. Leading to the much more evolved Ambermoon Immersive Edition).
+Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the same semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
 <br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
 ### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
 
