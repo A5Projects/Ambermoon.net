@@ -83,6 +83,34 @@ namespace Ambermoon.Data
         public uint LearnedSpellsType6 { get; set; }
         public uint LearnedSpellsType7 { get; set; }
         public uint TotalWeight { get; set; }
+        uint goldWeightInTotal = ImmersiveBalance.LegacyGoldWeight;
+
+        // A freshly read record already has the on-disk weight. Only characters
+        // recalculated for play in Advanced need their gold converted on write.
+        public uint LegacyTotalWeight
+        {
+            get => TotalWeight + Gold * (ImmersiveBalance.LegacyGoldWeight - goldWeightInTotal);
+            set
+            {
+                TotalWeight = value;
+                goldWeightInTotal = ImmersiveBalance.LegacyGoldWeight;
+            }
+        }
+
+        public void RecalculateTotalWeight(IItemManager itemManager)
+        {
+            uint goldWeight = GoldWeight;
+            uint weight = Gold * goldWeight + Food * FoodWeight;
+            foreach (var slot in Inventory.Slots.Concat(Equipment.Slots.Values))
+            {
+                if (slot != null && !slot.Empty && slot.ItemIndex != 0)
+                    weight += (uint)slot.Amount * itemManager.GetItem(slot.ItemIndex).Weight;
+            }
+
+            TotalWeight = weight;
+            goldWeightInTotal = goldWeight;
+        }
+
         public string Name { get; set; }
         public bool Alive =>
             !Conditions.HasFlag(Condition.DeadCorpse) &&

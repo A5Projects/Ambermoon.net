@@ -368,6 +368,7 @@ partial class GameCore
 
         Ingame = true;
         CurrentSavegame = savegame;
+        UpdateObtainedItemOptions(savegame);
         GameTime = new SavegameTime(savegame, ImmersiveBalance.Enabled) { PreventTiredness = PreventTiredness };
         lastSwimDamageHour = GameTime.Hour;
         lastSwimDamageMinute = GameTime.Minute;
@@ -445,7 +446,6 @@ partial class GameCore
             if (savegame.CurrentPartyMemberIndices[i] != 0)
             {
                 var partyMember = savegame.GetPartyMember(i)!;
-                CheckWeight(partyMember);
                 AddPartyMember(i, partyMember);
             }
         }
@@ -525,30 +525,6 @@ partial class GameCore
         PlayerMoved(false, new Position(player.Position), false);
 
         ModHooks?.GameStarted(newGame);
-
-        void CheckWeight(PartyMember partyMember)
-        {
-            // Adjust weight in case it was set to a wrong value before.
-            partyMember.TotalWeight = (uint)partyMember.Gold * Character.GoldWeight + (uint)partyMember.Food * Character.FoodWeight;
-
-            foreach (var item in partyMember.Inventory.Slots)
-            {
-                if (item != null && item.Amount != 0 && item.ItemIndex != 0)
-                {
-                    var itemInfo = ItemManager.GetItem(item.ItemIndex);
-                    partyMember.TotalWeight += (uint)item.Amount * itemInfo.Weight;
-                }
-            }
-
-            foreach (var item in partyMember.Equipment.Slots.Values)
-            {
-                if (item != null && item.Amount != 0 && item.ItemIndex != 0)
-                {
-                    var itemInfo = ItemManager.GetItem(item.ItemIndex);
-                    partyMember.TotalWeight += (uint)item.Amount * itemInfo.Weight;
-                }
-            }
-        }
     }
 
     internal void NewGame(bool cleanUp = true)

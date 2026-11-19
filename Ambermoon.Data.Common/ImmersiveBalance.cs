@@ -9,7 +9,8 @@ namespace Ambermoon.Data
     public static class ImmersiveBalance
     {
         public static bool Enabled { get; private set; }
-        public static uint GoldWeight => Enabled ? 1u : 5u;
+        internal const uint LegacyGoldWeight = 5;
+        public static uint GoldWeight => Enabled ? 1u : LegacyGoldWeight;
         public static uint CarryWeightPerStrength => Enabled ? 2000u : 1000u;
 
         public static bool UsesRelaxedBalance(Features features) =>

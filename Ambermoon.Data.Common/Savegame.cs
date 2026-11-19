@@ -347,14 +347,15 @@ namespace Ambermoon.Data
             SpecialItemsActive |= (ushort)(1 << (int)specialItemPurpose);
         }
 
+        // Events have already converted their bit index to an option mask.
         public bool IsGameOptionActive(Option option)
         {
-            return (GameOptions & (1 << (int)option)) != 0;
+            return (GameOptions & (ushort)option) != 0;
         }
 
         public void SetGameOption(Option option, bool active)
         {
-            ushort bit = (ushort)(1 << (int)option);
+            ushort bit = (ushort)option;
 
             if (active)
                 GameOptions |= bit;

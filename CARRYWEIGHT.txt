@@ -32,6 +32,32 @@ does not change the character's strength or give permanent carrying capacity
 to another build. The destination must enable its own bonus if needed.
 Ordinary overloading under its different capacity/weight rules is expected.
 
+Save transfer with upstream Ambermoon.net 1.16.0
+
+Use the same edition and language on both sides. For example, German Original
+uses Saves/german and German Advanced uses Saves/advanced_german. A whole
+edition folder includes the Save.XX directories and the Saves and Saves.cfg
+slot indexes. Copy it into a fresh destination to retain the slot names and
+Continue selection. For slots above 10, enable additional slots on the
+receiving installation. An F7 quicksave loads through its normal slot.
+Round-trip checks covered German Original, German Advanced and English
+Advanced saves, including an F7 save in slot 30.
+
+This local Immersive build uses the same saved quest and item-acquisition
+flags as upstream 1.16.0. Both remember obtaining the Map of Lyramion and the
+Rune Alphabet. Old saves recover the map from its quest flag or the item and
+recover the alphabet if a stored companion still has it.
+
+Older builds used one bit for two events. Following upstream's migration,
+that legacy bit counts as finding the yellow sphere. An old save has no way
+to distinguish it from Valdyn's conversation with Sheera. New saves keep the
+two events independently.
+
+New saves record inventory weight using upstream's five grams per gold coin
+for every companion. Immersive recalculates the weight used during play when
+loading. To transfer an older Immersive Advanced save, load it here and save
+to a new slot first. Characters can still be overloaded under upstream rules.
+
 Original balance in Immersive UI v1.0.1 and later
 
 The Original game-data selection now uses original capacity (1 kg per effective

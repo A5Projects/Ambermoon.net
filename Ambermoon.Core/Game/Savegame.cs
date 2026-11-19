@@ -85,36 +85,7 @@ partial class GameCore
     private protected void FixSavegameValues(Savegame savegame)
     {
         foreach (var member in savegame.PartyMembers.Values)
-        {
-            uint weight = 0;
-
-            // Add gold and food
-            weight += member.Gold * Character.GoldWeight;
-            weight += member.Food * Character.FoodWeight;
-
-            // Add items
-            foreach (var itemSlot in member.Inventory.Slots)
-            {
-                if (itemSlot == null || itemSlot.ItemIndex == 0)
-                    continue;
-
-                var item = ItemManager.GetItem(itemSlot.ItemIndex);
-
-                weight += (uint)itemSlot.Amount * item.Weight;
-            }
-
-            foreach (var itemSlot in member.Equipment.Slots.Values)
-            {
-                if (itemSlot == null || itemSlot.ItemIndex == 0)
-                    continue;
-
-                var item = ItemManager.GetItem(itemSlot.ItemIndex);
-
-                weight += (uint)itemSlot.Amount * item.Weight;
-            }
-
-            member.TotalWeight = weight;
-        }
+            member.RecalculateTotalWeight(ItemManager);
     }
 
     void RunSavegameTileChangeEvents(uint mapIndex)

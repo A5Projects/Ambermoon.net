@@ -85,7 +85,7 @@ namespace Ambermoon.Data.Legacy.Characters
             dataWriter.Write(character.LearnedSpellsType5);
             dataWriter.Write(character.LearnedSpellsType6);
             dataWriter.Write(character.LearnedSpellsType7);
-            dataWriter.Write(character.TotalWeight);
+            dataWriter.Write(character.LegacyTotalWeight);
             string serializedCharacterName = character.Name.Length == 16
                 ? character.Name.Substring(0, 15) + "\0"
                 : character.Name.PadRight(16, '\0');

@@ -92,7 +92,7 @@ namespace Ambermoon.Data.Legacy.Characters
             character.LearnedSpellsType5 = dataReader.ReadDword();
             character.LearnedSpellsType6 = dataReader.ReadDword();
             character.LearnedSpellsType7 = dataReader.ReadDword();
-            character.TotalWeight = dataReader.ReadDword();
+            character.LegacyTotalWeight = dataReader.ReadDword();
             character.Name = dataReader.ReadString(16);
 
             int terminatingNullIndex = character.Name.IndexOf('\0');

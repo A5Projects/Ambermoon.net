@@ -34,7 +34,7 @@ when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mo
 ## back to offical readme:
 Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant and control changes, "expanded" slightly from the Ambermoon.net main UI. (removed gaps around the world view, mouse view); 
 <br> Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).<br>
-Savegames are fully compatible between all versions.
+Transfer saves between builds using the same game-data edition and language. See [save transfer and version details](CARRYWEIGHT.txt).
 
 ## Published downloads
 
