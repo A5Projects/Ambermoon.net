@@ -82,6 +82,10 @@ sealed class CommandLineOptions
     /// Overrides Movement3DRate (logical 3D steps/s) for this run without modifying ambermoon.cfg.
     /// </summary>
     public int? MoveRate { get; private set; }
+    /// <summary>
+    /// Overrides the 3D renderer mode (classic/experimental) for this run without modifying ambermoon.cfg.
+    /// </summary>
+    public Render.Renderer3DMode? Renderer3D { get; private set; }
     public bool SkipsVersionSelector => Version != null;
     public bool SkipsMainMenu => Continue || LoadSlot != null;
 
@@ -107,6 +111,7 @@ sealed class CommandLineOptions
         Console.WriteLine(" --ups <n>          Override update rate cap for this run (0 = 1:1 with render)");
         Console.WriteLine(" --timeline-3d <on|off>  Override timeline 3D movement for this run");
         Console.WriteLine(" --move-rate <n>    Override logical 3D movement steps/s (20-240) for this run");
+        Console.WriteLine(" --renderer <classic|experimental>  Override 3D renderer pass for this run");
         Console.WriteLine();
         Console.WriteLine("Example: Ambermoon.net --data C:\\Ambermoon-Advanced\\german\\Amberfiles --load 0 --cheat 3 \"teleport 483 20 13\" --screenshot 6 --exit-after 8");
     }
@@ -225,6 +230,14 @@ sealed class CommandLineOptions
                     if (!int.TryParse(NextValue(arg), out int moveRate) || moveRate < 20 || moveRate > 240)
                         throw new ArgumentException("--move-rate expects an integer between 20 and 240.");
                     options.MoveRate = moveRate;
+                    break;
+                case "--renderer":
+                    options.Renderer3D = NextValue(arg).ToLowerInvariant() switch
+                    {
+                        "classic" => Render.Renderer3DMode.Classic,
+                        "experimental" or "exp" => Render.Renderer3DMode.Experimental,
+                        _ => throw new ArgumentException("--renderer expects classic or experimental.")
+                    };
                     break;
                 default:
                     throw new ArgumentException($"Unknown option '{arg}'.");

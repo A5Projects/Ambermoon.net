@@ -392,6 +392,7 @@ public class RenderLayer : IRenderLayer, IDisposable
     RenderBuffer renderBufferSemiTransparent = null;
     readonly Func<RenderBuffer> renderBufferSemiTransparentFactory = null;
     readonly Texture palette = null;
+    internal Texture Palette => palette;
     bool disposed = false;
 
     public RenderLayer(State state, Layer layer, Texture texture, Texture palette)

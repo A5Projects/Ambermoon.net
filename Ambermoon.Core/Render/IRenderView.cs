@@ -31,6 +31,12 @@ public enum WindowMode
     FullsizedWindow,
 }
 
+public enum Renderer3DMode
+{
+    Classic,
+    Experimental,
+}
+
 public interface IRenderView : IRenderLayerFactory
 {
     void Render(FloatPosition? viewportOffset);
@@ -93,4 +99,6 @@ public interface IGameRenderView : IRenderView
     void SetFog(Color fogColor, float distance, (float Start, float End, float Blend)? outdoorFade = null);
     void SetSmoothDistantFloor(bool enabled);
     void SetSmoothWalls(bool enabled);
+    bool SupportsExperimental3D { get; }
+    Renderer3DMode Renderer3DMode { get; set; }
 }

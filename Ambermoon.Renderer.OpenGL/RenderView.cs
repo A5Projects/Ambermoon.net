@@ -248,7 +248,14 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
     public void SetTextureFactor(Layer layer, uint factor)
     {
         layers[layer]?.SetTextureFactor(factor);
+        NotifyTextureFactorChanged(layer, factor);
     }
+
+    private protected virtual bool IsExperimental3DActive => false;
+    private protected virtual void BeginExperimental3D(Rect viewport, Position backgroundOffset) { }
+    private protected virtual void RenderExperimental3DAndComposite(Rect viewport, Rect mapViewArea, FrameBuffer destinationFrameBuffer, bool useEffectFrameBuffer) { }
+    private protected virtual void NotifyTextureFactorChanged(Layer layer, uint factor) { }
+    private protected virtual void DisposeResources() { }
 
     public void Close()
     {
@@ -587,6 +594,7 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
             State.Gl.Clear((uint)ClearBufferMask.ColorBufferBit | (uint)ClearBufferMask.DepthBufferBit);
 
             bool set2DViewport = ShowImageLayerOnly;
+            bool useExperimental3D = render3DMap && IsExperimental3DActive;
             viewOffset.X -= Util.Floor(0.49f * frameBufferSize.Width / Global.VirtualScreenWidth);
             viewOffset.Y -= Util.Floor(0.49f * frameBufferSize.Height / Global.VirtualScreenHeight);
 
@@ -601,7 +609,11 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                     {
                         var viewport = RenderScreenArea;
 
-                        if (useEffectFrameBuffer)
+                        if (useExperimental3D)
+                        {
+                            BeginExperimental3D(viewport, useEffectFrameBuffer ? Position.Zero : viewOffset);
+                        }
+                        else if (useEffectFrameBuffer)
                             State.Gl.Viewport(0, 0, (uint)viewport.Width, (uint)viewport.Height);
                         else
                         {
@@ -618,6 +630,14 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                         mapViewArea.Position = PositionTransformation(mapViewArea.Position).Round();
                         mapViewArea.Size = SizeTransformation(mapViewArea.Size).ToSize();
                         var viewport = RenderScreenArea;
+
+                        if (useExperimental3D)
+                        {
+                            RenderExperimental3DAndComposite(viewport, mapViewArea,
+                                useEffectFrameBuffer ? effectFrameBuffer : null, useEffectFrameBuffer);
+                            continue;
+                        }
+
                         if (useEffectFrameBuffer)
                         {
                             State.Gl.Viewport(mapViewArea.X, viewport.Height - (mapViewArea.Y + mapViewArea.Height),
@@ -639,10 +659,16 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                     }
                     else if (layer.Key == Layer.Map3D)
                     {
+                        if (useExperimental3D)
+                            continue;
+
                         State.Gl.Enable(EnableCap.DepthTest);
                     }
                     else if (layer.Key == Layer.Billboards3D)
                     {
+                        if (useExperimental3D)
+                            continue;
+
                         State.Gl.Disable(EnableCap.CullFace);
                     }
                     else if (layer.Key == Global.First2DLayer)
@@ -991,6 +1017,8 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
     {
         if (!disposed)
         {
+            DisposeResources();
+
             foreach (var layer in layers.Values)
                 layer?.Dispose();
 
@@ -1006,6 +1034,10 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
     readonly Surface3DFactory surface3DFactory = null;
     readonly RenderTextFactory renderTextFactory = null;
     readonly FowFactory fowFactory = null;
+#if !GLES
+    readonly Experimental.Experimental3DRenderer experimental3DRenderer = null;
+#endif
+    Renderer3DMode renderer3DMode = Renderer3DMode.Classic;
     PaletteReplacement paletteReplacement = null;
     PaletteReplacement horizonPaletteReplacement = null;
     PaletteFading paletteFading = null;
@@ -1020,6 +1052,59 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
     public IFontProvider FontProvider { get; }
     public ITextProcessor TextProcessor { get; }
     public Action<float> AspectProcessor { get; }
+
+    public bool SupportsExperimental3D
+    {
+        get
+        {
+#if !GLES
+            return experimental3DRenderer != null;
+#else
+            return false;
+#endif
+        }
+    }
+
+    public Renderer3DMode Renderer3DMode
+    {
+        get => SupportsExperimental3D ? renderer3DMode : Renderer3DMode.Classic;
+        set => renderer3DMode = SupportsExperimental3D ? value : Renderer3DMode.Classic;
+    }
+
+#if !GLES
+    private protected override bool IsExperimental3DActive =>
+        experimental3DRenderer != null && renderer3DMode == Renderer3DMode.Experimental;
+
+    private protected override void BeginExperimental3D(Rect viewport, Position backgroundOffset)
+    {
+        experimental3DRenderer?.Begin3DPass(viewport, backgroundOffset);
+    }
+
+    private protected override void RenderExperimental3DAndComposite(Rect viewport, Rect mapViewArea,
+        FrameBuffer destinationFrameBuffer, bool useEffectFrameBuffer)
+    {
+        if (experimental3DRenderer == null)
+            return;
+
+        var ceilingLayer = GetLayer(Layer.Map3DCeiling) as RenderLayer;
+        var wallLayer = GetLayer(Layer.Map3D) as RenderLayer;
+        var billboardLayer = GetLayer(Layer.Billboards3D) as RenderLayer;
+        var palette = wallLayer?.Palette ?? ceilingLayer?.Palette ?? billboardLayer?.Palette;
+
+        experimental3DRenderer.RenderGeometryAndComposite(ceilingLayer, wallLayer, billboardLayer, palette,
+            viewport, mapViewArea, destinationFrameBuffer, useEffectFrameBuffer);
+    }
+
+    private protected override void NotifyTextureFactorChanged(Layer layer, uint factor)
+    {
+        experimental3DRenderer?.Scene.OnTextureFactorChanged(layer, factor);
+    }
+
+    private protected override void DisposeResources()
+    {
+        experimental3DRenderer?.Dispose();
+    }
+#endif
 
     public GameRenderView(IContextProvider contextProvider, IGameData gameData, IGraphicInfoProvider graphicInfoProvider,
         IFontProvider fontProvider, ITextProcessor textProcessor, Func<TextureAtlasManager> textureAtlasManagerProvider,
@@ -1037,9 +1122,26 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         FontProvider = fontProvider;
         TextProcessor = textProcessor;
 
+#if !GLES
+        try
+        {
+            experimental3DRenderer = new Experimental.Experimental3DRenderer(State);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Experimental 3D renderer unavailable, falling back to Classic: {ex.Message}");
+            experimental3DRenderer?.Dispose();
+            experimental3DRenderer = null;
+        }
+#endif
+
         // factories
         var visibleArea = new Rect(0, 0, Global.VirtualScreenWidth, Global.VirtualScreenHeight);
+#if !GLES
+        surface3DFactory = new Surface3DFactory(visibleArea, experimental3DRenderer?.Scene);
+#else
         surface3DFactory = new Surface3DFactory(visibleArea);
+#endif
         renderTextFactory = new RenderTextFactory(visibleArea);
         fowFactory = new FowFactory(visibleArea);
     }
@@ -1060,6 +1162,10 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
 
                 (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetPaletteReplacement(paletteReplacement);
                 (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetPaletteReplacement(paletteReplacement);
+#if !GLES
+                if (experimental3DRenderer != null)
+                    experimental3DRenderer.Uniforms.PaletteReplacement = paletteReplacement;
+#endif
             }
         }
     }
@@ -1097,6 +1203,10 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetLight(light);
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetLight(light);
         (GetLayer(Layer.Map3DBackground) as RenderLayer).RenderBuffer.SkyShader.SetLight(light);
+#if !GLES
+        if (experimental3DRenderer != null)
+            experimental3DRenderer.Uniforms.Light = light;
+#endif
     }
 
     public void Set3DFade(float fade)
@@ -1104,28 +1214,56 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetFade(fade);
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetFade(fade);
         //(GetLayer(Layer.Map3DBackground) as RenderLayer).RenderBuffer.SkyShader.SetFade(fade);
+#if !GLES
+        if (experimental3DRenderer != null)
+            experimental3DRenderer.Uniforms.Fade = fade;
+#endif
     }
 
     public void SetSkyColorReplacement(uint? skyColor, Color replaceColor)
     {
         (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetSkyColorReplacement(skyColor, replaceColor);
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSkyColorReplacement(skyColor, replaceColor);
+#if !GLES
+        if (experimental3DRenderer != null)
+        {
+            experimental3DRenderer.Uniforms.SkyColorIndex = skyColor;
+            if (replaceColor != null)
+                experimental3DRenderer.Uniforms.SkyReplaceColor = replaceColor;
+        }
+#endif
     }
 
     public void SetFog(Color fogColor, float distance, (float Start, float End, float Blend)? outdoorFade = null)
     {
         (GetLayer(Layer.Billboards3D) as RenderLayer).RenderBuffer.Billboard3DShader.SetFog(fogColor, distance, outdoorFade);
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetFog(fogColor, distance, outdoorFade);
+#if !GLES
+        if (experimental3DRenderer != null)
+        {
+            experimental3DRenderer.Uniforms.FogColor = fogColor;
+            experimental3DRenderer.Uniforms.FogDistance = distance;
+            experimental3DRenderer.Uniforms.OutdoorFade = outdoorFade;
+        }
+#endif
     }
 
     public void SetSmoothDistantFloor(bool enabled)
     {
         // Floor/ceiling and walls share this shader; only explicitly tagged floors use the filter.
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSmoothDistantFloor(enabled);
+#if !GLES
+        if (experimental3DRenderer != null)
+            experimental3DRenderer.Uniforms.SmoothDistantFloor = enabled;
+#endif
     }
 
     public void SetSmoothWalls(bool enabled)
     {
         (GetLayer(Layer.Map3D) as RenderLayer).RenderBuffer.Texture3DShader.SetSmoothWalls(enabled);
+#if !GLES
+        if (experimental3DRenderer != null)
+            experimental3DRenderer.Uniforms.SmoothWalls = enabled;
+#endif
     }
 }

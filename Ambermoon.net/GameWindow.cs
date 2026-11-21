@@ -1268,6 +1268,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
                             game.Timeline3DOverride = commandLineOptions.Timeline3D;
                             game.Movement3DRateOverride = commandLineOptions.MoveRate;
+                            game.Renderer3DOverride = commandLineOptions.Renderer3D;
+                            game.RefreshRenderer3DMode();
                             game.MonitorRefreshRateProvider = () => framePacer?.MonitorRefreshRate ?? GetActiveRefreshRate();
                             game.FrameLimitChanged = () =>
                             {
@@ -1910,9 +1912,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         int? swapInterval = framePacer?.QuerySwapInterval(window.GLContext);
         bool timeline = (commandLineOptions.Timeline3D ?? configuration.Timeline3DMovement) && !configuration.LegacyMode;
         int moveRate = commandLineOptions.MoveRate ?? configuration.Movement3DRate;
+        var rendererMode = Game?.ActiveRenderer3D ?? commandLineOptions.Renderer3D ?? configuration.Renderer3D;
         return $"window.VSync={window.VSync}, window.UpdatesPerSecond={window.UpdatesPerSecond}, " +
                $"{framePacer?.Describe() ?? "pacer=none"}, timeline3D={timeline} ({moveRate}/s), " +
-               $"WGL swap interval={swapInterval?.ToString() ?? "unknown"}";
+               $"renderer3D={rendererMode}, WGL swap interval={swapInterval?.ToString() ?? "unknown"}";
     }
 
     void ReapplySwapInterval()

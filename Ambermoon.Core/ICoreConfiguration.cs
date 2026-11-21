@@ -149,6 +149,7 @@ public interface ICoreConfiguration
     int Movement3DRate { get; set; }
     bool SmoothDistantFloor { get; set; }
     bool SmoothWalls { get; set; }
+    Renderer3DMode Renderer3D { get; set; }
     bool VSync { get; set; }
     int MaxFps { get; set; }
     int MouseLookSensitivity { get; set; }

@@ -36,12 +36,23 @@ partial class GameCore
     /// window host to clear any non-persistent CLI --fps / --vsync overrides immediately.
     /// </summary>
     public Action? FrameLimitChanged { get; set; }
+    /// <summary>
+    /// Optional per-run override for the active 3D renderer (e.g. from CLI --renderer).
+    /// </summary>
+    public Renderer3DMode? Renderer3DOverride { get; set; }
+    public Renderer3DMode ActiveRenderer3D => Renderer3DOverride ?? CoreConfiguration.Renderer3D;
+
+    public void RefreshRenderer3DMode()
+    {
+        renderView.Renderer3DMode = ActiveRenderer3D;
+    }
 
     internal void NotifyConfigurationChange(bool windowChange)
     {
         // Also apply while in 2D so the next 3D map uses the selected setting.
         renderView.SetSmoothDistantFloor(CoreConfiguration.SmoothDistantFloor);
         renderView.SetSmoothWalls(CoreConfiguration.SmoothWalls);
+        RefreshRenderer3DMode();
         if (Is3D)
         {
             renderMap3D?.UpdateFloorAndCeilingVisibility(CoreConfiguration.ShowFloor, CoreConfiguration.ShowCeiling);

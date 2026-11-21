@@ -1241,7 +1241,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 28;
+        const int OptionCount = 29;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1281,7 +1281,9 @@ namespace Ambermoon.UI
                     "Maussteuerung 3D",
                     "3D Boden glätten",
                     "3D Wände glätten",
-                    "FPS-Limit"
+                    "FPS-Limit",
+                    // Page 5
+                    "3D-Renderer"
                 }
             },
             {
@@ -1319,7 +1321,9 @@ namespace Ambermoon.UI
                     "3D mouse",
                     "Smooth distant floor",
                     "Smooth 3D walls",
-                    "Frame limit"
+                    "Frame limit",
+                    // Page 5
+                    "3D renderer"
                 }
             },
             {
@@ -1357,7 +1361,9 @@ namespace Ambermoon.UI
                     "Souris 3D",
                     "Sol lointain lissé",
                     "Lisser les murs 3D",
-                    "Limite FPS"
+                    "Limite FPS",
+                    // Page 5
+                    "Rendu 3D"
                 }
             },
             {
@@ -1395,7 +1401,9 @@ namespace Ambermoon.UI
                     "Mysz 3D",
                     "Wygładź daleki grunt",
                     "Wygładź ściany 3D",
-                    "Limit FPS"
+                    "Limit FPS",
+                    // Page 5
+                    "Renderer 3D"
                 }
             },
             {
@@ -1433,7 +1441,9 @@ namespace Ambermoon.UI
                     "Myš ve 3D",
                     "Vyhladit vzdálený terén",
                     "Vyhladit 3D stěny",
-                    "Limit FPS"
+                    "Limit FPS",
+                    // Page 5
+                    "3D renderer"
                 }
             }
         }.ToImmutableDictionary();
@@ -1583,6 +1593,15 @@ namespace Ambermoon.UI
             { GameLanguage.Czech, ["Šipky", "Rozhlížení"] }
         }.ToImmutableDictionary();
 
+        static readonly ImmutableDictionary<GameLanguage, string[]> Renderer3DValues = new Dictionary<GameLanguage, string[]>
+        {
+            { GameLanguage.German, ["Klassisch", "Experimentell"] },
+            { GameLanguage.English, ["Classic", "Experimental"] },
+            { GameLanguage.French, ["Classique", "Expérimental"] },
+            { GameLanguage.Polish, ["Klasyczny", "Eksperymentalny"] },
+            { GameLanguage.Czech, ["Klasický", "Experimentální"] }
+        }.ToImmutableDictionary();
+
         static readonly ImmutableDictionary<GameLanguage, string[]> AutoBattleOptions = new Dictionary<GameLanguage, string[]>
         {
             {
@@ -1703,6 +1722,8 @@ namespace Ambermoon.UI
             AddOption((index, _) => ToggleSmoothDistantFloor());
             AddOption((index, _) => ToggleSmoothWalls());
             AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleFrameLimit());
+            // Page 5
+            AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleRenderer3D());
 
             void UpdateFullscreenOption()
             {
@@ -1806,6 +1827,7 @@ namespace Ambermoon.UI
                 return "240";
             }
             void SetFrameLimit() => SetOptionString(27, GetFrameLimitString());
+            void SetRenderer3D() => SetOptionString(28, Renderer3DValues[game.GameLanguage][RenderView.SupportsExperimental3D && game.ActiveRenderer3D == Renderer3DMode.Experimental ? 1 : 0]);
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1849,6 +1871,9 @@ namespace Ambermoon.UI
                         SetSmoothDistantFloor();
                         SetSmoothWalls();
                         SetFrameLimit();
+                        break;
+                    case 4:
+                        SetRenderer3D();
                         break;
                 }
             }
@@ -2017,6 +2042,21 @@ namespace Ambermoon.UI
                 changedConfiguration = true;
                 config.RequestSave();
                 game.FrameLimitChanged?.Invoke();
+                game.NotifyConfigurationChange(false);
+            }
+            void ToggleRenderer3D()
+            {
+                if (!RenderView.SupportsExperimental3D)
+                    return;
+
+                var next = game.ActiveRenderer3D == Renderer3DMode.Experimental
+                    ? Renderer3DMode.Classic
+                    : Renderer3DMode.Experimental;
+                game.Renderer3DOverride = null;
+                game.CoreConfiguration.Renderer3D = next;
+                SetRenderer3D();
+                changedConfiguration = true;
+                game.CoreConfiguration.RequestSave();
                 game.NotifyConfigurationChange(false);
             }
             void TogglePlayerStatsTooltips()

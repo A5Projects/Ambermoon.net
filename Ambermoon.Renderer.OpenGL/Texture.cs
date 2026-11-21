@@ -157,6 +157,11 @@ public class Texture : Render.Texture, IDisposable
         }
     }
 
+    internal static void InvalidateActiveTexture()
+    {
+        ActiveTexture = null;
+    }
+
     public void Dispose()
     {
         if (!disposed)

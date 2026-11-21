@@ -35,6 +35,7 @@ internal class Surface3D : ISurface3D
     bool deleted = false;
     bool notOnScreen = true;
     readonly Rect virtualScreen = null;
+    readonly IScene3DObserver sceneObserver = null;
     Position textureAtlasOffset = null;
     byte paletteIndex = 0;
     float extrude = 0.0f;
@@ -48,12 +49,13 @@ internal class Surface3D : ISurface3D
 
     public Surface3D(SurfaceType type, float width, float height, int textureAtlasX, int textureAtlasY, uint textureWidth, uint textureHeight,
         uint mappedTextureWidth, uint mappedTextureHeight, Rect virtualScreen, WallOrientation wallOrientation, bool alpha, int frameCount,
-        float extrude)
+        float extrude, IScene3DObserver sceneObserver = null)
     {
         Type = type;
         Width = width;
         Height = height;
         this.virtualScreen = virtualScreen;
+        this.sceneObserver = sceneObserver;
         textureAtlasOffset = new Position(textureAtlasX, textureAtlasY);
         WallOrientation = wallOrientation;
         TextureWidth = textureWidth;
@@ -269,49 +271,71 @@ internal class Surface3D : ISurface3D
     protected virtual void AddToLayer()
     {
         drawIndex = (Layer as RenderLayer).GetDrawIndex(this);
+        sceneObserver?.OnSurfaceAdded(Layer.Layer, this);
     }
 
     protected virtual void RemoveFromLayer()
     {
         if (drawIndex != -1)
         {
-            (Layer as RenderLayer).FreeDrawIndex(drawIndex);
+            var renderLayer = Layer as RenderLayer;
+            renderLayer.FreeDrawIndex(drawIndex);
             drawIndex = -1;
+            sceneObserver?.OnSurfaceRemoved(renderLayer.Layer, this);
         }
     }
 
     protected virtual void UpdatePosition()
     {
         if (drawIndex != -1) // -1 means not attached to a layer
+        {
             (Layer as RenderLayer).UpdatePosition(drawIndex, this);
+            sceneObserver?.OnSurfaceUpdated(Layer.Layer, this);
+        }
     }
 
     protected virtual void UpdateTextureAtlasOffset()
     {
         if (drawIndex != -1) // -1 means not attached to a layer
+        {
             (Layer as RenderLayer).UpdateTextureAtlasOffset(drawIndex, this);
+            sceneObserver?.OnSurfaceUpdated(Layer.Layer, this);
+        }
     }
 
     protected virtual void UpdatePaletteIndex()
     {
         if (drawIndex != -1) // -1 means not attached to a layer
+        {
             (Layer as RenderLayer).UpdatePaletteIndex(drawIndex, PaletteIndex);
+            sceneObserver?.OnSurfaceUpdated(Layer.Layer, this);
+        }
     }
 
     protected virtual void UpdateExtrude()
     {
         if (drawIndex != -1) // -1 means not attached to a layer
+        {
             (Layer as RenderLayer).UpdateExtrude(drawIndex, Extrude);
+            sceneObserver?.OnSurfaceUpdated(Layer.Layer, this);
+        }
     }
 }
 
 public class Surface3DFactory : ISurface3DFactory
 {
     internal Rect VirtualScreen { get; private set; } = null;
+    readonly IScene3DObserver sceneObserver;
 
     public Surface3DFactory(Rect virtualScreen)
+        : this(virtualScreen, null)
+    {
+    }
+
+    internal Surface3DFactory(Rect virtualScreen, IScene3DObserver sceneObserver)
     {
         VirtualScreen = virtualScreen;
+        this.sceneObserver = sceneObserver;
     }
 
     public ISurface3D Create(SurfaceType type, float width, float height, uint textureWidth, uint textureHeight,
@@ -319,6 +343,6 @@ public class Surface3DFactory : ISurface3DFactory
         WallOrientation wallOrientation = WallOrientation.Normal, int textureAtlasX = 0, int textureAtlasY = 0)
     {
         return new Surface3D(type, width, height, textureAtlasX, textureAtlasY, textureWidth, textureHeight,
-            mappedTextureWidth, mappedTextureHeight, VirtualScreen, wallOrientation, alpha, frameCount, extrude);
+            mappedTextureWidth, mappedTextureHeight, VirtualScreen, wallOrientation, alpha, frameCount, extrude, sceneObserver);
     }
 }

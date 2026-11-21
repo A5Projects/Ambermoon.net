@@ -130,6 +130,11 @@ internal class Configuration : IConfiguration
     public bool SmoothDistantFloor { get; set; } = true;
     public bool SmoothWalls { get; set; } = true;
     /// <summary>
+    /// Selects the active 3D renderer pass (Classic or Experimental). Switchable live
+    /// on settings page 5 or overridden per run with --renderer classic|experimental.
+    /// </summary>
+    public Renderer3DMode Renderer3D { get; set; } = Renderer3DMode.Experimental;
+    /// <summary>
     /// Synchronise presenting with the display refresh (recommended). If a GPU driver
     /// overrides VSync to off, FramePacer falls back to the monitor refresh rate automatically.
     /// </summary>

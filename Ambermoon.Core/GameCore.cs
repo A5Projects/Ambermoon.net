@@ -84,6 +84,7 @@ public abstract partial class GameCore
         this.renderView = renderView;
         renderView.SetSmoothDistantFloor(configuration.SmoothDistantFloor);
         renderView.SetSmoothWalls(configuration.SmoothWalls);
+        RefreshRenderer3DMode();
         renderView.Map3DViewArea = Global.GetMap3DViewArea(configuration.Expanded3DView);
         AudioOutput = audioOutput;
         this.songManager = songManager;

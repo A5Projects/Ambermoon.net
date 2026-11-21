@@ -57,6 +57,7 @@ VSync | Synchronises frame presentation with the display refresh rate. If a GPU 
 MaxFps | Frame rate cap in frames per second. `0` = automatic (`VSync` when enabled, or 240 fps ceiling when `VSync` is off), `-2` = `2x` the active display refresh rate (e.g. `168` at 84 Hz), positive integer = explicit FPS cap, `-1` = uncapped. Configurable in-game via **Frame limit** / **FPS-Limit** on settings page 4 (`VSync`, `60`, `120`, `144`, `240`, `2x`; override per run with `--fps <n|2x|auto|0>`). | Integer (`-2`, `-1`, `0`, or positive) | 0
 SmoothDistantFloor | Reduces distant 3D floor shimmer by averaging palette-resolved colour samples as the texture becomes compressed. Nearby floor, walls, ceilings and sprites keep their existing sampling. Toggle on settings page 4: "Smooth distant floor" / "3D Boden glätten". Independent of fog and the global graphic filter. | true or false | true
 SmoothWalls | Blends pixel edges on nearby opaque 3D walls and filters compressed wall detail along streets. Toggle on settings page 4 under **Smooth 3D walls** / **3D Wände glätten**. | true or false | true
+Renderer3D | Selects the active 3D renderer pass (`Classic` or `Experimental`). Toggle live on settings page 5 under **3D renderer** / **3D-Renderer** (override per run with `--renderer classic|experimental`). | Classic or Experimental | Experimental
 
 There are also some technical or more advanced settings which should only be changed by advanced users:
 
