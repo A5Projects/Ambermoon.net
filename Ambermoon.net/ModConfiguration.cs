@@ -41,8 +41,12 @@ internal class ModConfiguration(IConfiguration configuration, ModOptions modOpti
     public bool IsMobile => configuration.IsMobile;
     public bool MouseLook3D { get => configuration.MouseLook3D; set => configuration.MouseLook3D = value; }
     public bool Smooth3DMovement { get => configuration.Smooth3DMovement; set => configuration.Smooth3DMovement = value; }
+    public bool Timeline3DMovement { get => configuration.Timeline3DMovement; set => configuration.Timeline3DMovement = value; }
+    public int Movement3DRate { get => configuration.Movement3DRate; set => configuration.Movement3DRate = value; }
     public bool SmoothDistantFloor { get => configuration.SmoothDistantFloor; set => configuration.SmoothDistantFloor = value; }
     public bool SmoothWalls { get => configuration.SmoothWalls; set => configuration.SmoothWalls = value; }
+    public bool VSync { get => configuration.VSync; set => configuration.VSync = value; }
+    public int MaxFps { get => configuration.MaxFps; set => configuration.MaxFps = value; }
     public int MouseLookSensitivity { get => configuration.MouseLookSensitivity; set => configuration.MouseLookSensitivity = value; }
     public int? Width { get => configuration.Width; set => configuration.Width = value; }
     public int? Height { get => configuration.Height; set => configuration.Height = value; }

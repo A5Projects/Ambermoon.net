@@ -560,6 +560,12 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
             }
 
             bool render3DMap = !ShowImageLayerOnly && layers[Layer.Map3D].Visible;
+            if (render3DMap)
+            {
+                // Advance the 3D camera once before Layer.Map3DBackground so the
+                // horizon/stars scroll and the 3D geometry use the exact same pose.
+                (camera3D as Camera3D)?.UpdateMovementInterpolation();
+            }
             var viewOffset = new Position
             (
                 Util.Round((viewportOffset?.X ?? 0.0f) * renderDisplayArea.Width),
@@ -606,7 +612,7 @@ public class RenderView : RenderLayerFactory, IRenderView, IDisposable
                     else if (layer.Key == Layer.Map3DCeiling)
                     {
                         // Setup 3D stuff
-                        (camera3D as Camera3D).Activate();
+                        (camera3D as Camera3D).Activate(updateInterpolation: false);
                         State.RestoreProjectionMatrix(State.ProjectionMatrix3D);
                         var mapViewArea = ((IGameRenderView)this).Map3DViewArea.CreateModified(0, 0, 1, 1);
                         mapViewArea.Position = PositionTransformation(mapViewArea.Position).Round();

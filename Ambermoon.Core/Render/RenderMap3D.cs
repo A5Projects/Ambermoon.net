@@ -1148,16 +1148,9 @@ namespace Ambermoon.Render
 
                 if (horizonFog != null)
                 {
-                    int horizonAlpha = Util.Min(fogColor.A / 2, 32 + fogColor.R, 32 + fogColor.G, 32 + fogColor.B);
-                    if (outdoorFade is { } fade)
-                    {
-                        // The mountain backdrop lies beyond all nearby geometry.
-                        // Full daytime haze obscures it, rather than leaving sharp
-                        // distant peaks visible through already-faded terrain.
-                        horizonAlpha = Util.Round(horizonAlpha + fade.Blend * (255 - horizonAlpha));
-                    }
-                    horizonFog.Color = new Color(fogColor, (byte)horizonAlpha);
-                    horizonFog.Visible = fogColor.A != 0;
+                    // Leave the distant mountain backdrop untouched; fog affects only
+                    // the 3D scene geometry so the horizon never turns into a flat band.
+                    horizonFog.Visible = false;
                 }
             }
             else

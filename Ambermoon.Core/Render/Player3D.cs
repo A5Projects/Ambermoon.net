@@ -154,9 +154,22 @@ namespace Ambermoon.Render
             bool moved = TryMove(distance, ticks, positionProvider, mover, turning);
             // A collision fallback may report success while its permitted axis
             // has no movement component. Keep that gameplay result unchanged.
-            if (!moved || !game.CanInterpolate3DMovement ||
-                (Camera.X == oldX && Camera.Y == oldY && Camera.Z == oldZ))
+            if (!game.CanInterpolate3DMovement)
+            {
                 Camera.ResetMovementInterpolation();
+            }
+            else if (!game.Timeline3DActive)
+            {
+                if (!moved || (Camera.X == oldX && Camera.Y == oldY && Camera.Z == oldZ))
+                    Camera.ResetMovementInterpolation();
+            }
+            else if (!moved && (Camera.X != oldX || Camera.Y != oldY || Camera.Z != oldZ))
+            {
+                // Logical position moved and an event intercepted it; settle immediately.
+                // Pure collision blocks leave the timeline intact so the camera glides to
+                // the wall and diagonal wall-sliding stays smooth.
+                Camera.ResetMovementInterpolation();
+            }
             return moved;
         }
 
@@ -277,7 +290,7 @@ namespace Ambermoon.Render
             {
                 float oldX = Camera.X;
                 float oldY = Camera.Z;
-                if (game.CanInterpolate3DMovement)
+                if (game.CanInterpolate3DMovement && !game.Timeline3DActive)
                     Camera.BeginMovementInterpolation(game.Movement3DVisualTicks, game.Movement3DVisualDuration);
                 try
                 {
@@ -285,7 +298,8 @@ namespace Ambermoon.Render
                 }
                 finally
                 {
-                    Camera.EndMovementInterpolation();
+                    if (!game.Timeline3DActive)
+                        Camera.EndMovementInterpolation();
                 }
 
                 var touchedPositions = Geometry.CameraToTouchedBlockPositions(map.Map!, Camera.X, Camera.Z, 0.75f * Global.DistancePerBlock);

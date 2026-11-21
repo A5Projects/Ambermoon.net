@@ -142,13 +142,65 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         }
     }
 
+    VideoMode? desktopVideoMode;
+
+    VideoMode GetCurrentMonitorVideoMode()
+    {
+        var monitorMode = window?.Monitor?.VideoMode;
+        if (monitorMode?.Resolution != null)
+            return monitorMode.Value;
+        return window?.VideoMode ?? default;
+    }
+
+    int? GetActiveRefreshRate()
+    {
+        if (window?.WindowState != WindowState.Fullscreen)
+        {
+            var mode = GetCurrentMonitorVideoMode();
+            if (mode.RefreshRate is > 0)
+                return mode.RefreshRate;
+        }
+        return desktopVideoMode?.RefreshRate
+            ?? window?.Monitor?.VideoMode.RefreshRate
+            ?? window?.VideoMode.RefreshRate;
+    }
+
+    unsafe void ApplyGlfwFullscreenVideoMode(WindowDimension resolution, int? refreshRate)
+    {
+        if (window.Native?.Glfw is not { } glfwPtr || glfwPtr == 0)
+            return;
+
+        try
+        {
+            var glfw = Silk.NET.GLFW.Glfw.GetApi();
+            Silk.NET.GLFW.Monitor* monitorPtr = null;
+            int monitorIndex = window.Monitor?.Index ?? 0;
+            Silk.NET.GLFW.Monitor** monitors = glfw.GetMonitors(out int count);
+            if (monitors != null && monitorIndex >= 0 && monitorIndex < count)
+                monitorPtr = monitors[monitorIndex];
+            if (monitorPtr == null)
+                monitorPtr = glfw.GetPrimaryMonitor();
+
+            if (monitorPtr != null)
+            {
+                int rate = refreshRate is > 0 ? refreshRate.Value : Silk.NET.GLFW.Glfw.DontCare;
+                glfw.SetWindowMonitor((Silk.NET.GLFW.WindowHandle*)glfwPtr, monitorPtr,
+                    0, 0, resolution.X, resolution.Y, rate);
+            }
+        }
+        catch
+        {
+            // Fall back to Silk.NET's default fullscreen video mode if GLFW interop fails.
+        }
+    }
+
     void ChangeResolution(int? oldWidth) => ChangeResolution(oldWidth, configuration.WindowMode, true);
 
     void ChangeResolution(int? oldWidth, WindowMode windowMode, bool changed)
     {
         if (windowMode != WindowMode.Normal)
         {
-            var fullscreenSize = window.VideoMode.Resolution;
+            var fullscreenSize = desktopVideoMode?.Resolution ?? GetCurrentMonitorVideoMode().Resolution;
 
             if (fullscreenSize != null)
             {
@@ -216,9 +268,52 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void ChangeFullscreenMode(WindowMode windowMode)
     {
+        if (window.WindowState != WindowState.Fullscreen)
+        {
+            var currentMode = GetCurrentMonitorVideoMode();
+            if (currentMode.Resolution != null)
+                desktopVideoMode = currentMode;
+        }
+
+        if (windowMode == WindowMode.Fullscreen)
+        {
+            var targetMode = desktopVideoMode ?? GetCurrentMonitorVideoMode();
+            if (window.Monitor != null && targetMode.Resolution is { } resCheck && targetMode.RefreshRate is not > 0)
+            {
+                var best = window.Monitor.GetAllVideoModes()
+                    .Where(m => m.Resolution == resCheck)
+                    .OrderByDescending(m => m.RefreshRate ?? 0)
+                    .FirstOrDefault();
+                if (best.Resolution != null)
+                    targetMode = best;
+            }
+
+            configuration.WindowMode = windowMode;
+            window.TopMost = true;
+            window.WindowBorder = WindowBorder.Hidden;
+
+            if (targetMode.Resolution is { } res)
+            {
+                configuration.FullscreenWidth = res.X;
+                configuration.FullscreenHeight = res.Y;
+                // Set native fullscreen size before entering WindowState.Fullscreen so GLFW
+                // does not transition through a smaller windowed resolution at 75 Hz first.
+                window.Size = res;
+            }
+
+            window.WindowState = WindowState.Fullscreen;
+            if (targetMode.Resolution is { } fsRes)
+                ApplyGlfwFullscreenVideoMode(fsRes, targetMode.RefreshRate);
+
+            UpdateWindow(configuration);
+            ReapplySwapInterval();
+            return;
+        }
+
         WindowMode = windowMode;
         FullscreenChangeRequest(windowMode);
         UpdateWindow(configuration);
+        ReapplySwapInterval();
     }
 
     void FullscreenChangeRequest(WindowMode windowMode)
@@ -1171,6 +1266,15 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                             if (OperatingSystem.IsWindows())
                                 game.CapsLockStateProvider = static () => Console.CapsLock;
 
+                            game.Timeline3DOverride = commandLineOptions.Timeline3D;
+                            game.Movement3DRateOverride = commandLineOptions.MoveRate;
+                            game.MonitorRefreshRateProvider = () => framePacer?.MonitorRefreshRate ?? GetActiveRefreshRate();
+                            game.FrameLimitChanged = () =>
+                            {
+                                cliVSyncOverride = null;
+                                cliFpsOverride = null;
+                            };
+
                             if (features.HasFlag(Features.Mod))
                                 activeMod?.AttachGame(game);
 
@@ -1243,6 +1347,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                                     if (!Console.IsOutputRedirected)
                                         Console.Clear();
                                 }
+
+                                ApplyFramePacing(initializeStats: false);
                             };
                             game.DrugTicked += Drug_Ticked;
                             mainMenu.GameDataLoaded = true;
@@ -1792,6 +1898,88 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         }
     }
 
+    FramePacer framePacer;
+    FrameStats frameStats;
+    bool? cliVSyncOverride;
+    double? cliFpsOverride;
+    double lastSwapStartTime;
+    double lastSwapEndTime;
+
+    string DescribePacing()
+    {
+        int? swapInterval = framePacer?.QuerySwapInterval(window.GLContext);
+        bool timeline = (commandLineOptions.Timeline3D ?? configuration.Timeline3DMovement) && !configuration.LegacyMode;
+        int moveRate = commandLineOptions.MoveRate ?? configuration.Movement3DRate;
+        return $"window.VSync={window.VSync}, window.UpdatesPerSecond={window.UpdatesPerSecond}, " +
+               $"{framePacer?.Describe() ?? "pacer=none"}, timeline3D={timeline} ({moveRate}/s), " +
+               $"WGL swap interval={swapInterval?.ToString() ?? "unknown"}";
+    }
+
+    void ReapplySwapInterval()
+    {
+        if (window == null || framePacer == null)
+            return;
+
+        bool vsync = framePacer.VSyncRequested;
+        window.VSync = vsync;
+        try
+        {
+            window.GLContext?.SwapInterval(vsync ? 1 : 0);
+        }
+        catch
+        {
+            // ignore if context is not yet ready
+        }
+        framePacer.UpdateMonitorRefreshRate(GetActiveRefreshRate());
+        framePacer.OnDisplayModeChanged();
+        framePacer.QuerySwapInterval(window.GLContext, force: true);
+    }
+
+    /// <summary>
+    /// Applies VSync/frame cap settings to the live context and FramePacer, and optionally
+    /// initializes frame pacing diagnostics.
+    /// </summary>
+    void ApplyFramePacing(bool initializeStats)
+    {
+        double requestedMaxFps = cliFpsOverride ?? configuration.MaxFps;
+        bool vsync = cliVSyncOverride ?? configuration.VSync;
+        if (vsync && requestedMaxFps != 0 && cliVSyncOverride != true)
+            vsync = false;
+
+        bool timelineEnabled = (commandLineOptions.Timeline3D ?? configuration.Timeline3DMovement) && !configuration.LegacyMode;
+
+        framePacer.Configure(vsync, requestedMaxFps, GetActiveRefreshRate());
+        window.VSync = vsync;
+        try
+        {
+            window.GLContext?.SwapInterval(vsync ? 1 : 0);
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // FramePacer owns render pacing cleanly via sleep + short spin-wait instead of
+        // Silk.NET's 100%-CPU busy loop or VSync-bypassed runaway rendering.
+        window.FramesPerSecond = 0;
+        // Timeline 3D movement works at any update rate (1:1 with render frames).
+        // Legacy rounded 3D movement requires <= 120 UPS so Util.Round(60 * delta) does not round to 0;
+        // only cap UPS when the render rate could actually exceed 120 Hz, avoiding beat-pattern skips.
+        bool legacyNeedsUpsCap = !timelineEnabled &&
+            (framePacer.EffectiveFpsCap == 0
+                ? (!vsync || framePacer.EffectiveRefreshRate > 120)
+                : framePacer.EffectiveFpsCap > 120.5);
+        window.UpdatesPerSecond = commandLineOptions.Ups ?? (legacyNeedsUpsCap ? 118.0 : 0.0);
+
+        int? swapInterval = framePacer.QuerySwapInterval(window.GLContext, force: true);
+        if (initializeStats && commandLineOptions.FrameStats)
+        {
+            frameStats = new FrameStats(Path.Combine(Configuration.BundleDirectory, "frame-stats.log"), DescribePacing());
+            frameStats.SetSwapIntervalAtStart(swapInterval);
+            Console.WriteLine("[frame-stats] " + DescribePacing());
+        }
+    }
+
     void Window_Load()
     {
         // Some backends reset the pre-load caption to the entry assembly name.
@@ -1820,7 +2008,11 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         else
             window.Monitor = platform.GetMainMonitor();
 
-        var fullscreenSize = window.VideoMode.Resolution;
+        var initialMode = GetCurrentMonitorVideoMode();
+        if (initialMode.Resolution != null)
+            desktopVideoMode = initialMode;
+
+        var fullscreenSize = initialMode.Resolution;
 
         if (fullscreenSize != null)
         {
@@ -1832,6 +2024,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         {
             ChangeFullscreenMode(configuration.WindowMode); // This will adjust the window
         }
+
+        ApplyFramePacing(initializeStats: true);
 
         var gl = Silk.NET.OpenGL.GL.GetApi(GLContext);
         gl.Viewport(new System.Drawing.Size(window.FramebufferSize.X, window.FramebufferSize.Y));
@@ -2057,18 +2251,26 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                 mainMenu.Render();
             else if (Game != null)
             {
+                frameStats?.MarkGameplayActive();
                 Game.PrepareRender();
                 renderView.Render(Game.ViewportOffset);
             }
             else if (renderView != null)
                 renderView.Render(null);
 
+            lastSwapStartTime = framePacer?.Now ?? 0;
             window.SwapBuffers();
+            lastSwapEndTime = framePacer?.Now ?? 0;
+
+            frameStats?.OnRender((lastSwapEndTime - lastSwapStartTime) * 1000.0,
+                framePacer?.LastWaitMs ?? 0, DescribePacing);
         }
     }
 
     void Window_Update(double delta)
     {
+        frameStats?.OnUpdate();
+
         if (preloading)
         {
             preloadAction?.Invoke();
@@ -2234,6 +2436,13 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             configuration.WindowX = window.Position.X;
             configuration.WindowY = window.Position.Y;
             configuration.MonitorIndex = window.Monitor?.Index ?? 0;
+            if (window.WindowState != WindowState.Fullscreen)
+            {
+                var movedMode = GetCurrentMonitorVideoMode();
+                if (movedMode.Resolution != null)
+                    desktopVideoMode = movedMode;
+            }
+            framePacer?.UpdateMonitorRefreshRate(GetActiveRefreshRate());
         }
 
         WindowMoved();
@@ -2293,6 +2502,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
     {
         this.configuration = configuration;
         this.commandLineOptions = commandLineOptions ?? CommandLineOptions.Parse([]);
+        cliVSyncOverride = this.commandLineOptions.VSync;
+        cliFpsOverride = this.commandLineOptions.Fps;
         pendingScreenshots = [.. this.commandLineOptions.Screenshots.Order()];
         pendingCheats = [.. this.commandLineOptions.Cheats.OrderBy(c => c.Seconds)];
         scenarioScript = this.commandLineOptions.ScriptPath == null ? null : new ScenarioScript(this.commandLineOptions.ScriptPath);
@@ -2313,6 +2524,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             WindowState.Normal, WindowBorder.Fixed, true, false, default, 24);
         options.WindowClass = "Ambermoon.net";
 
+        framePacer = new FramePacer();
         try
         {
             GlfwWindowing.RegisterPlatform();
@@ -2332,12 +2544,42 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             window.FocusChanged += Window_FocusChanged;
             window.Closing += () =>
             {
+                frameStats?.Write(DescribePacing);
                 Game?.SetMouseLookFocus(false);
                 audioOutput?.Stop();
                 audioOutput?.Dispose();
                 cheatTaskCancellationTokenSource.Cancel();
             };
-            window.Run();
+
+            window.Initialize();
+            window.Run(() =>
+            {
+                double frameStart = framePacer.Now;
+                window.DoEvents();
+
+                if (!window.IsClosing)
+                {
+                    if (window.WindowState == WindowState.Minimized)
+                    {
+                        window.DoUpdate();
+                        framePacer.ResetDeadline();
+                        Thread.Sleep(50);
+                        return;
+                    }
+
+                    window.DoUpdate();
+                }
+
+                if (!window.IsClosing)
+                {
+                    lastSwapStartTime = lastSwapEndTime = framePacer.Now;
+                    window.DoRender();
+                    int? swapInterval = framePacer.QuerySwapInterval(window.GLContext);
+                    framePacer.EndFrameAndWait(frameStart, lastSwapStartTime, lastSwapEndTime, swapInterval);
+                }
+            });
+            window.DoEvents();
+            window.Reset();
         }
         catch (Exception ex)
         {
@@ -2390,6 +2632,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                 infoText = null;
             });
             Util.SafeCall(() => window?.Dispose());
+            Util.SafeCall(() => framePacer?.Dispose());
+            framePacer = null;
         }
     }
 }

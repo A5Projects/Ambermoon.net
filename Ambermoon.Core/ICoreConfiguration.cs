@@ -138,8 +138,19 @@ public interface ICoreConfiguration
     bool TurnWithArrowKeys { get; set; }
     bool MouseLook3D { get; set; }
     bool Smooth3DMovement { get; set; }
+    /// <summary>
+    /// 3D movement runs at a fixed number of steps per second (<see cref="Movement3DRate"/>),
+    /// independent of the update/refresh rate, and the camera follows a timestamped timeline.
+    /// </summary>
+    bool Timeline3DMovement { get; set; }
+    /// <summary>
+    /// Logical 3D movement steps per second when <see cref="Timeline3DMovement"/> is enabled.
+    /// </summary>
+    int Movement3DRate { get; set; }
     bool SmoothDistantFloor { get; set; }
     bool SmoothWalls { get; set; }
+    bool VSync { get; set; }
+    int MaxFps { get; set; }
     int MouseLookSensitivity { get; set; }
     GameLanguage Language { get; set; }
     bool ShowCompletedQuests { get; set; }

@@ -26,7 +26,7 @@ partial class GameCore
     internal double Movement3DVisualDuration => movement.MovementTicks(true, false, TravelType)
         * (visualMovement3DTicks == 0 ? 1.0 / TicksPerSecond : visualMovement3DSeconds / visualMovement3DTicks);
     internal uint Movement3DVisualTicks => movement3DTicks;
-    internal bool CanInterpolate3DMovement => CoreConfiguration.Smooth3DMovement && !CoreConfiguration.IsMobile &&
+    internal bool CanInterpolate3DMovement => (Timeline3DActive || CoreConfiguration.Smooth3DMovement) && !CoreConfiguration.IsMobile &&
         IdleOnMap && Is3D && !DisallowMoving() && mouseLookFocused && !mouseLookFullscreenChanging &&
         !layout.OptionMenuOpen && !layout.IsDragging &&
         worldMapViewer == null && QuestLog?.Open != true && nextClickHandler == null && !GameOverButtonsVisible;
@@ -50,7 +50,108 @@ partial class GameCore
         movementElapsed = 0;
         lastMovementInterval = 0;
         last3DMoveTicksReset = movement3DTicks;
+        timeline3DNextStep = double.NaN;
         ++movementResetVersion;
+    }
+
+    // --- Timeline 3D movement (CoreConfiguration.Timeline3DMovement) --------------
+    // Logical 3D steps are scheduled on a fixed-rate timeline using the shared monotonic
+    // movement clock instead of being derived from the rounded per-update tick count. The
+    // number of steps per second no longer depends on the display/update rate, and each
+    // logical step brackets translation + keyboard yaw into one pose sample so the camera
+    // interpolates smoothly across straight, diagonal, turning, and wall-sliding paths.
+    const int MaxTimeline3DStepsPerUpdate = 3;
+    const double MaxTimeline3DLag = 0.1;
+    double timeline3DNextStep = double.NaN;
+
+    /// <summary>
+    /// Optional non-persistent runtime override (for command-line testing).
+    /// </summary>
+    public bool? Timeline3DOverride { get; set; }
+    /// <summary>
+    /// Optional non-persistent runtime override for logical 3D steps per second.
+    /// </summary>
+    public int? Movement3DRateOverride { get; set; }
+    /// <summary>
+    /// Optional clock override for deterministic tests; defaults to <see cref="Ambermoon.Render.MovementClock.Now"/>.
+    /// </summary>
+    internal Func<double>? TimelineClockProvider { get; set; }
+
+    double TimelineNow => TimelineClockProvider?.Invoke() ?? Ambermoon.Render.MovementClock.Now;
+    internal bool Timeline3DActive => (Timeline3DOverride ?? CoreConfiguration.Timeline3DMovement) &&
+        !CoreConfiguration.IsMobile && !CoreConfiguration.LegacyMode;
+    internal double Timeline3DInterval => movement.MovementTicks(true, false, TravelType) /
+        (double)Math.Clamp(Movement3DRateOverride ?? CoreConfiguration.Movement3DRate, 20, 240);
+
+    bool ExecuteTimeline3DStep(double scheduledTime, double interval, bool clickMove, bool tapped = false)
+    {
+        bool interpolate = CanInterpolate3DMovement && camera3D != null;
+        uint resetVersion = movementResetVersion;
+        if (interpolate)
+            camera3D!.BeginTimelineStep(scheduledTime, interval);
+        try
+        {
+            if (clickMove)
+                HandleClickMovement();
+            else
+                Move(tapped);
+        }
+        finally
+        {
+            if (interpolate)
+                camera3D!.EndTimelineStep();
+        }
+
+        if (movementResetVersion != resetVersion)
+        {
+            ResetMovementTimer();
+            return false;
+        }
+        return true;
+    }
+
+    void StartTimeline3DMovement(bool tapped)
+    {
+        ResetMovementTimer();
+        double now = TimelineNow;
+        double interval = Timeline3DInterval;
+        if (ExecuteTimeline3DStep(now, interval, clickMove: false, tapped: tapped))
+            timeline3DNextStep = now + interval;
+    }
+
+    void StartTimeline3DClickMovement()
+    {
+        ResetMovementTimer();
+        double now = TimelineNow;
+        double interval = Timeline3DInterval;
+        if (ExecuteTimeline3DStep(now, interval, clickMove: true))
+            timeline3DNextStep = now + interval;
+    }
+
+    void UpdateTimeline3DMovement()
+    {
+        double now = TimelineNow;
+        double interval = Timeline3DInterval;
+
+        if (double.IsNaN(timeline3DNextStep) || now - timeline3DNextStep > MaxTimeline3DLag)
+            timeline3DNextStep = now; // first step, or resume after a stall without a burst
+
+        int steps = 0;
+        while (timeline3DNextStep <= now + 1e-9 && steps < MaxTimeline3DStepsPerUpdate)
+        {
+            bool continued = ExecuteTimeline3DStep(timeline3DNextStep, interval, clickMoveActive);
+            ++steps;
+            if (!continued || !CanScheduleMovement || (!clickMoveActive && !KeyboardMovementHeld))
+            {
+                ResetMovementTimer();
+                return;
+            }
+            timeline3DNextStep += interval;
+        }
+
+        // Never replay a backlog later.
+        if (steps == MaxTimeline3DStepsPerUpdate && timeline3DNextStep <= now)
+            timeline3DNextStep = now + interval;
     }
 
     void Update3DMovementClock(double deltaTime)
@@ -91,6 +192,12 @@ partial class GameCore
 
         if (is3D)
         {
+            if (Timeline3DActive)
+            {
+                UpdateTimeline3DMovement();
+                return;
+            }
+
             uint moveTicks = movement3DTicks >= last3DMoveTicksReset ? movement3DTicks - last3DMoveTicksReset
                 : (uint)((long)movement3DTicks + uint.MaxValue - last3DMoveTicksReset);
             if (moveTicks >= movement.MovementTicks(true, false, TravelType))

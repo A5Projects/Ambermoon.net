@@ -112,8 +112,12 @@ namespace AmbermoonAndroid
         public Movement3D Movement3D { get; set; } = Movement3D.WASD;
 		public bool MouseLook3D { get; set; } = false;
 		public bool Smooth3DMovement { get; set; } = true;
+		public bool Timeline3DMovement { get; set; } = true;
+		public int Movement3DRate { get; set; } = 60;
 		public bool SmoothDistantFloor { get; set; } = true;
 		public bool SmoothWalls { get; set; } = true;
+		public bool VSync { get; set; } = true;
+		public int MaxFps { get; set; } = 0;
 		public int MouseLookSensitivity { get; set; } = 100;
 		public bool TurnWithArrowKeys { get; set; } = true;
 		public GameLanguage Language { get; set; } = (CultureInfo.DefaultThreadCurrentCulture ?? CultureInfo.CurrentCulture)?.Name?.ToLower() switch

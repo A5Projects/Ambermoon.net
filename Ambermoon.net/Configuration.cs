@@ -117,8 +117,29 @@ internal class Configuration : IConfiguration
     public bool TurnWithArrowKeys { get; set; } = true;
     public bool MouseLook3D { get; set; } = false;
     public bool Smooth3DMovement { get; set; } = true;
+    /// <summary>
+    /// Runs modern 3D movement on a fixed-rate simulation timeline (default 60 steps/s)
+    /// and interpolates translation and keyboard turning cleanly at any display refresh rate.
+    /// Set to false to restore the legacy per-update movement scheduler.
+    /// </summary>
+    public bool Timeline3DMovement { get; set; } = true;
+    /// <summary>
+    /// Logical 3D movement steps per second when Timeline3DMovement is enabled.
+    /// </summary>
+    public int Movement3DRate { get; set; } = 60;
     public bool SmoothDistantFloor { get; set; } = true;
     public bool SmoothWalls { get; set; } = true;
+    /// <summary>
+    /// Synchronise presenting with the display refresh (recommended). If a GPU driver
+    /// overrides VSync to off, FramePacer falls back to the monitor refresh rate automatically.
+    /// </summary>
+    public bool VSync { get; set; } = true;
+    /// <summary>
+    /// Frame rate cap in frames per second. 0 = automatic (VSync when blocking, or 240 fps
+    /// safety ceiling when VSync is off). -2 = 2x monitor refresh. Positive value = explicit cap.
+    /// -1 = uncapped.
+    /// </summary>
+    public int MaxFps { get; set; } = 0;
     public int MouseLookSensitivity { get; set; } = 100;
     public GameLanguage Language { get; set; } = (CultureInfo.DefaultThreadCurrentCulture ?? CultureInfo.CurrentCulture)?.Name?.ToLower() switch
     {

@@ -1241,7 +1241,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 27;
+        const int OptionCount = 28;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1280,7 +1280,8 @@ namespace Ambermoon.UI
                     "Auto-Kampf",
                     "Maussteuerung 3D",
                     "3D Boden glätten",
-                    "3D Wände glätten"
+                    "3D Wände glätten",
+                    "FPS-Limit"
                 }
             },
             {
@@ -1317,7 +1318,8 @@ namespace Ambermoon.UI
                     "Auto-Battle",
                     "3D mouse",
                     "Smooth distant floor",
-                    "Smooth 3D walls"
+                    "Smooth 3D walls",
+                    "Frame limit"
                 }
             },
             {
@@ -1354,7 +1356,8 @@ namespace Ambermoon.UI
                     "Combat automatique",
                     "Souris 3D",
                     "Sol lointain lissé",
-                    "Lisser les murs 3D"
+                    "Lisser les murs 3D",
+                    "Limite FPS"
                 }
             },
             {
@@ -1391,7 +1394,8 @@ namespace Ambermoon.UI
                     "Automatyczna walka",
                     "Mysz 3D",
                     "Wygładź daleki grunt",
-                    "Wygładź ściany 3D"
+                    "Wygładź ściany 3D",
+                    "Limit FPS"
                 }
             },
             {
@@ -1428,7 +1432,8 @@ namespace Ambermoon.UI
                     "Automatický boj",
                     "Myš ve 3D",
                     "Vyhladit vzdálený terén",
-                    "Vyhladit 3D stěny"
+                    "Vyhladit 3D stěny",
+                    "Limit FPS"
                 }
             }
         }.ToImmutableDictionary();
@@ -1697,6 +1702,7 @@ namespace Ambermoon.UI
             AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleMouseLook3D());
             AddOption((index, _) => ToggleSmoothDistantFloor());
             AddOption((index, _) => ToggleSmoothWalls());
+            AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleFrameLimit());
 
             void UpdateFullscreenOption()
             {
@@ -1784,6 +1790,22 @@ namespace Ambermoon.UI
             void SetMouseLook3D() => SetOptionString(24, MouseLook3DValues[game.GameLanguage][game.CoreConfiguration.MouseLook3D ? 1 : 0]);
             void SetSmoothDistantFloor() => SetOptionString(25, game.CoreConfiguration.SmoothDistantFloor ? on : off);
             void SetSmoothWalls() => SetOptionString(26, game.CoreConfiguration.SmoothWalls ? on : off);
+            string GetFrameLimitString()
+            {
+                if (game.CoreConfiguration.VSync && game.CoreConfiguration.MaxFps == 0)
+                    return "VSync";
+                if (game.CoreConfiguration.MaxFps == -2)
+                {
+                    int? refresh = game.MonitorRefreshRateProvider?.Invoke();
+                    return refresh is > 0 ? $"2x ({Math.Clamp(refresh.Value * 2, 60, 360)})" : "2x";
+                }
+                if (game.CoreConfiguration.MaxFps > 0)
+                    return game.CoreConfiguration.MaxFps.ToString();
+                if (game.CoreConfiguration.MaxFps == -1)
+                    return "Max";
+                return "240";
+            }
+            void SetFrameLimit() => SetOptionString(27, GetFrameLimitString());
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1826,6 +1848,7 @@ namespace Ambermoon.UI
                         SetMouseLook3D();
                         SetSmoothDistantFloor();
                         SetSmoothWalls();
+                        SetFrameLimit();
                         break;
                 }
             }
@@ -1942,6 +1965,59 @@ namespace Ambermoon.UI
                 game.CoreConfiguration.SmoothWalls = !game.CoreConfiguration.SmoothWalls;
                 SetSmoothWalls();
                 changedConfiguration = true;
+            }
+            void ToggleFrameLimit()
+            {
+                var config = game.CoreConfiguration;
+                if (config.VSync && config.MaxFps == 0)
+                {
+                    config.VSync = false;
+                    config.MaxFps = 60;
+                }
+                else if (!config.VSync && config.MaxFps == 60)
+                {
+                    config.MaxFps = 120;
+                }
+                else if (!config.VSync && config.MaxFps == 120)
+                {
+                    config.MaxFps = 144;
+                }
+                else if (!config.VSync && config.MaxFps == 144)
+                {
+                    config.MaxFps = 240;
+                }
+                else if (!config.VSync && config.MaxFps == 240)
+                {
+                    config.MaxFps = -2;
+                }
+                else if (config.MaxFps == -2)
+                {
+                    config.VSync = true;
+                    config.MaxFps = 0;
+                }
+                else if (config.MaxFps > 0 && config.MaxFps < 240)
+                {
+                    config.VSync = false;
+                    config.MaxFps = config.MaxFps < 60 ? 60
+                        : config.MaxFps < 120 ? 120
+                        : config.MaxFps < 144 ? 144 : 240;
+                }
+                else if (config.MaxFps >= 240)
+                {
+                    config.VSync = false;
+                    config.MaxFps = -2;
+                }
+                else
+                {
+                    config.VSync = true;
+                    config.MaxFps = 0;
+                }
+
+                SetFrameLimit();
+                changedConfiguration = true;
+                config.RequestSave();
+                game.FrameLimitChanged?.Invoke();
+                game.NotifyConfigurationChange(false);
             }
             void TogglePlayerStatsTooltips()
             {

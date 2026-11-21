@@ -14,12 +14,11 @@ The Immersive adjustment uses the existing sky colours and existing fog shaders:
 - The new curve blends into the old one at 06:00–08:00 and 17:00–19:00. Outside
   that period the previous night calculation is retained. Existing Light-spell
   distance extensions are respected.
-- Walls, floor, billboard objects, and the mountain backdrop use coordinated
-  colours. Billboard tops retain a small height allowance, capped at one block,
-  so distant trees do not stand out through otherwise faded surroundings.
-- The mountain backdrop is treated as farther away than the rendered terrain:
-  full daytime haze obscures it completely, blending back during dusk/dawn.
-  Disabling fog restores the backdrop.
+- Walls, floor, and billboard objects use coordinated sky-derived fog colours.
+  Billboard tops retain a small height allowance, capped at one block, so
+  distant trees do not stand out through otherwise faded surroundings.
+- The distant mountain backdrop is left untouched by fog, avoiding a solid
+  coloured band across the skyline while keeping the 3D scene haze intact.
 - Dungeon and ordinary indoor fog retain their existing calculations. The sole
   indoor exception is map 427, the permanently lit Baron's palace in both
   Original and Advanced. Other lit interiors, including crypts and caves, keep

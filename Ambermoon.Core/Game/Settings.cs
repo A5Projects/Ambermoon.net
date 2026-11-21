@@ -26,6 +26,16 @@ partial class GameCore
     readonly ResolutionChangeHandler resolutionChangeHandler;
 
     public event Action<ICoreConfiguration, bool>? ConfigurationChanged;
+    /// <summary>
+    /// Optional provider returning the active monitor's refresh rate (Hz) so the Options UI
+    /// can display the resolved frame rate for the "2x" frame limit preset.
+    /// </summary>
+    public Func<int?>? MonitorRefreshRateProvider { get; set; }
+    /// <summary>
+    /// Invoked when the user explicitly changes the in-game Frame limit option, allowing the
+    /// window host to clear any non-persistent CLI --fps / --vsync overrides immediately.
+    /// </summary>
+    public Action? FrameLimitChanged { get; set; }
 
     internal void NotifyConfigurationChange(bool windowChange)
     {

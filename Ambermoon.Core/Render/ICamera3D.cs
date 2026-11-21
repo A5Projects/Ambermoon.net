@@ -34,6 +34,15 @@ namespace Ambermoon.Render
         // These affect only the drawn translation. X/Y/Z and all direction and
         // collision queries remain the immediate gameplay camera position.
         void BeginMovementInterpolation(uint ticks, double duration);
+        /// <summary>
+        /// Timeline mode: brackets a single logical movement/turn step scheduled at
+        /// <paramref name="scheduledTime"/> (seconds on <see cref="MovementClock"/>) with
+        /// step period <paramref name="interval"/>. All translation and keyboard yaw inside
+        /// the step are recorded as one smooth pose transition; mouse-look outside a step
+        /// stays immediate.
+        /// </summary>
+        void BeginTimelineStep(double scheduledTime, double interval);
+        void EndTimelineStep();
         void EndMovementInterpolation();
         void ResetMovementInterpolation();
 

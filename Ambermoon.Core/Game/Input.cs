@@ -637,8 +637,15 @@ partial class GameCore
             if (IsMovementKey(key) && !wasPressed && !movementHeld &&
                 !(layout.ExplorationActionsOpen && key >= Key.Num1 && key <= Key.Num9))
             {
-                Move(tapped);
-                ResetMovementTimer();
+                if (is3D && Timeline3DActive)
+                {
+                    StartTimeline3DMovement(tapped);
+                }
+                else
+                {
+                    Move(tapped);
+                    ResetMovementTimer();
+                }
             }
         }
         else if (currentWindow.Window == Window.BattlePositions && battlePositionDragging)
@@ -1344,8 +1351,15 @@ partial class GameCore
                     if (is3D)
                         TrapMouse(Map3DViewArea);
                     clickMoveActive = true;
-                    ResetMovementTimer();
-                    HandleClickMovement();
+                    if (is3D && Timeline3DActive)
+                    {
+                        StartTimeline3DClickMovement();
+                    }
+                    else
+                    {
+                        ResetMovementTimer();
+                        HandleClickMovement();
+                    }
                 }
                 else if (CoreConfiguration.IsMobile)
                 {
