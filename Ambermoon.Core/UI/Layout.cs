@@ -1241,7 +1241,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 29;
+        const int OptionCount = 30;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1283,7 +1283,8 @@ namespace Ambermoon.UI
                     "3D Wände glätten",
                     "FPS-Limit",
                     // Page 5
-                    "3D-Renderer"
+                    "3D-Renderer",
+                    "3D-Texturen"
                 }
             },
             {
@@ -1323,7 +1324,8 @@ namespace Ambermoon.UI
                     "Smooth 3D walls",
                     "Frame limit",
                     // Page 5
-                    "3D renderer"
+                    "3D renderer",
+                    "3D textures"
                 }
             },
             {
@@ -1363,7 +1365,8 @@ namespace Ambermoon.UI
                     "Lisser les murs 3D",
                     "Limite FPS",
                     // Page 5
-                    "Rendu 3D"
+                    "Rendu 3D",
+                    "Textures 3D"
                 }
             },
             {
@@ -1403,7 +1406,8 @@ namespace Ambermoon.UI
                     "Wygładź ściany 3D",
                     "Limit FPS",
                     // Page 5
-                    "Renderer 3D"
+                    "Renderer 3D",
+                    "Tekstury 3D"
                 }
             },
             {
@@ -1443,7 +1447,8 @@ namespace Ambermoon.UI
                     "Vyhladit 3D stěny",
                     "Limit FPS",
                     // Page 5
-                    "3D renderer"
+                    "3D renderer",
+                    "3D textury"
                 }
             }
         }.ToImmutableDictionary();
@@ -1602,6 +1607,15 @@ namespace Ambermoon.UI
             { GameLanguage.Czech, ["Klasický", "Experimentální"] }
         }.ToImmutableDictionary();
 
+        static readonly ImmutableDictionary<GameLanguage, string[]> Texture3DFilterValues = new Dictionary<GameLanguage, string[]>
+        {
+            { GameLanguage.German, ["Kantengeführt", "Scharf bilinear", "Pixelgenau"] },
+            { GameLanguage.English, ["Edge-directed", "Sharp bilinear", "Crisp"] },
+            { GameLanguage.French, ["Par contours", "Bilinéaire net", "Net"] },
+            { GameLanguage.Polish, ["Krawędziowe", "Ostre biliniowe", "Ostre"] },
+            { GameLanguage.Czech, ["Hranové", "Ostré bilineár.", "Ostré"] }
+        }.ToImmutableDictionary();
+
         static readonly ImmutableDictionary<GameLanguage, string[]> AutoBattleOptions = new Dictionary<GameLanguage, string[]>
         {
             {
@@ -1724,6 +1738,7 @@ namespace Ambermoon.UI
             AddOption(game.CoreConfiguration.IsMobile ? null : (index, _) => ToggleFrameLimit());
             // Page 5
             AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleRenderer3D());
+            AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleTexture3DFilter());
 
             void UpdateFullscreenOption()
             {
@@ -1828,6 +1843,7 @@ namespace Ambermoon.UI
             }
             void SetFrameLimit() => SetOptionString(27, GetFrameLimitString());
             void SetRenderer3D() => SetOptionString(28, Renderer3DValues[game.GameLanguage][RenderView.SupportsExperimental3D && game.ActiveRenderer3D == Renderer3DMode.Experimental ? 1 : 0]);
+            void SetTexture3DFilter() => SetOptionString(29, Texture3DFilterValues[game.GameLanguage][(int)game.ActiveTexture3DFilter]);
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1874,6 +1890,7 @@ namespace Ambermoon.UI
                         break;
                     case 4:
                         SetRenderer3D();
+                        SetTexture3DFilter();
                         break;
                 }
             }
@@ -2055,6 +2072,24 @@ namespace Ambermoon.UI
                 game.Renderer3DOverride = null;
                 game.CoreConfiguration.Renderer3D = next;
                 SetRenderer3D();
+                changedConfiguration = true;
+                game.CoreConfiguration.RequestSave();
+                game.NotifyConfigurationChange(false);
+            }
+            void ToggleTexture3DFilter()
+            {
+                if (!RenderView.SupportsExperimental3D)
+                    return;
+
+                var next = game.ActiveTexture3DFilter switch
+                {
+                    Texture3DFilterMode.EdgeDirected => Texture3DFilterMode.SharpBilinear,
+                    Texture3DFilterMode.SharpBilinear => Texture3DFilterMode.Crisp,
+                    _ => Texture3DFilterMode.EdgeDirected
+                };
+                game.Texture3DFilterOverride = null;
+                game.CoreConfiguration.Texture3DFilter = next;
+                SetTexture3DFilter();
                 changedConfiguration = true;
                 game.CoreConfiguration.RequestSave();
                 game.NotifyConfigurationChange(false);

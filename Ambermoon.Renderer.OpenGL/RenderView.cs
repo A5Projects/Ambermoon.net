@@ -1071,6 +1071,20 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         set => renderer3DMode = SupportsExperimental3D ? value : Renderer3DMode.Classic;
     }
 
+    Texture3DFilterMode texture3DFilterMode = Texture3DFilterMode.EdgeDirected;
+    public Texture3DFilterMode Texture3DFilterMode
+    {
+        get => texture3DFilterMode;
+        set
+        {
+            texture3DFilterMode = value;
+#if !GLES
+            if (experimental3DRenderer != null)
+                experimental3DRenderer.Uniforms.FilterMode = value;
+#endif
+        }
+    }
+
 #if !GLES
     private protected override bool IsExperimental3DActive =>
         experimental3DRenderer != null && renderer3DMode == Renderer3DMode.Experimental;

@@ -41,10 +41,16 @@ partial class GameCore
     /// </summary>
     public Renderer3DMode? Renderer3DOverride { get; set; }
     public Renderer3DMode ActiveRenderer3D => Renderer3DOverride ?? CoreConfiguration.Renderer3D;
+    /// <summary>
+    /// Optional per-run override for the Experimental 3D texture filter (e.g. from CLI --texture-filter).
+    /// </summary>
+    public Texture3DFilterMode? Texture3DFilterOverride { get; set; }
+    public Texture3DFilterMode ActiveTexture3DFilter => Texture3DFilterOverride ?? CoreConfiguration.Texture3DFilter;
 
     public void RefreshRenderer3DMode()
     {
         renderView.Renderer3DMode = ActiveRenderer3D;
+        renderView.Texture3DFilterMode = ActiveTexture3DFilter;
     }
 
     internal void NotifyConfigurationChange(bool windowChange)

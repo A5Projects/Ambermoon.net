@@ -5,8 +5,9 @@ using System;
 namespace Ambermoon.Renderer.OpenGL.Experimental;
 
 /// <summary>
-/// Owns the offscreen 3D render target, <see cref="Scene3DBuilder"/> meshes, and parity/experimental
-/// 3D shaders, keeping the Experimental 3D pass isolated from Classic layers and 2D/UI compositing.
+/// Owns the offscreen 3D render target, <see cref="Scene3DBuilder"/> meshes,
+/// <see cref="ExperimentalTextureCache"/> RGBA texture arrays, and Experimental 3D shaders,
+/// keeping the Experimental 3D pass isolated from Classic layers and 2D/UI compositing.
 /// </summary>
 internal sealed class Experimental3DRenderer : IDisposable
 {
@@ -19,6 +20,7 @@ internal sealed class Experimental3DRenderer : IDisposable
     bool disposed;
 
     public Scene3DBuilder Scene { get; }
+    public ExperimentalTextureCache TextureCache { get; }
     public Experimental3DState Uniforms { get; } = new();
     public ulong FramesRendered { get; private set; }
     public Size LastTargetSize { get; private set; } = new(0, 0);
@@ -27,6 +29,7 @@ internal sealed class Experimental3DRenderer : IDisposable
     {
         this.state = state;
         Scene = new Scene3DBuilder(state);
+        TextureCache = new ExperimentalTextureCache(state);
         sceneTarget = new FrameBuffer(state);
         surfaceShader = new ExperimentalSurfaceShader(state);
         billboardShader = new ExperimentalBillboardShader(state);
@@ -60,6 +63,14 @@ internal sealed class Experimental3DRenderer : IDisposable
             return;
 
         var gl = state.Gl;
+        TextureCache.BeginFrame();
+        ulong frameIndex = FramesRendered + 1;
+
+        ulong palReplaceHash = ExperimentalTextureCache.ComputePaletteReplacementHash(Uniforms.PaletteReplacement);
+        byte skyKey = Uniforms.SkyColorIndex.HasValue && Uniforms.SkyColorIndex.Value <= 31u
+            ? (byte)Uniforms.SkyColorIndex.Value
+            : (byte)255;
+        uint skyReplaceRgba = skyKey != 255 ? ExperimentalTextureCache.PackRgba(Uniforms.SkyReplaceColor) : 0u;
 
         // Draw 3D geometry into the exact Map3DViewArea sub-viewport inside sceneTarget.
         gl.Viewport(mapViewArea.X, viewport.Height - (mapViewArea.Y + mapViewArea.Height),
@@ -70,28 +81,34 @@ internal sealed class Experimental3DRenderer : IDisposable
 
         if (ceilingLayer.Visible && ceilingLayer.Texture is Texture ceilingTexture && palette != null)
         {
-            BindAtlasAndPalette(ceilingTexture, palette);
-            surfaceShader.BindAndApply(Uniforms, (uint)ceilingTexture.Width, (uint)ceilingTexture.Height, palette.Height);
-            Scene.FloorCeilingBatch.Draw();
+            var ctx = new TextureCacheContext(ceilingTexture.Index, palette.Index, palReplaceHash, skyKey, skyReplaceRgba, Uniforms.FilterMode);
+            surfaceShader.BindAndApply(Uniforms);
+            Scene.FloorCeilingBatch.Draw(TextureCache, ceilingTexture, palette, Uniforms, ctx, frameIndex,
+                bucket => surfaceShader.SetLayerTextureSize(bucket.Width, bucket.Height));
         }
 
         gl.Enable(EnableCap.DepthTest);
 
         if (wallLayer.Visible && wallLayer.Texture is Texture wallTexture && palette != null)
         {
-            BindAtlasAndPalette(wallTexture, palette);
-            surfaceShader.BindAndApply(Uniforms, (uint)wallTexture.Width, (uint)wallTexture.Height, palette.Height);
-            Scene.WallBatch.Draw();
+            var ctx = new TextureCacheContext(wallTexture.Index, palette.Index, palReplaceHash, skyKey, skyReplaceRgba, Uniforms.FilterMode);
+            surfaceShader.BindAndApply(Uniforms);
+            Scene.WallBatch.Draw(TextureCache, wallTexture, palette, Uniforms, ctx, frameIndex,
+                bucket => surfaceShader.SetLayerTextureSize(bucket.Width, bucket.Height));
         }
 
         gl.Disable(EnableCap.CullFace);
 
         if (billboardLayer.Visible && billboardLayer.Texture is Texture billboardTexture && palette != null)
         {
-            BindAtlasAndPalette(billboardTexture, palette);
-            billboardShader.BindAndApply(Uniforms, (uint)billboardTexture.Width, (uint)billboardTexture.Height, palette.Height);
-            Scene.BillboardBatch.Draw();
+            var ctx = new TextureCacheContext(billboardTexture.Index, palette.Index, palReplaceHash, skyKey, skyReplaceRgba, Uniforms.FilterMode);
+            billboardShader.BindAndApply(Uniforms);
+            Scene.BillboardBatch.Draw(TextureCache, billboardTexture, palette, Uniforms, ctx, frameIndex,
+                bucket => billboardShader.SetLayerTextureSize(bucket.Width, bucket.Height));
         }
+
+        gl.ActiveTexture(GLEnum.Texture0);
+        gl.BindTexture(TextureTarget.Texture2DArray, 0);
 
         // Composite the completed offscreen 3D scene back to the destination framebuffer
         // (either effectFrameBuffer or default FBO 0) so 2D/UI/GraphicFilter/Effects proceed identically.
@@ -116,10 +133,8 @@ internal sealed class Experimental3DRenderer : IDisposable
         gl.BindVertexArray(compositeVao);
         gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
         gl.BindVertexArray(0);
-        gl.ActiveTexture(GLEnum.Texture1);
-        gl.BindTexture(TextureTarget.Texture2D, 0);
         gl.ActiveTexture(GLEnum.Texture0);
-        gl.BindTexture(GLEnum.Texture2D, 0);
+        gl.BindTexture(TextureTarget.Texture2D, 0);
 
         gl.DepthMask(true);
         gl.Enable(EnableCap.DepthTest);
@@ -128,22 +143,13 @@ internal sealed class Experimental3DRenderer : IDisposable
         FramesRendered++;
     }
 
-    void BindAtlasAndPalette(Texture atlas, Texture palette)
-    {
-        var gl = state.Gl;
-        gl.ActiveTexture(GLEnum.Texture0);
-        gl.BindTexture(TextureTarget.Texture2D, atlas.Index);
-        gl.ActiveTexture(GLEnum.Texture1);
-        gl.BindTexture(TextureTarget.Texture2D, palette.Index);
-        Texture.InvalidateActiveTexture();
-    }
-
     public void Dispose()
     {
         if (disposed)
             return;
         disposed = true;
         Scene.Dispose();
+        TextureCache.Dispose();
         sceneTarget.Dispose();
         surfaceShader.Dispose();
         billboardShader.Dispose();

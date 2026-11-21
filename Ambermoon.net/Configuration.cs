@@ -135,6 +135,12 @@ internal class Configuration : IConfiguration
     /// </summary>
     public Renderer3DMode Renderer3D { get; set; } = Renderer3DMode.Experimental;
     /// <summary>
+    /// Selects texture magnification style for the Experimental 3D renderer:
+    /// EdgeDirected (default, 4x edge-directed pre-upscale), SharpBilinear, or Crisp.
+    /// Toggle live on settings page 5 or override per run with --texture-filter edge|sharp|crisp.
+    /// </summary>
+    public Texture3DFilterMode Texture3DFilter { get; set; } = Texture3DFilterMode.EdgeDirected;
+    /// <summary>
     /// Synchronise presenting with the display refresh (recommended). If a GPU driver
     /// overrides VSync to off, FramePacer falls back to the monitor refresh rate automatically.
     /// </summary>

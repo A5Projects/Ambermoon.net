@@ -150,6 +150,7 @@ public interface ICoreConfiguration
     bool SmoothDistantFloor { get; set; }
     bool SmoothWalls { get; set; }
     Renderer3DMode Renderer3D { get; set; }
+    Texture3DFilterMode Texture3DFilter { get; set; }
     bool VSync { get; set; }
     int MaxFps { get; set; }
     int MouseLookSensitivity { get; set; }

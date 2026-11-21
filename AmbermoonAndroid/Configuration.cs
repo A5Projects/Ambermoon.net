@@ -117,6 +117,7 @@ namespace AmbermoonAndroid
 		public bool SmoothDistantFloor { get; set; } = true;
 		public bool SmoothWalls { get; set; } = true;
 		public Renderer3DMode Renderer3D { get; set; } = Renderer3DMode.Classic;
+		public Texture3DFilterMode Texture3DFilter { get; set; } = Texture3DFilterMode.EdgeDirected;
 		public bool VSync { get; set; } = true;
 		public int MaxFps { get; set; } = 0;
 		public int MouseLookSensitivity { get; set; } = 100;

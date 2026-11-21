@@ -37,6 +37,13 @@ public enum Renderer3DMode
     Experimental,
 }
 
+public enum Texture3DFilterMode
+{
+    EdgeDirected,
+    SharpBilinear,
+    Crisp,
+}
+
 public interface IRenderView : IRenderLayerFactory
 {
     void Render(FloatPosition? viewportOffset);
@@ -101,4 +108,5 @@ public interface IGameRenderView : IRenderView
     void SetSmoothWalls(bool enabled);
     bool SupportsExperimental3D { get; }
     Renderer3DMode Renderer3DMode { get; set; }
+    Texture3DFilterMode Texture3DFilterMode { get; set; }
 }

@@ -5,6 +5,7 @@ using System;
 namespace Ambermoon.Renderer.OpenGL.Experimental;
 
 using Data;
+using Render;
 
 internal sealed class Experimental3DState
 {
@@ -12,6 +13,7 @@ internal sealed class Experimental3DState
     public float Fade { get; set; } = 1.0f;
     public bool SmoothDistantFloor { get; set; }
     public bool SmoothWalls { get; set; }
+    public Texture3DFilterMode FilterMode { get; set; } = Texture3DFilterMode.EdgeDirected;
     public PaletteReplacement PaletteReplacement { get; set; }
     public uint? SkyColorIndex { get; set; }
     public Render.Color SkyReplaceColor { get; set; } = Render.Color.Transparent;
@@ -46,8 +48,10 @@ internal static class ExperimentalShaderBuilder
 }
 
 /// <summary>
-/// Experimental 3D floor/ceiling/wall shader. In P1 this delivers pixel-exact parity with
-/// Classic Texture3DShader while carrying surface normals for P3 atmospheric lighting.
+/// Experimental 3D floor/ceiling/wall shader sampling premultiplied RGBA8 texture-array layers
+/// with hardware trilinear mipmaps, up to 16x anisotropic filtering, and selectable magnification
+/// (EdgeDirected 4x, SharpBilinear via textureGrad, or Crisp nearest-mag).
+/// Retires Classic's manual 8-tap floor/wall shaders while carrying surface normals for P3 lighting.
 /// </summary>
 internal sealed class ExperimentalSurfaceShader : IDisposable
 {
@@ -59,154 +63,69 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
     {
         this.state = state;
 
-        string frag = ExperimentalShaderBuilder.FragmentHeader(state) + $$"""
-        uniform sampler2D sampler;
-        uniform sampler2D palette;
-        uniform uvec2 atlasSize;
+        string frag = ExperimentalShaderBuilder.FragmentHeader(state) + """
+        uniform sampler2DArray texArray;
+        uniform vec2 layerTexSize;
+        uniform int filterMode;
         uniform float light;
-        uniform float palCount;
-        uniform vec4 palReplace[16];
-        uniform float useReplace;
-        uniform float skyColorIndex;
-        uniform vec4 skyColorReplace;
         uniform vec4 fogColor;
         uniform float fogDist;
         uniform vec3 fogFadeRange;
+        uniform float fogCap;
         uniform float fade;
-        uniform float smoothDistantFloor;
-        uniform float smoothWalls;
 
-        in vec2 varTexCoord;
+        in vec2 varUv;
         in vec3 varNormal;
         in float dist;
-        flat in float palIndex;
-        flat in vec2 varTextureEndCoord;
-        flat in vec2 varTextureSize;
-        flat in float alphaEnabled;
-        flat in float floorSurface;
+        flat in float varTexLayer;
+        flat in float isCutout;
 
-        vec4 paletteColor(float index)
+        vec4 samplePremultiplied(vec2 uv, float layer, vec2 uvDx, vec2 uvDy)
         {
-            return useReplace > 0.5 && index < 15.5 ? palReplace[int(index + 0.5)]
-                : textureLod(palette, vec2((index + 0.5) / 32.0, (palIndex + 0.5) / palCount), 0.0);
-        }
-
-        vec4 wallSample(ivec2 texel, ivec2 first, ivec2 last)
-        {
-            float index = texelFetch(sampler, clamp(texel, first, last), 0).r * 255.0;
-            if (abs(index - skyColorIndex) < 0.5)
-                return vec4(0.0);
-            vec4 color = paletteColor(index);
-            if (color.a < 0.5)
-                return vec4(0.0);
-            return vec4(max(vec3(0.0), color.rgb + vec3(light) - vec3(1.0)), 1.0);
-        }
-
-        vec3 smoothWallColor(vec3 centerColor, vec2 dx, vec2 dy)
-        {
-            vec2 atlas = vec2(atlasSize);
-            ivec2 last = ivec2(round(varTextureEndCoord * atlas)) - ivec2(1);
-            ivec2 first = last + ivec2(1) - ivec2(round(varTextureSize * atlas));
-            vec2 position = varTexCoord * atlas;
-            float distant = smoothstep(1.0, 2.0, max(length(dx), length(dy)));
-            vec3 closeColor = centerColor;
-            if (distant < 1.0)
+            if (filterMode == 1 || filterMode == 2)
             {
-                vec2 fromCenter = fract(position) - 0.5;
-                vec2 span = max(abs(dx) + abs(dy), vec2(0.000001));
-                vec2 w = clamp(0.5 + (abs(fromCenter) - 0.5) / span, 0.0, 0.5);
-                if (w.x > 0.0 || w.y > 0.0)
-                {
-                    ivec2 here = ivec2(floor(position));
-                    ivec2 neighbor = ivec2(2.0 * step(vec2(0.0), fromCenter) - 1.0);
-                    vec4 sum = (1.0 - w.x) * (1.0 - w.y) * vec4(centerColor, 1.0);
-                    if (w.x > 0.0)
-                        sum += w.x * (1.0 - w.y) * wallSample(here + ivec2(neighbor.x, 0), first, last);
-                    if (w.y > 0.0)
-                        sum += (1.0 - w.x) * w.y * wallSample(here + ivec2(0, neighbor.y), first, last);
-                    if (w.x > 0.0 && w.y > 0.0)
-                        sum += w.x * w.y * wallSample(here + neighbor, first, last);
-                    closeColor = sum.rgb / sum.a;
-                }
+                // Per-axis magnification (SharpBilinear = subpixel AA; Crisp = nearest texel)
+                // handing off seamlessly per axis to hardware trilinear mipmaps + 16x anisotropy
+                // via original geometric derivatives so receding floors never lose aniso.
+                vec2 p = uv * layerTexSize;
+                vec2 s = p - 0.5;
+                vec2 i = floor(s);
+                vec2 f = s - i;
+                vec2 deriv = abs(uvDx * layerTexSize) + abs(uvDy * layerTexSize);
+                vec2 w = filterMode == 1
+                    ? clamp(deriv, vec2(0.0001), vec2(1.0))
+                    : mix(vec2(0.0001), vec2(1.0), smoothstep(0.85, 1.15, deriv));
+                vec2 fAdj = clamp((f - 0.5) / w + 0.5, 0.0, 1.0);
+                vec2 adjUv = (i + fAdj + 0.5) / layerTexSize;
+                return textureGrad(texArray, vec3(adjUv, layer), uvDx, uvDy);
             }
-            if (distant <= 0.0)
-                return closeColor;
 
-            const vec2 taps[8] = vec2[8](vec2(-7,-3), vec2(-5,7), vec2(-3,-1), vec2(-1,-5),
-                                         vec2(1,5), vec2(3,1), vec2(5,-7), vec2(7,3));
-            vec4 sum = vec4(0.0);
-            for (int i = 0; i < 8; ++i)
-            {
-                vec2 samplePosition = position + (taps[i].x * dx + taps[i].y * dy) / 16.0;
-                sum += wallSample(ivec2(floor(samplePosition)), first, last);
-            }
-            return mix(closeColor, sum.a > 0.0 ? sum.rgb / sum.a : centerColor, distant);
-        }
-
-        vec3 sampleFloorColor(vec2 coord)
-        {
-            vec2 first = varTextureEndCoord - varTextureSize;
-            vec2 halfTexel = vec2(0.5) / vec2(atlasSize);
-            vec2 wrapped = first + mod(coord - first, varTextureSize);
-            wrapped = clamp(wrapped, first + halfTexel, varTextureEndCoord - halfTexel);
-            float index = textureLod(sampler, wrapped, 0.0).r * 255.0;
-            vec4 color = paletteColor(index);
-            if (abs(index - skyColorIndex) < 0.5)
-                return skyColorReplace.rgb;
-            return max(vec3(0.0), color.rgb + vec3(light) - vec3(1.0));
+            return textureGrad(texArray, vec3(uv, layer), uvDx, uvDy);
         }
 
         void main()
         {
-            vec2 texCoordDx = dFdx(varTexCoord);
-            vec2 texCoordDy = dFdy(varTexCoord);
-            outColor = vec4(0.0);
-            vec2 realTexCoord = varTexCoord;
-            if (realTexCoord.x >= varTextureEndCoord.x)
-                realTexCoord.x -= floor((varTextureSize.x + realTexCoord.x - varTextureEndCoord.x) / varTextureSize.x) * varTextureSize.x;
-            if (realTexCoord.y >= varTextureEndCoord.y)
-                realTexCoord.y -= floor((varTextureSize.y + realTexCoord.y - varTextureEndCoord.y) / varTextureSize.y) * varTextureSize.y;
-            float colorIndex = textureLod(sampler, realTexCoord, 0.0).r * 255.0;
-            vec4 pixelColor = paletteColor(colorIndex);
+            vec2 uvDx = dFdx(varUv);
+            vec2 uvDy = dFdy(varUv);
 
-            if (alphaEnabled > 0.5 && alphaEnabled < 1.5 && (colorIndex < 0.5 || pixelColor.a < 0.5) || light < 0.01)
+            if (light < 0.01)
                 discard;
-            else if (abs(colorIndex - skyColorIndex) < 0.5)
+
+            vec4 texel = samplePremultiplied(varUv, varTexLayer, uvDx, uvDy);
+
+            if (isCutout > 0.5)
             {
-                if (alphaEnabled > 1.5)
+                if (texel.a < 0.5)
                     discard;
-                else
-                    outColor = skyColorReplace;
-            }
-            else
-                outColor = vec4(max(vec3(0.0), pixelColor.rgb + vec3(light) - vec3(1.0)), pixelColor.a);
-
-            if (smoothDistantFloor > 0.5 && floorSurface > 0.5 && alphaEnabled < 0.5)
-            {
-                float footprint = max(length(texCoordDx * vec2(atlasSize)), length(texCoordDy * vec2(atlasSize)));
-                float filterAmount = smoothstep(1.0, 2.0, footprint);
-                if (filterAmount > 0.0)
-                {
-                    vec2 dx = 1.5 * texCoordDx;
-                    vec2 dy = 1.5 * texCoordDy;
-                    vec3 filtered = sampleFloorColor(varTexCoord - 0.4375 * dx - 0.1875 * dy)
-                        + sampleFloorColor(varTexCoord - 0.3125 * dx + 0.4375 * dy)
-                        + sampleFloorColor(varTexCoord - 0.1875 * dx - 0.0625 * dy)
-                        + sampleFloorColor(varTexCoord - 0.0625 * dx - 0.3125 * dy)
-                        + sampleFloorColor(varTexCoord + 0.0625 * dx + 0.3125 * dy)
-                        + sampleFloorColor(varTexCoord + 0.1875 * dx + 0.0625 * dy)
-                        + sampleFloorColor(varTexCoord + 0.3125 * dx - 0.4375 * dy)
-                        + sampleFloorColor(varTexCoord + 0.4375 * dx + 0.1875 * dy);
-                    outColor.rgb = mix(outColor.rgb, filtered * 0.125, filterAmount);
-                }
+                texel.rgb = clamp(texel.rgb / texel.a, 0.0, 1.0);
+                texel.a = 1.0;
             }
 
-            if (smoothWalls > 0.5 && alphaEnabled > 1.5 && pixelColor.a >= 0.5)
-                outColor.rgb = smoothWallColor(outColor.rgb, texCoordDx * vec2(atlasSize), texCoordDy * vec2(atlasSize));
+            outColor = vec4(max(vec3(0.0), texel.rgb + vec3(light) - vec3(1.0)), texel.a);
 
             if (fogColor.a > 0.001)
             {
-                float fogFactor = fogColor.a * min(skyColorIndex < 31.5 ? 0.8 : 1.0, dist / fogDist);
+                float fogFactor = fogColor.a * min(fogCap, dist / fogDist);
                 float originalAlpha = outColor.a;
                 if (fogFadeRange.z > 0.0)
                 {
@@ -223,39 +142,29 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
         }
         """;
 
-        string vert = ExperimentalShaderBuilder.VertexHeader(state) + $$"""
+        string vert = ExperimentalShaderBuilder.VertexHeader(state) + """
         in vec3 position;
         in vec3 normal;
-        in ivec2 texCoord;
-        in ivec2 texEndCoord;
-        in ivec2 texSize;
-        in uint paletteIndex;
-        in uint alpha;
+        in vec2 uv;
+        in float texLayer;
+        in uint flags;
 
-        uniform uvec2 atlasSize;
         uniform mat4 projMat;
         uniform mat4 mvMat;
         uniform vec2 fogDepth;
 
-        out vec2 varTexCoord;
+        out vec2 varUv;
         out vec3 varNormal;
         out float dist;
-        flat out float palIndex;
-        flat out vec2 varTextureEndCoord;
-        flat out vec2 varTextureSize;
-        flat out float alphaEnabled;
-        flat out float floorSurface;
+        flat out float varTexLayer;
+        flat out float isCutout;
 
         void main()
         {
-            vec2 atlasFactor = vec2(1.0 / float(atlasSize.x), 1.0 / float(atlasSize.y));
-            varTexCoord = atlasFactor * vec2(texCoord.x, texCoord.y);
+            varUv = uv;
             varNormal = normal;
-            palIndex = float(paletteIndex);
-            varTextureEndCoord = atlasFactor * vec2(texEndCoord.x, texEndCoord.y);
-            varTextureSize = atlasFactor * vec2(texSize.x, texSize.y);
-            alphaEnabled = float(alpha & 3u);
-            floorSurface = (alpha & {{Texture3DShader.FloorSurfaceFlag}}u) != 0u ? 1.0 : 0.0;
+            varTexLayer = texLayer;
+            isCutout = (flags & 1u) != 0u ? 1.0 : 0.0;
             vec4 viewPosition = mvMat * vec4(position, 1.0);
             gl_Position = projMat * viewPosition;
             dist = dot(fogDepth, viewPosition.zw);
@@ -266,53 +175,36 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
         [
             (0, "position"),
             (1, "normal"),
-            (2, "texCoord"),
-            (3, "texEndCoord"),
-            (4, "texSize"),
-            (5, "paletteIndex"),
-            (6, "alpha"),
+            (2, "uv"),
+            (3, "texLayer"),
+            (4, "flags"),
         ]);
     }
 
-    public void BindAndApply(Experimental3DState data, uint atlasWidth, uint atlasHeight, int paletteCount)
+    public void BindAndApply(Experimental3DState data)
     {
         program.Use();
         program.SetInputMatrix("mvMat", state.CurrentModelViewMatrix.ToArray(), true);
         program.SetInputMatrix("projMat", state.CurrentProjectionMatrix.ToArray(), true);
         program.SetInputVector2("fogDepth", state.FogDepth3D.Scale, state.FogDepth3D.Offset);
-        program.SetInput("sampler", 0);
-        program.SetInput("palette", 1);
-        program.SetInputVector2("atlasSize", atlasWidth, atlasHeight);
-        program.SetInput("palCount", (float)paletteCount);
+        program.SetInput("texArray", 0);
+        program.SetInput("filterMode", (int)data.FilterMode);
         program.SetInput("light", data.Light);
         program.SetInput("fade", data.Fade);
-        program.SetInput("smoothDistantFloor", data.SmoothDistantFloor ? 1.0f : 0.0f);
-        program.SetInput("smoothWalls", data.SmoothWalls ? 1.0f : 0.0f);
 
-        if (data.PaletteReplacement == null)
-        {
-            program.SetInput("useReplace", 0.0f);
-        }
-        else
-        {
-            program.SetInputColorArray("palReplace", data.PaletteReplacement.ColorData);
-            program.SetInput("useReplace", 1.0f);
-        }
-
-        program.SetInput("skyColorIndex", data.SkyColorIndex == null ? 32.0f : (float)data.SkyColorIndex.Value);
-        if (data.SkyReplaceColor != null)
-        {
-            program.SetInputVector4("skyColorReplace",
-                data.SkyReplaceColor.R / 255.0f, data.SkyReplaceColor.G / 255.0f,
-                data.SkyReplaceColor.B / 255.0f, data.SkyReplaceColor.A / 255.0f);
-        }
-
+        bool hasSkyKey = data.SkyColorIndex.HasValue && data.SkyColorIndex.Value <= 31u;
+        program.SetInput("fogCap", hasSkyKey ? 0.8f : 1.0f);
         program.SetInputVector4("fogColor",
             data.FogColor.R / 255.0f, data.FogColor.G / 255.0f,
             data.FogColor.B / 255.0f, data.FogColor.A / 255.0f);
         program.SetInput("fogDist", data.FogDistance);
         var fadeRange = data.OutdoorFade ?? (Start: 0.0f, End: 1.0f, Blend: 0.0f);
         program.SetInputVector3("fogFadeRange", fadeRange.Start, fadeRange.End, fadeRange.Blend);
+    }
+
+    public void SetLayerTextureSize(int width, int height)
+    {
+        program.SetInputVector2("layerTexSize", (float)width, (float)height);
     }
 
     public void Dispose()
@@ -326,8 +218,8 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
 }
 
 /// <summary>
-/// Experimental 3D billboard shader. In P1 this delivers pixel-exact parity with
-/// Classic Billboard3DShader.
+/// Experimental 3D billboard shader sampling premultiplied RGBA8 texture-array layers
+/// with zero silhouette tint bleed, coverage-preserving mipmaps, and 16x anisotropy.
 /// </summary>
 internal sealed class ExperimentalBillboardShader : IDisposable
 {
@@ -340,50 +232,62 @@ internal sealed class ExperimentalBillboardShader : IDisposable
         this.state = state;
 
         string frag = ExperimentalShaderBuilder.FragmentHeader(state) + """
-        uniform sampler2D sampler;
-        uniform sampler2D palette;
+        uniform sampler2DArray texArray;
+        uniform vec2 layerTexSize;
+        uniform int filterMode;
         uniform float light;
-        uniform float palCount;
-        uniform vec4 palReplace[16];
-        uniform float useReplace;
-        uniform float skyColorIndex;
-        uniform vec4 skyColorReplace;
         uniform vec4 fogColor;
         uniform float fogDist;
         uniform vec3 fogFadeRange;
+        uniform float fogCap;
+        uniform float outdoorTaper;
         uniform float fade;
 
-        in vec2 varTexCoord;
+        in vec2 varUv;
         in float dist;
         in float drawY;
-        flat in float palIndex;
-        flat in vec2 varTextureEndCoord;
-        flat in vec2 varTextureSize;
+        flat in float varTexLayer;
+
+        vec4 samplePremultiplied(vec2 uv, float layer, vec2 uvDx, vec2 uvDy)
+        {
+            if (filterMode == 1 || filterMode == 2)
+            {
+                vec2 p = uv * layerTexSize;
+                vec2 s = p - 0.5;
+                vec2 i = floor(s);
+                vec2 f = s - i;
+                vec2 deriv = abs(uvDx * layerTexSize) + abs(uvDy * layerTexSize);
+                vec2 w = filterMode == 1
+                    ? clamp(deriv, vec2(0.0001), vec2(1.0))
+                    : mix(vec2(0.0001), vec2(1.0), smoothstep(0.85, 1.15, deriv));
+                vec2 fAdj = clamp((f - 0.5) / w + 0.5, 0.0, 1.0);
+                vec2 adjUv = (i + fAdj + 0.5) / layerTexSize;
+                return textureGrad(texArray, vec3(adjUv, layer), uvDx, uvDy);
+            }
+
+            return textureGrad(texArray, vec3(uv, layer), uvDx, uvDy);
+        }
 
         void main()
         {
-            outColor = vec4(0.0);
-            vec2 realTexCoord = varTexCoord;
-            if (realTexCoord.x >= varTextureEndCoord.x)
-                realTexCoord.x -= floor((varTextureSize.x + realTexCoord.x - varTextureEndCoord.x) / varTextureSize.x) * varTextureSize.x;
-            if (realTexCoord.y >= varTextureEndCoord.y)
-                realTexCoord.y -= floor((varTextureSize.y + realTexCoord.y - varTextureEndCoord.y) / varTextureSize.y) * varTextureSize.y;
-            float colorIndex = textureLod(sampler, realTexCoord, 0.0).r * 255.0;
-            vec4 pixelColor = useReplace > 0.5 && colorIndex < 15.5 ? palReplace[int(colorIndex + 0.5)]
-                : textureLod(palette, vec2((colorIndex + 0.5) / 32.0, (palIndex + 0.5) / palCount), 0.0);
+            vec2 uvDx = dFdx(varUv);
+            vec2 uvDy = dFdy(varUv);
 
-            if (colorIndex < 0.5 || pixelColor.a < 0.5 || light < 0.01)
+            if (light < 0.01)
                 discard;
-            else if (abs(colorIndex - skyColorIndex) < 0.001)
-                outColor = skyColorReplace;
-            else
-                outColor = vec4(pixelColor.rgb + vec3(light) - vec3(1.0), pixelColor.a);
+
+            vec4 texel = samplePremultiplied(varUv, varTexLayer, uvDx, uvDy);
+            if (texel.a < 0.5)
+                discard;
+
+            vec3 straightRgb = clamp(texel.rgb / texel.a, 0.0, 1.0);
+            outColor = vec4(max(vec3(0.0), straightRgb + vec3(light) - vec3(1.0)), 1.0);
 
             if (fogColor.a > 0.001)
             {
-                float fogFactor = fogColor.a * (skyColorIndex < 31.5 && drawY > 0.0
-                    ? min(skyColorIndex < 31.5 ? 0.8 : 1.0, dist / (fogDist * (1.0 + 2.5 * drawY)))
-                    : min(skyColorIndex < 31.5 ? 0.8 : 1.0, dist / fogDist));
+                float fogFactor = fogColor.a * (outdoorTaper > 0.5 && drawY > 0.0
+                    ? min(fogCap, dist / (fogDist * (1.0 + 2.5 * drawY)))
+                    : min(fogCap, dist / fogDist));
                 float originalAlpha = outColor.a;
                 if (fogFadeRange.z > 0.0)
                 {
@@ -405,23 +309,18 @@ internal sealed class ExperimentalBillboardShader : IDisposable
         in vec3 position;
         in vec3 center;
         in uint orientation;
-        in ivec2 texCoord;
-        in ivec2 texEndCoord;
-        in ivec2 texSize;
-        in uint paletteIndex;
+        in vec2 uv;
+        in float texLayer;
         in float extrude;
 
-        uniform uvec2 atlasSize;
         uniform mat4 projMat;
         uniform mat4 mvMat;
         uniform vec2 fogDepth;
 
-        out vec2 varTexCoord;
+        out vec2 varUv;
         out float dist;
         out float drawY;
-        flat out float palIndex;
-        flat out vec2 varTextureEndCoord;
-        flat out vec2 varTextureSize;
+        flat out float varTexLayer;
 
         void main()
         {
@@ -436,11 +335,8 @@ internal sealed class ExperimentalBillboardShader : IDisposable
                 vec4 rotatedOffset = -1.0 * mvMat * vec4(offset.x, 0.0, offset.y, 0.0);
                 localPos += vec4(rotatedOffset.x, 0.0, rotatedOffset.z, 0.0);
             }
-            vec2 atlasFactor = vec2(1.0 / float(atlasSize.x), 1.0 / float(atlasSize.y));
-            varTexCoord = atlasFactor * vec2(texCoord.x, texCoord.y);
-            palIndex = float(paletteIndex);
-            varTextureEndCoord = atlasFactor * vec2(texEndCoord.x, texEndCoord.y);
-            varTextureSize = atlasFactor * vec2(texSize.x, texSize.y);
+            varUv = uv;
+            varTexLayer = texLayer;
             gl_Position = projMat * localPos;
             dist = dot(fogDepth, localPos.zw);
             drawY = localPos.y;
@@ -452,51 +348,37 @@ internal sealed class ExperimentalBillboardShader : IDisposable
             (0, "position"),
             (1, "center"),
             (2, "orientation"),
-            (3, "texCoord"),
-            (4, "texEndCoord"),
-            (5, "texSize"),
-            (6, "paletteIndex"),
-            (7, "extrude"),
+            (3, "uv"),
+            (4, "texLayer"),
+            (5, "extrude"),
         ]);
     }
 
-    public void BindAndApply(Experimental3DState data, uint atlasWidth, uint atlasHeight, int paletteCount)
+    public void BindAndApply(Experimental3DState data)
     {
         program.Use();
         program.SetInputMatrix("mvMat", state.CurrentModelViewMatrix.ToArray(), true);
         program.SetInputMatrix("projMat", state.CurrentProjectionMatrix.ToArray(), true);
         program.SetInputVector2("fogDepth", state.FogDepth3D.Scale, state.FogDepth3D.Offset);
-        program.SetInput("sampler", 0);
-        program.SetInput("palette", 1);
-        program.SetInputVector2("atlasSize", atlasWidth, atlasHeight);
-        program.SetInput("palCount", (float)paletteCount);
+        program.SetInput("texArray", 0);
+        program.SetInput("filterMode", (int)data.FilterMode);
         program.SetInput("light", data.Light);
         program.SetInput("fade", data.Fade);
 
-        if (data.PaletteReplacement == null)
-        {
-            program.SetInput("useReplace", 0.0f);
-        }
-        else
-        {
-            program.SetInputColorArray("palReplace", data.PaletteReplacement.ColorData);
-            program.SetInput("useReplace", 1.0f);
-        }
-
-        program.SetInput("skyColorIndex", data.SkyColorIndex == null ? 32.0f : (float)data.SkyColorIndex.Value);
-        if (data.SkyReplaceColor != null)
-        {
-            program.SetInputVector4("skyColorReplace",
-                data.SkyReplaceColor.R / 255.0f, data.SkyReplaceColor.G / 255.0f,
-                data.SkyReplaceColor.B / 255.0f, data.SkyReplaceColor.A / 255.0f);
-        }
-
+        bool hasSkyKey = data.SkyColorIndex.HasValue && data.SkyColorIndex.Value <= 31u;
+        program.SetInput("fogCap", hasSkyKey ? 0.8f : 1.0f);
+        program.SetInput("outdoorTaper", hasSkyKey ? 1.0f : 0.0f);
         program.SetInputVector4("fogColor",
             data.FogColor.R / 255.0f, data.FogColor.G / 255.0f,
             data.FogColor.B / 255.0f, data.FogColor.A / 255.0f);
         program.SetInput("fogDist", data.FogDistance);
         var fadeRange = data.OutdoorFade ?? (Start: 0.0f, End: 1.0f, Blend: 0.0f);
         program.SetInputVector3("fogFadeRange", fadeRange.Start, fadeRange.End, fadeRange.Blend);
+    }
+
+    public void SetLayerTextureSize(int width, int height)
+    {
+        program.SetInputVector2("layerTexSize", (float)width, (float)height);
     }
 
     public void Dispose()
@@ -511,8 +393,7 @@ internal sealed class ExperimentalBillboardShader : IDisposable
 
 /// <summary>
 /// Fullscreen-triangle blit shader for compositing the offscreen 3D target back to the
-/// active destination framebuffer (default FBO or effect FBO). In P1 this is an exact
-/// 1:1 copy; in P3/P5 this is where 3D-only colour grading, dithering, and optional warp hook in.
+/// active destination framebuffer (default FBO or effect FBO).
 /// </summary>
 internal sealed class ExperimentalCompositeShader : IDisposable
 {

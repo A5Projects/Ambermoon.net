@@ -58,6 +58,7 @@ MaxFps | Frame rate cap in frames per second. `0` = automatic (`VSync` when enab
 SmoothDistantFloor | Reduces distant 3D floor shimmer by averaging palette-resolved colour samples as the texture becomes compressed. Nearby floor, walls, ceilings and sprites keep their existing sampling. Toggle on settings page 4: "Smooth distant floor" / "3D Boden glätten". Independent of fog and the global graphic filter. | true or false | true
 SmoothWalls | Blends pixel edges on nearby opaque 3D walls and filters compressed wall detail along streets. Toggle on settings page 4 under **Smooth 3D walls** / **3D Wände glätten**. | true or false | true
 Renderer3D | Selects the active 3D renderer pass (`Classic` or `Experimental`). Toggle live on settings page 5 under **3D renderer** / **3D-Renderer** (override per run with `--renderer classic|experimental`). | Classic or Experimental | Experimental
+Texture3DFilter | Selects texture magnification style for the Experimental 3D renderer (`EdgeDirected`, `SharpBilinear`, or `Crisp`; all use premultiplied mipmaps and 16x anisotropic filtering). Toggle live on settings page 5 under **3D textures** / **3D-Texturen** (override per run with `--texture-filter edge|sharp|crisp`). | EdgeDirected, SharpBilinear or Crisp | EdgeDirected
 
 There are also some technical or more advanced settings which should only be changed by advanced users:
 
