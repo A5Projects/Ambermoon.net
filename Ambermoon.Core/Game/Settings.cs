@@ -46,11 +46,17 @@ partial class GameCore
     /// </summary>
     public Texture3DFilterMode? Texture3DFilterOverride { get; set; }
     public Texture3DFilterMode ActiveTexture3DFilter => Texture3DFilterOverride ?? CoreConfiguration.Texture3DFilter;
+    /// <summary>
+    /// Optional per-run override for Experimental 3D lighting (e.g. from CLI --lighting).
+    /// </summary>
+    public Lighting3DMode? Lighting3DOverride { get; set; }
+    public Lighting3DMode ActiveLighting3D => Lighting3DOverride ?? CoreConfiguration.Lighting3D;
 
     public void RefreshRenderer3DMode()
     {
         renderView.Renderer3DMode = ActiveRenderer3D;
         renderView.Texture3DFilterMode = ActiveTexture3DFilter;
+        renderView.Lighting3DMode = ActiveLighting3D;
     }
 
     internal void NotifyConfigurationChange(bool windowChange)

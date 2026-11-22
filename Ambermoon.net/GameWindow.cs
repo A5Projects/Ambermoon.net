@@ -1270,6 +1270,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                             game.Movement3DRateOverride = commandLineOptions.MoveRate;
                             game.Renderer3DOverride = commandLineOptions.Renderer3D;
                             game.Texture3DFilterOverride = commandLineOptions.Texture3DFilter;
+                            game.Lighting3DOverride = commandLineOptions.Lighting3D;
                             game.RefreshRenderer3DMode();
                             game.MonitorRefreshRateProvider = () => framePacer?.MonitorRefreshRate ?? GetActiveRefreshRate();
                             game.FrameLimitChanged = () =>
@@ -1915,9 +1916,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         int moveRate = commandLineOptions.MoveRate ?? configuration.Movement3DRate;
         var rendererMode = Game?.ActiveRenderer3D ?? commandLineOptions.Renderer3D ?? configuration.Renderer3D;
         var texFilter = Game?.ActiveTexture3DFilter ?? commandLineOptions.Texture3DFilter ?? configuration.Texture3DFilter;
+        var lightingMode = Game?.ActiveLighting3D ?? commandLineOptions.Lighting3D ?? configuration.Lighting3D;
         return $"window.VSync={window.VSync}, window.UpdatesPerSecond={window.UpdatesPerSecond}, " +
                $"{framePacer?.Describe() ?? "pacer=none"}, timeline3D={timeline} ({moveRate}/s), " +
-               $"renderer3D={rendererMode} (filter={texFilter}), WGL swap interval={swapInterval?.ToString() ?? "unknown"}";
+               $"renderer3D={rendererMode} (filter={texFilter}, lighting={lightingMode}), WGL swap interval={swapInterval?.ToString() ?? "unknown"}";
     }
 
     void ReapplySwapInterval()

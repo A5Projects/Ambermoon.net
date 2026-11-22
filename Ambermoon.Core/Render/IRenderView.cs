@@ -44,6 +44,41 @@ public enum Texture3DFilterMode
     Crisp,
 }
 
+public enum Lighting3DMode
+{
+    Atmospheric,
+    Original,
+}
+
+public enum Environment3DKind
+{
+    OutdoorDay,
+    OutdoorDawnDusk,
+    OutdoorNight,
+    IndoorLit,
+    Dungeon,
+}
+
+public readonly record struct Scene3DEnvironment(
+    Environment3DKind Kind,
+    float TimeOfDayHours,
+    float DaylightFactor,
+    float TwilightFactor,
+    uint LightSpellLevel,
+    float WallHeight,
+    float BlockSize,
+    int MapWidth,
+    int MapHeight,
+    bool IsPalace,
+    bool HasCeiling,
+    Color SkyHorizonColor)
+{
+    public static Scene3DEnvironment Default => new(
+        Environment3DKind.OutdoorDay, 12.0f, 1.0f, 0.0f, 0,
+        Global.DistancePerBlock, Global.DistancePerBlock, 32, 32,
+        false, false, new Color(128, 176, 208, 255));
+}
+
 public interface IRenderView : IRenderLayerFactory
 {
     void Render(FloatPosition? viewportOffset);
@@ -109,4 +144,6 @@ public interface IGameRenderView : IRenderView
     bool SupportsExperimental3D { get; }
     Renderer3DMode Renderer3DMode { get; set; }
     Texture3DFilterMode Texture3DFilterMode { get; set; }
+    Lighting3DMode Lighting3DMode { get; set; }
+    void Set3DEnvironment(Scene3DEnvironment environment);
 }

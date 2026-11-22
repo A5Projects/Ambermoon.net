@@ -27,7 +27,23 @@ internal readonly record struct TextureLayerKey(
     bool WrapRepeat,
     byte UpscaleFactor);
 
-internal readonly record struct ResolvedTextureLayer(TextureArrayBucket Bucket, int LayerIndex);
+internal readonly record struct TextureEmissiveInfo(
+    int WarmFireCount,
+    int WarmHotCount,
+    int CoolBrightCount,
+    int OpaqueCount,
+    float WarmR,
+    float WarmG,
+    float WarmB,
+    float WarmCentroidX,
+    float WarmCentroidY,
+    float CoolR,
+    float CoolG,
+    float CoolB,
+    float CoolCentroidX,
+    float CoolCentroidY);
+
+internal readonly record struct ResolvedTextureLayer(TextureArrayBucket Bucket, int LayerIndex, TextureEmissiveInfo Emissive);
 
 /// <summary>
 /// One <c>GL_TEXTURE_2D_ARRAY</c> pool sharing uniform mip0 dimensions and wrap mode,
@@ -448,7 +464,7 @@ internal sealed class ExperimentalTextureCache : IDisposable
         byte[] palReplaceBytes = paletteReplacement?.ColorData;
 
         int bakeCount = pendingKeys.Count;
-        var bakedResults = new List<(int Width, int Height, byte[] Rgba)>[bakeCount];
+        var bakedResults = new (List<(int Width, int Height, byte[] Rgba)> Mips, TextureEmissiveInfo Emissive)[bakeCount];
 
         if (bakeCount >= 4)
         {
@@ -466,7 +482,7 @@ internal sealed class ExperimentalTextureCache : IDisposable
         for (int i = 0; i < bakeCount; i++)
         {
             var key = pendingKeys[i];
-            var mipChain = bakedResults[i];
+            var (mipChain, emissive) = bakedResults[i];
             var (outW, outH, _) = mipChain[0];
             var bucketKey = new TextureBucketKey(outW, outH, key.WrapRepeat);
             if (!buckets.TryGetValue(bucketKey, out var bucket))
@@ -483,7 +499,7 @@ internal sealed class ExperimentalTextureCache : IDisposable
             }
 
             bucket.UploadMipChain(layerIndex, mipChain);
-            cache[key] = new ResolvedTextureLayer(bucket, layerIndex);
+            cache[key] = new ResolvedTextureLayer(bucket, layerIndex, emissive);
             TotalTexturesBaked++;
         }
     }
@@ -498,7 +514,18 @@ internal sealed class ExperimentalTextureCache : IDisposable
         return false;
     }
 
-    static List<(int Width, int Height, byte[] Rgba)> BakeLayer(
+    public bool TryGetEmissive(in TextureLayerKey key, out TextureEmissiveInfo emissive)
+    {
+        if (cache.TryGetValue(key, out var resolved))
+        {
+            emissive = resolved.Emissive;
+            return true;
+        }
+        emissive = default;
+        return false;
+    }
+
+    static (List<(int Width, int Height, byte[] Rgba)> Mips, TextureEmissiveInfo Emissive) BakeLayer(
         TextureLayerKey key,
         AtlasSnapshot atlas,
         PaletteSnapshot palette,
@@ -593,6 +620,8 @@ internal sealed class ExperimentalTextureCache : IDisposable
             }
         }
 
+        var emissive = AnalyzeEmissive(srcPixels, srcW, srcH);
+
         uint[] mip0;
         int outW, outH;
         if (key.UpscaleFactor == 4)
@@ -608,7 +637,96 @@ internal sealed class ExperimentalTextureCache : IDisposable
             outH = srcH;
         }
 
-        return EdgeDirectedUpscaler.GeneratePremultipliedMipChain(mip0, outW, outH, hasTransparency);
+        return (EdgeDirectedUpscaler.GeneratePremultipliedMipChain(mip0, outW, outH, hasTransparency), emissive);
+    }
+
+    static TextureEmissiveInfo AnalyzeEmissive(uint[] srcPixels, int w, int h)
+    {
+        int opaqueCount = 0;
+        int warmFireCount = 0;
+        int warmHotCount = 0;
+        int warmWeighted = 0;
+        int coolCount = 0;
+        float warmR = 0, warmG = 0, warmB = 0, warmCx = 0, warmCy = 0;
+        float coolR = 0, coolG = 0, coolB = 0, coolCx = 0, coolCy = 0;
+
+        float invW = 1.0f / Math.Max(1, w);
+        float invH = 1.0f / Math.Max(1, h);
+
+        for (int y = 0; y < h; y++)
+        {
+            float ny = (y + 0.5f) * invH;
+            int row = y * w;
+            for (int x = 0; x < w; x++)
+            {
+                uint p = srcPixels[row + x];
+                if ((p >> 24) < 128u)
+                    continue;
+
+                opaqueCount++;
+                int r = (int)(p & 0xFFu);
+                int g = (int)((p >> 8) & 0xFFu);
+                int b = (int)((p >> 16) & 0xFFu);
+                float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+
+                // Separate genuine orange fire body (g>=85) and Amiga golden-orange flame tips (0xEB4/0xEC5 etc.)
+                // from pure crimson tunics (low g) or earthy cave tan/wood (high b / low R-B).
+                bool isFireRedOrange = r >= 225 && g >= 85 && b <= 65 && (r - b) >= 165;
+                bool isFireHotCore = r >= 225 && g >= 145 && b <= 115 && (r - b) >= 120 && luma >= 168.0f;
+                if (isFireRedOrange || isFireHotCore)
+                {
+                    if (isFireRedOrange)
+                        warmFireCount++;
+                    if (isFireHotCore)
+                        warmHotCount++;
+                    warmWeighted++;
+                    warmR += r;
+                    warmG += g;
+                    warmB += b;
+                    warmCx += (x + 0.5f) * invW;
+                    warmCy += ny;
+                }
+
+                bool isMagicCyanBlue = b >= 228 && (b - r) >= 95 && g >= 130;
+                bool isMagicViolet = r >= 220 && b >= 220 && (r - g) >= 85 && (b - g) >= 85;
+                if ((isMagicCyanBlue || isMagicViolet) && luma >= 115.0f)
+                {
+                    coolCount++;
+                    coolR += r;
+                    coolG += g;
+                    coolB += b;
+                    coolCx += (x + 0.5f) * invW;
+                    coolCy += ny;
+                }
+            }
+        }
+
+        float wAvgR = 0, wAvgG = 0, wAvgB = 0, wAvgCx = 0.5f, wAvgCy = 0.5f;
+        if (warmWeighted > 0)
+        {
+            float inv = 1.0f / (warmWeighted * 255.0f);
+            wAvgR = warmR * inv;
+            wAvgG = warmG * inv;
+            wAvgB = warmB * inv;
+            wAvgCx = warmCx / warmWeighted;
+            wAvgCy = warmCy / warmWeighted;
+        }
+
+        float cAvgR = 0, cAvgG = 0, cAvgB = 0, cAvgCx = 0.5f, cAvgCy = 0.5f;
+        if (coolCount > 0)
+        {
+            float inv = 1.0f / (coolCount * 255.0f);
+            cAvgR = coolR * inv;
+            cAvgG = coolG * inv;
+            cAvgB = coolB * inv;
+            cAvgCx = coolCx / coolCount;
+            cAvgCy = coolCy / coolCount;
+        }
+
+        return new TextureEmissiveInfo(
+            warmFireCount, warmHotCount, coolCount, opaqueCount,
+            wAvgR, wAvgG, wAvgB, wAvgCx, wAvgCy,
+            cAvgR, cAvgG, cAvgB, cAvgCx, cAvgCy);
     }
 
     AtlasSnapshot GetOrReadAtlas(Texture atlas)

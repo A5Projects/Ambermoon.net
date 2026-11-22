@@ -1085,6 +1085,28 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         }
     }
 
+    Lighting3DMode lighting3DMode = Lighting3DMode.Atmospheric;
+    public Lighting3DMode Lighting3DMode
+    {
+        get => lighting3DMode;
+        set
+        {
+            lighting3DMode = value;
+#if !GLES
+            if (experimental3DRenderer != null)
+                experimental3DRenderer.Uniforms.LightingMode = value;
+#endif
+        }
+    }
+
+    public void Set3DEnvironment(Scene3DEnvironment environment)
+    {
+#if !GLES
+        if (experimental3DRenderer != null)
+            experimental3DRenderer.Uniforms.Environment = environment;
+#endif
+    }
+
 #if !GLES
     private protected override bool IsExperimental3DActive =>
         experimental3DRenderer != null && renderer3DMode == Renderer3DMode.Experimental;
@@ -1106,7 +1128,7 @@ public class GameRenderView : RenderView, IGameRenderView, IDisposable
         var palette = wallLayer?.Palette ?? ceilingLayer?.Palette ?? billboardLayer?.Palette;
 
         experimental3DRenderer.RenderGeometryAndComposite(ceilingLayer, wallLayer, billboardLayer, palette,
-            viewport, mapViewArea, destinationFrameBuffer, useEffectFrameBuffer);
+            camera3D as Camera3D, viewport, mapViewArea, destinationFrameBuffer, useEffectFrameBuffer);
     }
 
     private protected override void NotifyTextureFactorChanged(Layer layer, uint factor)

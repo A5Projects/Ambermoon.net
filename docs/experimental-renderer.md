@@ -1,6 +1,6 @@
 # Experimental 3D Renderer & Pacing Changes
 
-Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P1**, and **P2**, developed from Immersive Edition v1.2.0 at `5c3cbd00`. [Experimental branch](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) · [Windows preview](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
+Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P1**, **P2**, and **P3**, developed from Immersive Edition v1.2.0 at `5c3cbd00`. [Experimental branch](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) · [Windows preview](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
 
 - **Target platform:** Windows desktop (`win-x64`, self-contained .NET 9 / Silk.NET OpenGL).
 - **Compatibility:** Savegame format, 2D maps, UI/HUD, dialogs, inventory, combat, graphic filters (`Smooth` / `Blur` / `CRT`), screen effects (`Sepia` / `Grayscale`), and Original/Advanced balance remain fully compatible with Immersive Edition v1.2.0.
@@ -17,15 +17,16 @@ Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P
   - **`VSync`** — locks to your monitor's refresh rate (default).
   - **`60`**, **`120`**, **`144`**, **`240`** — explicit smooth frame caps (disables VSync while active).
   - **`2x`** — caps at twice your monitor's active refresh rate (for example, `2x (168)` on an 84 Hz display).
+  - **`Unlimited` / `Unbegrenzt`** — disables VSync and the frame pacer (`MaxFps = -1`), allowing uncapped frame rates in both the Classic and Experimental renderers if desired.
 - **Consistent 3D walking & turning speed across monitors:** Modern 3D movement now runs on a fixed-rate simulation timeline (default `60` logical steps/s) with smooth camera interpolation, so walking speed no longer feels too fast on a 240 Hz laptop or changes when switching FPS limits. Mouse-look stays immediate with zero added lag.
 - **F11 exclusive fullscreen keeps custom/overclocked refresh rates:** Switching window modes with `F11` (`Normal` → `Fullscreen` → `Borderless`) previously caused exclusive fullscreen to fall back to a lower base refresh rate (e.g. `75 Hz` instead of an overclocked `84 Hz` desktop mode). Exclusive fullscreen now preserves the monitor's active refresh rate.
 - **Clean mountain skyline in outdoor fog:** Outdoor haze still softens the 3D streets, buildings, and distant objects using sky-derived colours, while leaving the distant mountain backdrop untouched (fixing the solid orange/coloured band that previously appeared over the skyline).
 
-### 2. New Experimental 3D renderer & texture filtering (P1 & P2)
+### 2. New Experimental 3D renderer, texture filtering & atmospheric lighting (P1–P3)
 
-Instead of rendering 3D worlds directly from 8-bit palette-index atlases with manual multi-tap shader workarounds, the **Experimental** 3D renderer converts active 3D textures into true colour (RGBA) GPU texture arrays with hardware mipmaps and **16× anisotropic filtering** across floors, ceilings, walls, and 3D objects/NPCs.
+Instead of rendering 3D worlds directly from 8-bit palette-index atlases with manual multi-tap shader workarounds, the **Experimental** 3D renderer converts active 3D textures into true colour (RGBA) GPU texture arrays with hardware mipmaps and **16× anisotropic filtering** across floors, ceilings, walls, and 3D objects/NPCs, followed by an HDR atmospheric lighting and colour pass.
 
-Two new live settings appear on **Options Page 5** (both take effect immediately without restarting):
+Three live settings appear on **Options Page 5** (all take effect immediately without restarting):
 
 1. **`3D renderer` / `3D-Renderer`** (Page 5, slot 1):
    - **`Experimental` / `Experimentell`** *(default)* — uses the new 3D renderer pass.
@@ -34,11 +35,15 @@ Two new live settings appear on **Options Page 5** (both take effect immediately
    - **`Edge-directed` / `Kantengeführt`** *(default)* — pre-upscales 3D pixel art 4× along diagonal contours and slopes before mipmapping. Keeps pixel-art stonework, timber beams, arches, and foliage cohesive while softening harsh stairstep jumps on nearby side walls during movement (especially noticeable on large 60–84 Hz screens).
    - **`Sharp bilinear` / `Scharf bilinear`** — keeps native 1× pixel blocks with crisp interiors and subtle sub-pixel edge anti-aliasing up close, plus full hardware mipmaps and 16× anisotropic filtering in the distance.
    - **`Crisp` / `Pixelgenau`** — pure razor-sharp original Amiga pixels up close, while still using full hardware mipmaps and 16× anisotropic filtering on receding floors and distant walls so distant shimmer stays gone.
+3. **`3D lighting` / `3D-Beleuchtung`** (Page 5, slot 3 — applies when `Experimental` is active):
+   - **`Atmospheric` / `Atmosphärisch`** *(default)* — enables environment-aware hemisphere & directional sunlight, smooth radial player torch/lantern glow, dynamic flickering point lights from real candles/torches/candelabra/magic/lava, subtle floor/ceiling/corner contact AO and object shadows, warm-highlight/cool-shadow split-toning, height-aware exponential haze, soft highlight roll-off, and subtle ordered dithering.
+   - **`Original`** — keeps P2's flat original palette shading and linear classic fog inside the Experimental pipeline for instant comparison.
 
-**What improved visually in P2:**
+**What improved visually in P2 & P3:**
 - **Zero distant floor & wall shimmer** across all three texture modes, replacing the old 8-tap manual floor/wall filters in the Experimental pass.
 - **Cleaner nearby walls in motion** with `Edge-directed` as the default.
 - **Zero dark fringes or sky-colour bleed** around keyed openings (Illien hedges, barred windows, arches, trees, and NPC/monster billboards), and distant hedges/foliage keep their visual density instead of thinning out.
+- **Grounded, mood-lit spaces (P3):** Wall-to-floor seams, ceiling seams, concave 90° corners, columns, and NPCs rest naturally on subtle ambient-occlusion shadows; dusk streets and night towns balance cool twilight/moonlight against warm lantern glow; palace halls and crypts catch real warm pools from animated candelabra, sconces, and sparks; dark dungeons preserve true pitch-black `Light = 0` darkness and close cleanly down distant corridors, while outdoor sky, stars, and distant mountain horizons remain untouched.
 - **All classic visual effects still work:** day/dusk/night palette transitions, Light spell darkness falloff, scene fades, outdoor/dungeon fog, `Smooth`/`Blur`/`CRT` filters, and `Sepia`/`Grayscale` effects.
 
 ### 3. Command-line overrides (per-run, never written to `ambermoon.cfg`)
@@ -47,8 +52,9 @@ Two new live settings appear on **Options Page 5** (both take effect immediately
 | --- | --- | --- |
 | `--renderer` | `classic`, `experimental` | Override the 3D renderer for this session |
 | `--texture-filter` | `edge`, `sharp`, `crisp` | Override the Experimental texture filter for this session |
+| `--lighting` | `atmospheric`, `original` | Override the Experimental 3D lighting mode for this session |
 | `--vsync` | `on`, `off` | Override VSync for this session |
-| `--fps` | `<n>`, `2x`, `auto`, `0` (uncapped) | Override frame cap for this session |
+| `--fps` | `<n>`, `2x`, `unlimited`, `auto`, `0` (uncapped) | Override frame cap for this session |
 | `--timeline-3d` | `on`, `off` | Override fixed-rate 3D movement timeline |
 | `--move-rate` | `20`–`240` | Override logical 3D movement rate (steps/s) |
 | `--frame-stats` | *(flag)* | Write `frame-stats.log` with pacing and mode telemetry on exit |
@@ -123,25 +129,46 @@ Goal: break out of the 8-bit palette-index atlas constraint that forced Classic'
 - **Live Page 5 slot 2 & CLI (`IRenderView.cs`, `ICoreConfiguration.cs`, `Settings.cs`, `Layout.cs`, `Configuration.cs`, `CommandLineOptions.cs`, `GameWindow.cs`):**
   - Added `Texture3DFilterMode { EdgeDirected, SharpBilinear, Crisp }` (default `EdgeDirected`), localized Page 5 slot 2 across all 5 languages (`OptionCount = 30`), and `--texture-filter <edge|sharp|crisp>`.
 
+### Milestone P3 (`experimental-p3`) — Atmospheric Lighting, Contact AO, Emissive Point Lights & Unlimited FPS Option
+
+Goal: replace flat Classic brightness/fog inside the Experimental pass with HDR environment-driven atmospheric lighting, contact AO, and automatic dynamic point lights while keeping the mountain skyline and `Light = 0` darkness authentic, plus expose an in-game `Unlimited` frame limit choice.
+
+- **Environment tracking & Live Page 4/Page 5 controls (`IRenderView.cs`, `ICoreConfiguration.cs`, `Settings.cs`, `RenderMap3D.cs`, `Layout.cs`, `CommandLineOptions.cs`):**
+  - Added `Lighting3DMode { Atmospheric, Original }`, `Environment3DKind { OutdoorDay, OutdoorDawnDusk, OutdoorNight, IndoorLit, Dungeon }`, `Scene3DEnvironment`, `Lighting3D` config (default `Atmospheric` desktop, `Original` Android), `--lighting <atmospheric|original>`, and localized Options Page 5 slot 3 (`OptionCount = 31`).
+  - `RenderMap3D.Update3DEnvironment` passes clock hours, daylight factor, active Light spell level, indoor/palace vs dungeon classification, and sky horizon color into `Experimental3DRenderer` whenever fog or sky updates.
+  - Extended Options Page 4 slot 7 (`ToggleFrameLimit`) and `--fps unlimited` with localized **`Unlimited` / `Unbegrenzt`** preset (`VSync = false`, `MaxFps = -1`), enabling uncapped frame delivery in both Classic and Experimental renderers.
+- **HDR offscreen target & compositing (`FrameBuffer.cs`, `Experimental3DRenderer.cs`, `Experimental3DShaders.cs`):**
+  - Upgraded `sceneTarget` to `GL_RGBA16F` / `GL_HALF_FLOAT` (with automatic `GL_RGBA8` fallback if a driver reports an incomplete FBO).
+  - `ExperimentalCompositeShader` applies soft-shoulder exponential highlight roll-off strictly above `peak > 1.0` so `<= 1.0` sky/stars/mountains pass through bit-unchanged, followed by subtle 4×4 ordered Bayer dithering suppressed below `peak <= 0.003` (`Light = 0` pitch-black stays `#000000`).
+- **Baked wall/corner AO & world-space `GL_RG8` shadow map (`Scene3DBuilder.cs`, `ExperimentalLighting.cs`):**
+  - Expanded `SurfaceVertex` (`44` bytes) with per-vertex `ao` attribute (`5`) encoding top/bottom wall seams and true 90° concave inner corners via `HasConcaveCornerAt`.
+  - `SceneLightingEngine` maintains a `8 texels/block` `GL_RG8` map storing cardinal-axis non-overlapping static wall-contact AO in `R` and per-frame floor billboard blob shadows in `G`, bound on texture unit `1` with zero static rebuilds (`+0` AO rebuilds on stationary frames).
+- **Emissive light extraction & 16-light selector (`ExperimentalTextureCache.cs`, `ExperimentalLighting.cs`, `ShaderProgram.cs`):**
+  - `AnalyzeEmissive` inspects un-upscaled palette RGBA during layer baking for vivid fire/amber cores (`WarmFireCount`, `WarmHotCount`, centroids) and arcane cyan/violet glows (`CoolBrightCount`), distinguishing real animated flames/sparks/candelabra and compact glowing windows from earthy cave rock, bark, bats, or NPC outfits.
+  - Selects up to `16` nearest lights (`SetInputVector4Array`) with dual-sine flicker per frame.
+- **Per-environment shading & dungeon darkness (`ExperimentalLighting.cs`, `Experimental3DShaders.cs`):**
+  - Combines hemisphere sky/ground ambient, directional sun/moon key, smooth radial player lantern/torch falloff (`Camera3D.RenderX/Y/Z` inverted to world space; billboard world position via `cameraWorldPos + localPos.xyz * mat3(mvMat)`), up to 16 coloured point lights, warm-highlight/cool-shadow split-toning, height-attenuated exponential outdoor haze, and a dedicated steep dungeon fog curve (`fogExpScale`) fed only by remote point-light glow (never `playerLight`) so dark dungeons seal cleanly to black at `dist >= fogDist`.
+
 ### Key File Map (Delta vs `main` `5c3cbd00`)
 
 | Area | New / Modified Files |
 | --- | --- |
 | **Frame pacing & display** | `Ambermoon.net/FramePacer.cs` *(new)*, `Ambermoon.net/FrameStats.cs` *(new)*, `Ambermoon.net/GameWindow.cs`, `Ambermoon.net/CommandLineOptions.cs` |
 | **3D movement timeline** | `Ambermoon.Core/Game/Movement.cs`, `Input.cs`, `Ambermoon.Core/Render/MovementClock.cs`, `ICamera3D.cs`, `Player3D.cs`, `Ambermoon.Renderer.OpenGL/Camera3D.cs` |
-| **Outdoor fog fix** | `Ambermoon.Core/Render/RenderMap3D.cs`, `docs/outdoor-fog.md` |
-| **Experimental 3D renderer** | `Ambermoon.Renderer.OpenGL/Experimental/IScene3DObserver.cs` *(new)*, `Scene3DBuilder.cs` *(new)*, `Experimental3DRenderer.cs` *(new)*, `Experimental3DShaders.cs` *(new)*, `ExperimentalTextureCache.cs` *(new)*, `EdgeDirectedUpscaler.cs` *(new)* |
-| **Renderer hooks** | `Ambermoon.Renderer.OpenGL/RenderView.cs`, `Surface3D.cs`, `RenderLayer.cs`, `Texture.cs` |
+| **Outdoor fog & environment** | `Ambermoon.Core/Render/RenderMap3D.cs`, `docs/outdoor-fog.md` |
+| **Experimental 3D renderer & P3 lighting** | `Ambermoon.Renderer.OpenGL/Experimental/IScene3DObserver.cs` *(new)*, `Scene3DBuilder.cs` *(new)*, `Experimental3DRenderer.cs` *(new)*, `Experimental3DShaders.cs` *(new)*, `ExperimentalTextureCache.cs` *(new)*, `EdgeDirectedUpscaler.cs` *(new)*, `ExperimentalLighting.cs` *(new)* |
+| **Renderer hooks & HDR FBO** | `Ambermoon.Renderer.OpenGL/RenderView.cs`, `Surface3D.cs`, `RenderLayer.cs`, `Texture.cs`, `FrameBuffer.cs`, `ShaderProgram.cs` |
 | **Config & Options UI** | `Ambermoon.Core/Render/IRenderView.cs`, `ICoreConfiguration.cs`, `Game/Settings.cs`, `GameCore.cs`, `UI/Layout.cs`, `Ambermoon.net/Configuration.cs`, `ModConfiguration.cs`, `AmbermoonAndroid/Configuration.cs`, `Configuration.md` |
 
-### Verified Metrics Summary (P0–P2)
+### Verified Metrics Summary (P0–P3)
 
 - **P0:** `44/44` checks passed; `84.0 fps` exclusive fullscreen (`wglSwapInterval = 1`), `168 fps` (`2x`) & `240 fps` caps verified, `updates/render = 1.00`, timeline walking distance consistent across refresh rates.
 - **P1:** `28/28` checks passed; `0 / 655,360` differing pixels in FBO-to-FBO parity across Newlake, Illien, dungeon, and Baron's palace; `0` Experimental GL errors; `+0` static mesh rebuilds.
 - **P2:** `23/23` checks passed; `16.0×` anisotropy active; `+0` static bakes/rebuilds and `+0` bakes switching `SharpBilinear → Crisp`; `0` black-fringe and `0` sky-bleed pixels on Illien keyed hedges (`52.46%–52.48%` coverage vs `52.48%` Classic); Newlake walking far-floor temporal shimmer reduced from `22.29` (Classic raw) and `15.15` (Classic smooth 8-tap) to `13.32` (`EdgeDirected`), `13.33` (`SharpBilinear`), and `14.08` (`Crisp`); near-wall gradient roughness lowered from `7.64` (Classic smooth) / `7.75` (Crisp) to `7.33` (`EdgeDirected`); `84.00 fps` across F11 fullscreen/borderless/normal modes with `0` Experimental GL errors.
+- **P3:** `24/24` checks passed (`0` Experimental GL errors); `OptionCount = 31` fits within 31 chars across all 5 languages; Page 4 `Unlimited` verified uncapped live (`2523.4 fps` in test suite, `2229.2 fps` in standalone Classic CLI run, `wglSwapInterval = 0`, `pacer = uncapped`); `Light = 0` dungeon preserves exact `#000000` (`max3dChannelRgb = 0`); static frames perform `+0` bakes, `+0` mesh rebuilds, and `+0` AO rebuilds; genuine billboard light extraction confirmed in Baron's Palace (`52`, `16` active), Alte Krypta (`123`, `16` active), and Lit Crypt (`12`, `8` active) with `0` false lights in Alte Höhle cave (`260`); F11 exclusive fullscreen sustained at `84.00 fps` (`3840×1600`).
 
 ### Planned Next Milestones
 
-- **P3 (`experimental-p3`):** Atmospheric lighting and colour pipeline — smooth distance falloff around the player, coloured dynamic point lights (torches, braziers, fire/lava, spell light), baked corner ambient occlusion, soft billboard contact shadows, per-environment colour grading with optional pixel-art-safe ordered dithering, and smooth exponential/height fog (keeping the mountain backdrop untouched).
+- **P3 (`experimental-p3`):** **Done.**
 - **P4 (`experimental-p4`):** Scale and performance for large view distances at `3840×1600` (spatial chunk batching, frustum culling, instanced/sorted billboards).
-- **P5 (optional):** Subtle peripheral projection warp and/or derived micro-bevel normal detail if desired after evaluating P3/P4.
+- **P5 (optional):** Subtle peripheral projection warp and/or derived micro-bevel normal detail if desired after evaluating P4.

@@ -141,6 +141,12 @@ internal class Configuration : IConfiguration
     /// </summary>
     public Texture3DFilterMode Texture3DFilter { get; set; } = Texture3DFilterMode.EdgeDirected;
     /// <summary>
+    /// Selects lighting style for the Experimental 3D renderer:
+    /// Atmospheric (default, smooth player falloff, coloured point lights, AO, grading + dithering) or Original (flat parity lighting).
+    /// Toggle live on settings page 5 or override per run with --lighting atmospheric|original.
+    /// </summary>
+    public Lighting3DMode Lighting3D { get; set; } = Lighting3DMode.Atmospheric;
+    /// <summary>
     /// Synchronise presenting with the display refresh (recommended). If a GPU driver
     /// overrides VSync to off, FramePacer falls back to the monitor refresh rate automatically.
     /// </summary>

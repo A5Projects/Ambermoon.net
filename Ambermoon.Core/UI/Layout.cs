@@ -1241,7 +1241,7 @@ namespace Ambermoon.UI
         }
 
         // TODO: add more languages later and/or add these texts to the new game data format
-        const int OptionCount = 30;
+        const int OptionCount = 31;
         const int OptionsPerPage = 7;
 
         static readonly ImmutableDictionary<GameLanguage, string[]> OptionNames = new Dictionary<GameLanguage, string[]>
@@ -1284,7 +1284,8 @@ namespace Ambermoon.UI
                     "FPS-Limit",
                     // Page 5
                     "3D-Renderer",
-                    "3D-Texturen"
+                    "3D-Texturen",
+                    "3D-Beleuchtung"
                 }
             },
             {
@@ -1325,7 +1326,8 @@ namespace Ambermoon.UI
                     "Frame limit",
                     // Page 5
                     "3D renderer",
-                    "3D textures"
+                    "3D textures",
+                    "3D lighting"
                 }
             },
             {
@@ -1366,7 +1368,8 @@ namespace Ambermoon.UI
                     "Limite FPS",
                     // Page 5
                     "Rendu 3D",
-                    "Textures 3D"
+                    "Textures 3D",
+                    "Éclairage 3D"
                 }
             },
             {
@@ -1407,7 +1410,8 @@ namespace Ambermoon.UI
                     "Limit FPS",
                     // Page 5
                     "Renderer 3D",
-                    "Tekstury 3D"
+                    "Tekstury 3D",
+                    "Oświetlenie 3D"
                 }
             },
             {
@@ -1448,7 +1452,8 @@ namespace Ambermoon.UI
                     "Limit FPS",
                     // Page 5
                     "3D renderer",
-                    "3D textury"
+                    "3D textury",
+                    "3D osvětlení"
                 }
             }
         }.ToImmutableDictionary();
@@ -1616,6 +1621,24 @@ namespace Ambermoon.UI
             { GameLanguage.Czech, ["Hranové", "Ostré bilineár.", "Ostré"] }
         }.ToImmutableDictionary();
 
+        static readonly ImmutableDictionary<GameLanguage, string[]> Lighting3DValues = new Dictionary<GameLanguage, string[]>
+        {
+            { GameLanguage.German, ["Atmosphärisch", "Original"] },
+            { GameLanguage.English, ["Atmospheric", "Original"] },
+            { GameLanguage.French, ["Atmosphérique", "Original"] },
+            { GameLanguage.Polish, ["Klimatyczne", "Oryginalne"] },
+            { GameLanguage.Czech, ["Atmosférické", "Původní"] }
+        }.ToImmutableDictionary();
+
+        static readonly ImmutableDictionary<GameLanguage, string> FrameLimitUnlimitedValues = new Dictionary<GameLanguage, string>
+        {
+            { GameLanguage.German, "Unbegrenzt" },
+            { GameLanguage.English, "Unlimited" },
+            { GameLanguage.French, "Illimité" },
+            { GameLanguage.Polish, "Bez limitu" },
+            { GameLanguage.Czech, "Neomezeno" }
+        }.ToImmutableDictionary();
+
         static readonly ImmutableDictionary<GameLanguage, string[]> AutoBattleOptions = new Dictionary<GameLanguage, string[]>
         {
             {
@@ -1739,6 +1762,7 @@ namespace Ambermoon.UI
             // Page 5
             AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleRenderer3D());
             AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleTexture3DFilter());
+            AddOption(game.CoreConfiguration.IsMobile || !RenderView.SupportsExperimental3D ? null : (index, _) => ToggleLighting3D());
 
             void UpdateFullscreenOption()
             {
@@ -1838,12 +1862,13 @@ namespace Ambermoon.UI
                 if (game.CoreConfiguration.MaxFps > 0)
                     return game.CoreConfiguration.MaxFps.ToString();
                 if (game.CoreConfiguration.MaxFps == -1)
-                    return "Max";
+                    return FrameLimitUnlimitedValues[game.GameLanguage];
                 return "240";
             }
             void SetFrameLimit() => SetOptionString(27, GetFrameLimitString());
             void SetRenderer3D() => SetOptionString(28, Renderer3DValues[game.GameLanguage][RenderView.SupportsExperimental3D && game.ActiveRenderer3D == Renderer3DMode.Experimental ? 1 : 0]);
             void SetTexture3DFilter() => SetOptionString(29, Texture3DFilterValues[game.GameLanguage][(int)game.ActiveTexture3DFilter]);
+            void SetLighting3D() => SetOptionString(30, Lighting3DValues[game.GameLanguage][(int)game.ActiveLighting3D]);
 
             void UpdateShowFogOption() => SetOptionAction(13, game.CoreConfiguration.ShowFloor && game.CoreConfiguration.ShowCeiling ? ((index, _) => ToggleFog()) : nullOptionAction);
 
@@ -1891,6 +1916,7 @@ namespace Ambermoon.UI
                     case 4:
                         SetRenderer3D();
                         SetTexture3DFilter();
+                        SetLighting3D();
                         break;
                 }
             }
@@ -2034,6 +2060,11 @@ namespace Ambermoon.UI
                 }
                 else if (config.MaxFps == -2)
                 {
+                    config.VSync = false;
+                    config.MaxFps = -1;
+                }
+                else if (config.MaxFps == -1)
+                {
                     config.VSync = true;
                     config.MaxFps = 0;
                 }
@@ -2090,6 +2121,21 @@ namespace Ambermoon.UI
                 game.Texture3DFilterOverride = null;
                 game.CoreConfiguration.Texture3DFilter = next;
                 SetTexture3DFilter();
+                changedConfiguration = true;
+                game.CoreConfiguration.RequestSave();
+                game.NotifyConfigurationChange(false);
+            }
+            void ToggleLighting3D()
+            {
+                if (!RenderView.SupportsExperimental3D)
+                    return;
+
+                var next = game.ActiveLighting3D == Lighting3DMode.Atmospheric
+                    ? Lighting3DMode.Original
+                    : Lighting3DMode.Atmospheric;
+                game.Lighting3DOverride = null;
+                game.CoreConfiguration.Lighting3D = next;
+                SetLighting3D();
                 changedConfiguration = true;
                 game.CoreConfiguration.RequestSave();
                 game.NotifyConfigurationChange(false);

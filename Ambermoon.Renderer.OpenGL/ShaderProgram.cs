@@ -380,6 +380,20 @@ internal class ShaderProgram : IDisposable
         );
     }
 
+    public void SetInputVector4Array(string name, float[] values, uint count)
+    {
+        if (count == 0)
+            return;
+
+        var location = GetLocation(name);
+
+        CallUniform
+        (
+            () => state.Gl.Uniform4((int)location, count, values),
+            () => state.Gl.ProgramUniform4(ProgramIndex, (int)location, count, values)
+        );
+    }
+
     public void SetInputVector4(string name, int x, int y, int z, int w)
     {
         var location = GetLocation(name);

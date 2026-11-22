@@ -47,6 +47,7 @@ internal class ModConfiguration(IConfiguration configuration, ModOptions modOpti
     public bool SmoothWalls { get => configuration.SmoothWalls; set => configuration.SmoothWalls = value; }
     public Renderer3DMode Renderer3D { get => configuration.Renderer3D; set => configuration.Renderer3D = value; }
     public Texture3DFilterMode Texture3DFilter { get => configuration.Texture3DFilter; set => configuration.Texture3DFilter = value; }
+    public Lighting3DMode Lighting3D { get => configuration.Lighting3D; set => configuration.Lighting3D = value; }
     public bool VSync { get => configuration.VSync; set => configuration.VSync = value; }
     public int MaxFps { get => configuration.MaxFps; set => configuration.MaxFps = value; }
     public int MouseLookSensitivity { get => configuration.MouseLookSensitivity; set => configuration.MouseLookSensitivity = value; }

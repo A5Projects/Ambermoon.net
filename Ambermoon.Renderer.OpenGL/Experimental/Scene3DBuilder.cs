@@ -32,7 +32,8 @@ internal readonly record struct TextureCacheContext(
     ulong PalReplaceHash,
     byte SkyColorKey,
     uint SkyReplaceRgba,
-    Texture3DFilterMode FilterMode);
+    Texture3DFilterMode FilterMode,
+    bool HasCeiling);
 
 internal readonly record struct BatchDrawRange(TextureArrayBucket Bucket, int FirstIndex, int IndexCount);
 
@@ -44,6 +45,7 @@ internal struct SurfaceVertex
     public float UvX, UvY;
     public float TexLayer;
     public uint Flags;
+    public float Ao;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -70,6 +72,9 @@ internal sealed class SurfaceMeshBatch : IDisposable
     readonly SortedSet<int> freeSlots = new();
     readonly List<TextureLayerKey> scratchKeys = new(256);
     readonly List<ISurface3D> scratchSurfaces = new(256);
+    readonly List<TextureLayerKey> activeKeys = new(256);
+    readonly List<ISurface3D> activeSurfaces = new(256);
+    readonly Dictionary<long, List<(float OtherX, float OtherZ, float Nx, float Nz)>> wallEndpointMap = new();
     readonly Dictionary<TextureArrayBucket, List<uint>> bucketIndices = new();
     readonly List<TextureArrayBucket> bucketOrder = new();
     readonly List<BatchDrawRange> drawRanges = new();
@@ -92,6 +97,8 @@ internal sealed class SurfaceMeshBatch : IDisposable
     public int RebuildCount { get; private set; }
     public int DrawCallCount => drawRanges.Count;
     public SceneBounds3D Bounds { get; private set; } = SceneBounds3D.Empty;
+    public IReadOnlyList<ISurface3D> ActiveSurfaces => activeSurfaces;
+    public IReadOnlyList<TextureLayerKey> ActiveKeys => activeKeys;
 
     public SurfaceMeshBatch(State state)
     {
@@ -123,6 +130,9 @@ internal sealed class SurfaceMeshBatch : IDisposable
 
             gl.EnableVertexAttribArray(4);
             gl.VertexAttribIPointer(4, 1, VertexAttribIType.UnsignedInt, stride, (void*)Marshal.OffsetOf<SurfaceVertex>(nameof(SurfaceVertex.Flags)));
+
+            gl.EnableVertexAttribArray(5);
+            gl.VertexAttribPointer(5, 1, VertexAttribPointerType.Float, false, stride, (void*)Marshal.OffsetOf<SurfaceVertex>(nameof(SurfaceVertex.Ao)));
         }
 
         gl.BindVertexArray(0);
@@ -186,6 +196,8 @@ internal sealed class SurfaceMeshBatch : IDisposable
         drawRanges.Clear();
         activeLayers.Clear();
         activeLayerSet.Clear();
+        activeSurfaces.Clear();
+        activeKeys.Clear();
 
         int quadCount = surfaceToSlot.Count;
         activeQuadCount = quadCount;
@@ -232,6 +244,20 @@ internal sealed class SurfaceMeshBatch : IDisposable
         textureCache.EnsureLayers(scratchKeys, atlas, palette, uniforms.PaletteReplacement);
         builtCacheEpoch = textureCache.CacheEpoch;
 
+        // Index wall endpoints so concave 90-degree inner corners receive baked vertex AO.
+        wallEndpointMap.Clear();
+        bool hasWalls = false;
+        for (int i = 0; i < scratchSurfaces.Count; i++)
+        {
+            var surf = scratchSurfaces[i];
+            if (surf.Type != SurfaceType.Wall)
+                continue;
+            hasWalls = true;
+            GetWallSegment(surf, out float e0x, out float e0z, out float e1x, out float e1z, out float nx, out float nz);
+            AddWallEndpoint(e0x, e0z, e1x, e1z, nx, nz);
+            AddWallEndpoint(e1x, e1z, e0x, e0z, nx, nz);
+        }
+
         int actualQuads = scratchSurfaces.Count;
         int vertexCount = actualQuads * 4;
         int indexCount = actualQuads * 6;
@@ -253,11 +279,20 @@ internal sealed class SurfaceMeshBatch : IDisposable
             if (!textureCache.TryGetResolved(scratchKeys[i], out var resolved))
                 continue;
 
+            activeSurfaces.Add(surface);
+            activeKeys.Add(scratchKeys[i]);
+
             if (activeLayerSet.Add(resolved))
                 activeLayers.Add(resolved);
 
+            float ao0 = 1.0f, ao1 = 1.0f, ao2 = 1.0f, ao3 = 1.0f;
+            if (hasWalls && surface.Type == SurfaceType.Wall)
+            {
+                ComputeWallVertexAo(surface, context.HasCeiling, out ao0, out ao1, out ao2, out ao3);
+            }
+
             int baseVertex = vOut;
-            WriteSurfaceQuad(surface, resolved.LayerIndex, vertices, baseVertex, out var bounds);
+            WriteSurfaceQuad(surface, resolved.LayerIndex, ao0, ao1, ao2, ao3, vertices, baseVertex, out var bounds);
             totalBounds = totalBounds.Union(bounds);
 
             if (!bucketIndices.TryGetValue(resolved.Bucket, out var idxList))
@@ -310,7 +345,89 @@ internal sealed class SurfaceMeshBatch : IDisposable
         gl.BindVertexArray(0);
     }
 
-    static void WriteSurfaceQuad(ISurface3D surface, int layerIndex, SurfaceVertex[] dst, int offset, out SceneBounds3D bounds)
+    static long QuantizePointKey(float x, float z)
+    {
+        int qx = (int)MathF.Round(x * 8.0f);
+        int qz = (int)MathF.Round(z * 8.0f);
+        return ((long)qx << 32) ^ (uint)qz;
+    }
+
+    public static void GetWallSegment(ISurface3D surface, out float e0x, out float e0z, out float e1x, out float e1z, out float nx, out float nz)
+    {
+        float x = surface.X;
+        float z = surface.Z;
+        float w = surface.Width;
+        e0x = x;
+        e0z = z;
+        switch (surface.WallOrientation)
+        {
+            case WallOrientation.Normal:
+                e1x = x + w; e1z = z;
+                nx = 0; nz = -1;
+                break;
+            case WallOrientation.Rotated90:
+                e1x = x; e1z = z + w;
+                nx = 1; nz = 0;
+                break;
+            case WallOrientation.Rotated180:
+                e1x = x - w; e1z = z;
+                nx = 0; nz = 1;
+                break;
+            case WallOrientation.Rotated270:
+            default:
+                e1x = x; e1z = z - w;
+                nx = -1; nz = 0;
+                break;
+        }
+    }
+
+    void AddWallEndpoint(float px, float pz, float otherX, float otherZ, float nx, float nz)
+    {
+        long key = QuantizePointKey(px, pz);
+        if (!wallEndpointMap.TryGetValue(key, out var list))
+        {
+            list = new List<(float, float, float, float)>(2);
+            wallEndpointMap.Add(key, list);
+        }
+        list.Add((otherX, otherZ, nx, nz));
+    }
+
+    bool HasConcaveCornerAt(float px, float pz, float alongX, float alongZ, float nx, float nz)
+    {
+        if (!wallEndpointMap.TryGetValue(QuantizePointKey(px, pz), out var neighbors))
+            return false;
+
+        for (int i = 0; i < neighbors.Count; i++)
+        {
+            var nb = neighbors[i];
+            float dx = nb.OtherX - px;
+            float dz = nb.OtherZ - pz;
+            // Neighbor wall protrudes into the open air in front of this wall (+N)
+            // and its own front face points back along this wall (+along): true inner 90-degree corner.
+            if (dx * nx + dz * nz > 0.25f && nb.Nx * alongX + nb.Nz * alongZ > 0.25f)
+                return true;
+        }
+        return false;
+    }
+
+    void ComputeWallVertexAo(ISurface3D surface, bool hasCeiling, out float ao0, out float ao1, out float ao2, out float ao3)
+    {
+        GetWallSegment(surface, out float e0x, out float e0z, out float e1x, out float e1z, out float nx, out float nz);
+        bool alpha = surface.Alpha;
+        float topBase = hasCeiling ? (alpha ? 0.90f : 0.78f) : 1.0f;
+        float botBase = alpha ? 0.88f : 0.76f;
+        float cornerMul = alpha ? 0.86f : 0.72f;
+
+        bool corner0 = HasConcaveCornerAt(e0x, e0z, e1x - e0x, e1z - e0z, nx, nz);
+        bool corner1 = HasConcaveCornerAt(e1x, e1z, e0x - e1x, e0z - e1z, nx, nz);
+
+        ao0 = topBase * (corner0 ? cornerMul : 1.0f);
+        ao3 = botBase * (corner0 ? cornerMul : 1.0f);
+        ao1 = topBase * (corner1 ? cornerMul : 1.0f);
+        ao2 = botBase * (corner1 ? cornerMul : 1.0f);
+    }
+
+    static void WriteSurfaceQuad(ISurface3D surface, int layerIndex, float ao0, float ao1, float ao2, float ao3, SurfaceVertex[] dst, int offset, out SceneBounds3D bounds)
     {
         float x = surface.X;
         float y = surface.Y;
@@ -393,34 +510,37 @@ internal sealed class SurfaceMeshBatch : IDisposable
 
         // bit 0: alpha-cutout enabled (all walls can carry keyed/transparent holes; floor/ceiling are opaque)
         // bit 1: floor surface marker
+        // bit 2: ceiling surface marker
         uint flags = (surface.Alpha || surface.Type == SurfaceType.Wall) ? 1u : 0u;
         if (surface.Type == SurfaceType.Floor)
             flags |= 2u;
+        else if (surface.Type == SurfaceType.Ceiling)
+            flags |= 4u;
         float texLayer = layerIndex;
 
         dst[offset + 0] = new SurfaceVertex
         {
             PosX = x0, PosY = y0, PosZ = z0,
             NormalX = nx, NormalY = ny, NormalZ = nz,
-            UvX = u0, UvY = v0, TexLayer = texLayer, Flags = flags
+            UvX = u0, UvY = v0, TexLayer = texLayer, Flags = flags, Ao = ao0
         };
         dst[offset + 1] = new SurfaceVertex
         {
             PosX = x1, PosY = y1, PosZ = z1,
             NormalX = nx, NormalY = ny, NormalZ = nz,
-            UvX = u1, UvY = v1, TexLayer = texLayer, Flags = flags
+            UvX = u1, UvY = v1, TexLayer = texLayer, Flags = flags, Ao = ao1
         };
         dst[offset + 2] = new SurfaceVertex
         {
             PosX = x2, PosY = y2, PosZ = z2,
             NormalX = nx, NormalY = ny, NormalZ = nz,
-            UvX = u2, UvY = v2, TexLayer = texLayer, Flags = flags
+            UvX = u2, UvY = v2, TexLayer = texLayer, Flags = flags, Ao = ao2
         };
         dst[offset + 3] = new SurfaceVertex
         {
             PosX = x3, PosY = y3, PosZ = z3,
             NormalX = nx, NormalY = ny, NormalZ = nz,
-            UvX = u3, UvY = v3, TexLayer = texLayer, Flags = flags
+            UvX = u3, UvY = v3, TexLayer = texLayer, Flags = flags, Ao = ao3
         };
 
         float minX = Math.Min(Math.Min(x0, x1), Math.Min(x2, x3));
@@ -505,6 +625,8 @@ internal sealed class BillboardMeshBatch : IDisposable
     readonly SortedSet<int> freeSlots = new();
     readonly List<TextureLayerKey> scratchKeys = new(128);
     readonly List<ISurface3D> scratchSurfaces = new(128);
+    readonly List<TextureLayerKey> activeKeys = new(128);
+    readonly List<ISurface3D> activeSurfaces = new(128);
     readonly Dictionary<TextureArrayBucket, List<uint>> bucketIndices = new();
     readonly List<TextureArrayBucket> bucketOrder = new();
     readonly List<BatchDrawRange> drawRanges = new();
@@ -526,6 +648,8 @@ internal sealed class BillboardMeshBatch : IDisposable
     public int QuadCount => activeQuadCount;
     public int RebuildCount { get; private set; }
     public int DrawCallCount => drawRanges.Count;
+    public IReadOnlyList<ISurface3D> ActiveSurfaces => activeSurfaces;
+    public IReadOnlyList<TextureLayerKey> ActiveKeys => activeKeys;
 
     public BillboardMeshBatch(State state)
     {
@@ -623,6 +747,8 @@ internal sealed class BillboardMeshBatch : IDisposable
         drawRanges.Clear();
         activeLayers.Clear();
         activeLayerSet.Clear();
+        activeSurfaces.Clear();
+        activeKeys.Clear();
 
         int quadCount = surfaceToSlot.Count;
         activeQuadCount = quadCount;
@@ -683,6 +809,9 @@ internal sealed class BillboardMeshBatch : IDisposable
             var surface = scratchSurfaces[i];
             if (!textureCache.TryGetResolved(scratchKeys[i], out var resolved))
                 continue;
+
+            activeSurfaces.Add(surface);
+            activeKeys.Add(scratchKeys[i]);
 
             if (activeLayerSet.Add(resolved))
                 activeLayers.Add(resolved);

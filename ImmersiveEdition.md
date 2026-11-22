@@ -1,6 +1,6 @@
 # Ambermoon Experimental v1.2.0-preview.1
 
-This preview builds on Immersive Edition v1.2.0. It adds desktop frame pacing, fixed-rate 3D movement, an exclusive-fullscreen refresh fix, clearer mountain skylines in outdoor fog, and a 3D renderer with mipmaps and up to 16× anisotropic filtering. Options page 5 lets you switch renderers and choose a texture filter in the current scene. [Renderer guide](docs/experimental-renderer.md).
+This preview builds on Immersive Edition v1.2.0. It adds desktop frame pacing (including an optional **Unlimited** preset), fixed-rate 3D movement, an exclusive-fullscreen refresh fix, clearer mountain skylines in outdoor fog, and the **Experimental** 3D renderer with RGBA mipmaps, 16× anisotropic filtering, edge-directed texture filtering, and atmospheric lighting. Options pages 4 and 5 let you toggle frame limits, renderers, texture filters, and 3D lighting live in the current scene. [Renderer guide](docs/experimental-renderer.md).
 
 The Windows x64 installer and portable ZIP include the runtime and game data. Use a dedicated Experimental folder to play this build alongside Immersive Edition. [Experimental preview downloads and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
 

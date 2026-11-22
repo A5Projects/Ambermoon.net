@@ -90,6 +90,10 @@ sealed class CommandLineOptions
     /// Overrides the Experimental 3D texture filter mode (edge/sharp/crisp) for this run without modifying ambermoon.cfg.
     /// </summary>
     public Render.Texture3DFilterMode? Texture3DFilter { get; private set; }
+    /// <summary>
+    /// Overrides the Experimental 3D lighting mode (atmospheric/original) for this run without modifying ambermoon.cfg.
+    /// </summary>
+    public Render.Lighting3DMode? Lighting3D { get; private set; }
     public bool SkipsVersionSelector => Version != null;
     public bool SkipsMainMenu => Continue || LoadSlot != null;
 
@@ -111,12 +115,13 @@ sealed class CommandLineOptions
         Console.WriteLine(" --exit-after <s>   Close the application s seconds after the game started");
         Console.WriteLine(" --frame-stats      Record frame pacing statistics and write frame-stats.log on exit");
         Console.WriteLine(" --vsync <on|off>   Override VSync for this run");
-        Console.WriteLine(" --fps <n|2x|auto|0>  Override frame cap (2x = 2x refresh, auto = default, 0 = uncapped)");
+        Console.WriteLine(" --fps <n|2x|auto|unlimited|0>  Override frame cap (2x = 2x refresh, unlimited/0 = uncapped)");
         Console.WriteLine(" --ups <n>          Override update rate cap for this run (0 = 1:1 with render)");
         Console.WriteLine(" --timeline-3d <on|off>  Override timeline 3D movement for this run");
         Console.WriteLine(" --move-rate <n>    Override logical 3D movement steps/s (20-240) for this run");
         Console.WriteLine(" --renderer <classic|experimental>  Override 3D renderer pass for this run");
         Console.WriteLine(" --texture-filter <edge|sharp|crisp> Override Experimental 3D texture filter for this run");
+        Console.WriteLine(" --lighting <atmospheric|original> Override Experimental 3D lighting style for this run");
         Console.WriteLine();
         Console.WriteLine("Example: Ambermoon.net --data C:\\Ambermoon-Advanced\\german\\Amberfiles --load 0 --cheat 3 \"teleport 483 20 13\" --screenshot 6 --exit-after 8");
     }
@@ -213,6 +218,8 @@ sealed class CommandLineOptions
                         options.Fps = 0;
                     else if (fpsVal.Equals("2x", StringComparison.OrdinalIgnoreCase))
                         options.Fps = -2;
+                    else if (fpsVal.Equals("unlimited", StringComparison.OrdinalIgnoreCase))
+                        options.Fps = -1;
                     else
                     {
                         double rate = ParseRate(fpsVal);
@@ -251,6 +258,14 @@ sealed class CommandLineOptions
                         "sharp" or "sharpbilinear" or "sharp-bilinear" => Render.Texture3DFilterMode.SharpBilinear,
                         "crisp" or "nearest" => Render.Texture3DFilterMode.Crisp,
                         _ => throw new ArgumentException("--texture-filter expects edge, sharp, or crisp.")
+                    };
+                    break;
+                case "--lighting":
+                    options.Lighting3D = NextValue(arg).ToLowerInvariant() switch
+                    {
+                        "atmospheric" or "atmo" => Render.Lighting3DMode.Atmospheric,
+                        "original" or "orig" or "flat" => Render.Lighting3DMode.Original,
+                        _ => throw new ArgumentException("--lighting expects atmospheric or original.")
                     };
                     break;
                 default:

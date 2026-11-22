@@ -7,7 +7,7 @@ using System;
 
 namespace Ambermoon.Renderer.OpenGL;
 
-public class FrameBuffer(State state) : IDisposable
+public class FrameBuffer(State state, InternalFormat colorFormat = InternalFormat.Rgba8) : IDisposable
 {
     uint index = state.Gl.GenFramebuffer();
     uint depthBuffer = state.Gl.GenRenderbuffer();
@@ -15,6 +15,7 @@ public class FrameBuffer(State state) : IDisposable
     bool disposed = false;
     readonly State state = state;
     readonly Size size = new(0, 0);
+    InternalFormat activeColorFormat = colorFormat;
 
     void EnsureSize(int width, int height)
     {
@@ -26,16 +27,22 @@ public class FrameBuffer(State state) : IDisposable
 
             gl.BindFramebuffer(GLEnum.Framebuffer, index);
 
-            gl.BindTexture(GLEnum.Texture2D, renderTexture);
-            unsafe
+            void AllocateColorTexture(InternalFormat format)
             {
-                gl.TexImage2D(GLEnum.Texture2D, 0, InternalFormat.Rgba8, (uint)width, (uint)height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, (void*)0);
+                GLEnum pixelType = format == InternalFormat.Rgba16f ? GLEnum.HalfFloat : GLEnum.UnsignedByte;
+                gl.BindTexture(GLEnum.Texture2D, renderTexture);
+                unsafe
+                {
+                    gl.TexImage2D(GLEnum.Texture2D, 0, format, (uint)width, (uint)height, 0, GLEnum.Rgba, pixelType, (void*)0);
+                }
+                gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+                gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+                gl.BindTexture(GLEnum.Texture2D, 0);
+                Texture.InvalidateActiveTexture();
+                gl.FramebufferTexture2D(GLEnum.Framebuffer, GLEnum.ColorAttachment0, GLEnum.Texture2D, renderTexture, 0);
             }
-            gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            gl.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            gl.BindTexture(GLEnum.Texture2D, 0);
 
-            gl.FramebufferTexture2D(GLEnum.Framebuffer, GLEnum.ColorAttachment0, GLEnum.Texture2D, renderTexture, 0);
+            AllocateColorTexture(activeColorFormat);
 
             gl.BindRenderbuffer(GLEnum.Renderbuffer, depthBuffer);
             gl.RenderbufferStorage(GLEnum.Renderbuffer, GLEnum.Depth24Stencil8, (uint)width, (uint)height);
@@ -45,8 +52,19 @@ public class FrameBuffer(State state) : IDisposable
 
             if (gl.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != GLEnum.FramebufferComplete)
             {
-                gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-                throw new AmbermoonException(ExceptionScope.Render, "Unable to setup framebuffer");
+                if (activeColorFormat != InternalFormat.Rgba8)
+                {
+                    // Fall back cleanly if the active GPU/driver cannot render to RGBA16F.
+                    while (gl.GetError() != GLEnum.NoError) { }
+                    activeColorFormat = InternalFormat.Rgba8;
+                    AllocateColorTexture(activeColorFormat);
+                }
+
+                if (gl.CheckFramebufferStatus(FramebufferTarget.Framebuffer) != GLEnum.FramebufferComplete)
+                {
+                    gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                    throw new AmbermoonException(ExceptionScope.Render, "Unable to setup framebuffer");
+                }
             }
 
             gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);

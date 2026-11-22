@@ -1162,6 +1162,57 @@ namespace Ambermoon.Render
             }
 
             renderView!.SetFog(fogColor, fogDistance, outdoorFade);
+            Update3DEnvironment(map, labdata, lightOff);
+        }
+
+        void Update3DEnvironment(Map map, Labdata labdata, bool lightOff = false)
+        {
+            float hour = game.GameTime!.Hour + game.GameTime.Minute / 60.0f;
+            float daylightFactor = Math.Clamp(Math.Min((hour - 5.5f) / 2.5f, (20.0f - hour) / 2.5f), 0.0f, 1.0f);
+            float dawnGlow = Math.Max(0.0f, 1.0f - Math.Abs(hour - 6.5f) / 1.75f);
+            float duskGlow = Math.Max(0.0f, 1.0f - Math.Abs(hour - 18.75f) / 1.75f);
+            float twilightFactor = map.Flags.HasFlag(MapFlags.Outdoor) ? Math.Clamp(Math.Max(dawnGlow, duskGlow), 0.0f, 1.0f) : 0.0f;
+
+            Environment3DKind kind;
+            if (map.Flags.HasFlag(MapFlags.Outdoor))
+            {
+                kind = daylightFactor >= 0.85f ? Environment3DKind.OutdoorDay
+                    : daylightFactor <= 0.10f ? Environment3DKind.OutdoorNight
+                    : Environment3DKind.OutdoorDawnDusk;
+            }
+            else if (map.Flags.HasFlag(MapFlags.Indoor))
+            {
+                kind = Environment3DKind.IndoorLit;
+            }
+            else
+            {
+                kind = Environment3DKind.Dungeon;
+            }
+
+            uint lightSpellLevel = !lightOff && game.CurrentSavegame!.IsSpellActive(ActiveSpellType.Light)
+                ? game.CurrentSavegame.GetActiveSpellLevel(ActiveSpellType.Light)
+                : 0u;
+            bool isPalace = map.Index == 427 && map.Flags.HasFlag(MapFlags.Indoor);
+            bool hasCeiling = !map.Flags.HasFlag(MapFlags.Sky) && labdata.CeilingGraphic != null && game.CoreConfiguration.ShowCeiling;
+
+            int visibleSkyBottom = horizonFog?.Y ?? ViewArea.Y + (ceilingColor?.Height ?? ViewArea.Height / 2);
+            var skyHorizon = skyColors?.LastOrDefault(part => part.Height > 0 && part.Y < visibleSkyBottom)?.Color
+                ?? ceilingColor?.Color
+                ?? new Color(128, 176, 208, 255);
+
+            renderView!.Set3DEnvironment(new Scene3DEnvironment(
+                kind,
+                hour,
+                daylightFactor,
+                twilightFactor,
+                lightSpellLevel,
+                WallHeight,
+                Global.DistancePerBlock,
+                map.Width,
+                map.Height,
+                isPalace,
+                hasCeiling,
+                skyHorizon));
         }
 
         public static float GetFloorY() => -0.25f * ReferenceWallHeight / BlockSize;
@@ -1860,7 +1911,9 @@ namespace Ambermoon.Render
             stars.ForEach(s => s.Value.Visible = false);
             skyColors?.ForEach(c => c?.Delete());
 
-            SetColors(null);            
+            SetColors(null);
+            if (Map != null && labdata != null)
+                Update3DEnvironment(Map, labdata);
         }
 
         public void SetColorLightFactor(float lightFactor)
@@ -1916,7 +1969,9 @@ namespace Ambermoon.Render
                 UpdateStars(Util.Round(-8.0f * HorizonTileWidth * camera!.Angle / 360.0f));
                 renderView.SetSkyColorReplacement(labdata!.CeilingColorIndex, skyColors.Last().Color);
             }
-            stars.ForEach(s => s.Value.Visible = canSee && (time.Hour >= 19 || time.Hour < 7));            
+            stars.ForEach(s => s.Value.Visible = canSee && (time.Hour >= 19 || time.Hour < 7));
+            if (Map != null && labdata != null)
+                Update3DEnvironment(Map, labdata);
         }
 
         void UpdateStars(int scrollX)
