@@ -410,6 +410,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
         renderView?.Resize(window.FramebufferSize.X, window.FramebufferSize.Y, window.Size.X, window.Size.Y);
         ReapplySwapInterval();
+        if (initialized)
+            ApplyFramePacing(initializeStats: false);
     }
 
     void FullscreenChangeRequest(WindowMode windowMode)
@@ -2031,8 +2033,9 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         if (window == null || framePacer == null)
             return;
 
-        bool vsync = framePacer.VSyncRequested;
         framePacer.SetExclusiveFullscreen(IsExclusiveFullscreen());
+        framePacer.UpdateMonitorRefreshRate(GetActiveRefreshRate());
+        bool vsync = framePacer.EffectiveVSync;
         window.VSync = vsync;
         try
         {
@@ -2044,7 +2047,6 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         {
             appliedVSync = null;
         }
-        framePacer.UpdateMonitorRefreshRate(GetActiveRefreshRate());
         framePacer.OnDisplayModeChanged();
         framePacer.QuerySwapInterval(window.GLContext, force: true);
     }
@@ -2064,18 +2066,19 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
         framePacer.SetExclusiveFullscreen(IsExclusiveFullscreen());
         framePacer.Configure(vsync, requestedMaxFps, GetActiveRefreshRate());
+        bool effectiveVSync = framePacer.EffectiveVSync;
 
-        // Only poke window.VSync / wglSwapInterval when the swap-interval state actually changes
+        // Only poke window.VSync / wglSwapInterval when the effective swap-interval state actually changes
         // (or on startup), so toggling unrelated 3D options or closing Options never disturbs the swapchain.
-        bool vsyncChanged = initializeStats || appliedVSync != vsync;
+        bool vsyncChanged = initializeStats || appliedVSync != effectiveVSync;
         if (vsyncChanged)
         {
-            window.VSync = vsync;
+            window.VSync = effectiveVSync;
             try
             {
                 window.MakeCurrent();
-                window.GLContext?.SwapInterval(vsync ? 1 : 0);
-                appliedVSync = vsync;
+                window.GLContext?.SwapInterval(effectiveVSync ? 1 : 0);
+                appliedVSync = effectiveVSync;
             }
             catch
             {
@@ -2091,7 +2094,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         // only cap UPS when the render rate could actually exceed 120 Hz, avoiding beat-pattern skips.
         bool legacyNeedsUpsCap = !timelineEnabled &&
             (framePacer.EffectiveFpsCap == 0
-                ? (!vsync || framePacer.EffectiveRefreshRate > 120)
+                ? (!effectiveVSync || framePacer.EffectiveRefreshRate > 120)
                 : framePacer.EffectiveFpsCap > 120.5);
         window.UpdatesPerSecond = commandLineOptions.Ups ?? (legacyNeedsUpsCap ? 118.0 : 0.0);
 
@@ -2579,6 +2582,8 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                     desktopVideoMode = movedMode;
             }
             framePacer?.UpdateMonitorRefreshRate(GetActiveRefreshRate());
+            if (framePacer != null)
+                ApplyFramePacing(initializeStats: false);
         }
 
         WindowMoved();

@@ -26,7 +26,6 @@ sealed class FramePacer : IDisposable
     const int BypassTriggerStreak = 8;
     const double SleepThresholdSeconds = 0.0025;
     const double SpinMarginSeconds = 0.0015;
-    const double WindowedUnlimitedSafeCap = 360.0;
 
     readonly bool timerPeriodActive;
     double nextDeadline = double.NaN;
@@ -39,7 +38,7 @@ sealed class FramePacer : IDisposable
     public bool VSyncRequested { get; private set; } = true;
     /// <summary>
     /// &gt; 0: explicit FPS cap. 0: auto (VSync when blocking, or safe 240 fps ceiling when VSync is off).
-    /// -2: 2x display refresh rate. -1: explicitly uncapped in exclusive fullscreen (DWM-safe cap in Windows windowed/borderless).
+    /// -2: 2x display refresh rate. -1: explicitly uncapped in exclusive fullscreen.
     /// </summary>
     public double RequestedMaxFps { get; private set; }
     public int MonitorRefreshRate { get; private set; } = 60;
@@ -50,12 +49,39 @@ sealed class FramePacer : IDisposable
     public double Now => (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency;
     public int EffectiveRefreshRate => Math.Clamp(MonitorRefreshRate > 0 ? MonitorRefreshRate : 120, 30, 360);
 
+    /// <summary>
+    /// On Windows, DWM always composites windowed and borderless OpenGL surfaces at the display's
+    /// refresh rate. Presenting with wglSwapInterval(0) faster than the monitor refresh rate cannot
+    /// display additional frames through DWM and causes severe NVIDIA/DWM contention (1 FPS stalls
+    /// or freezes). Sync to DWM VSync whenever a windowed/borderless target exceeds the display rate;
+    /// exclusive fullscreen bypasses DWM and runs at the full requested cap.
+    /// </summary>
+    public bool IsWindowedDwmCapped
+    {
+        get
+        {
+            if (!OperatingSystem.IsWindows() || IsExclusiveFullscreen)
+                return false;
+            if (RequestedMaxFps == -1 || RequestedMaxFps == -2)
+                return true;
+            if (RequestedMaxFps > EffectiveRefreshRate)
+                return true;
+            if (RequestedMaxFps == 0 && !VSyncRequested)
+                return true;
+            return false;
+        }
+    }
+
+    public bool EffectiveVSync => VSyncRequested || IsWindowedDwmCapped;
+
     public double EffectiveFpsCap
     {
         get
         {
+            if (IsWindowedDwmCapped)
+                return VSyncBypassDetected ? EffectiveRefreshRate : 0;
             if (RequestedMaxFps == -1)
-                return OperatingSystem.IsWindows() && !IsExclusiveFullscreen ? WindowedUnlimitedSafeCap : 0;
+                return 0;
             if (RequestedMaxFps == -2)
                 return Math.Clamp(EffectiveRefreshRate * 2, 60, 360);
             if (RequestedMaxFps > 0)
@@ -164,7 +190,7 @@ sealed class FramePacer : IDisposable
         LastWaitMs = 0;
         double now = Now;
 
-        if (VSyncRequested && RequestedMaxFps == 0 && !VSyncBypassDetected)
+        if (EffectiveVSync && !VSyncBypassDetected)
         {
             double frameMs = (swapEnd - frameStart) * 1000.0;
             double swapMs = (swapEnd - swapStart) * 1000.0;
@@ -228,14 +254,25 @@ sealed class FramePacer : IDisposable
 
     public string Describe()
     {
-        double cap = EffectiveFpsCap;
-        string mode = RequestedMaxFps == -1
-            ? (cap > 0 ? $"uncapped (DWM-safe cap {cap:0.#} fps)" : "uncapped")
+        string requested = RequestedMaxFps == -1
+            ? "unlimited"
             : RequestedMaxFps == -2
-                ? $"cap {cap:0.#} fps (2x refresh)"
-                : cap > 0
-                    ? (VSyncBypassDetected ? $"safety-cap {cap:0.#} fps (VSync bypass detected)" : $"cap {cap:0.#} fps")
-                    : "VSync-driven";
+                ? $"2x ({Math.Clamp(EffectiveRefreshRate * 2, 60, 360)})"
+                : RequestedMaxFps > 0
+                    ? $"{RequestedMaxFps:0.#}"
+                    : "auto";
+        double cap = EffectiveFpsCap;
+        string mode = IsWindowedDwmCapped
+            ? (VSyncBypassDetected
+                ? $"windowed DWM-safe cap {cap:0.#} fps (requested {requested})"
+                : $"windowed DWM VSync {EffectiveRefreshRate} Hz (requested {requested})")
+            : RequestedMaxFps == -1
+                ? "uncapped"
+                : RequestedMaxFps == -2
+                    ? $"cap {cap:0.#} fps (2x refresh)"
+                    : cap > 0
+                        ? (VSyncBypassDetected ? $"safety-cap {cap:0.#} fps (VSync bypass detected)" : $"cap {cap:0.#} fps")
+                        : "VSync-driven";
         return $"pacer={mode}, refresh={MonitorRefreshRate} Hz, wglSwapInterval={cachedSwapInterval?.ToString() ?? "?"}";
     }
 
