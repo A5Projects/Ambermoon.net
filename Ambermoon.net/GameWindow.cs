@@ -2009,6 +2009,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
     FrameStats frameStats;
     bool? cliVSyncOverride;
     double? cliFpsOverride;
+    bool? appliedVSync;
     double lastSwapStartTime;
     double lastSwapEndTime;
 
@@ -2031,15 +2032,17 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             return;
 
         bool vsync = framePacer.VSyncRequested;
+        framePacer.SetExclusiveFullscreen(IsExclusiveFullscreen());
         window.VSync = vsync;
         try
         {
             window.MakeCurrent();
             window.GLContext?.SwapInterval(vsync ? 1 : 0);
+            appliedVSync = vsync;
         }
         catch
         {
-            // ignore if context is not yet ready
+            appliedVSync = null;
         }
         framePacer.UpdateMonitorRefreshRate(GetActiveRefreshRate());
         framePacer.OnDisplayModeChanged();
@@ -2059,15 +2062,25 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
         bool timelineEnabled = (commandLineOptions.Timeline3D ?? configuration.Timeline3DMovement) && !configuration.LegacyMode;
 
+        framePacer.SetExclusiveFullscreen(IsExclusiveFullscreen());
         framePacer.Configure(vsync, requestedMaxFps, GetActiveRefreshRate());
-        window.VSync = vsync;
-        try
+
+        // Only poke window.VSync / wglSwapInterval when the swap-interval state actually changes
+        // (or on startup), so toggling unrelated 3D options or closing Options never disturbs the swapchain.
+        bool vsyncChanged = initializeStats || appliedVSync != vsync;
+        if (vsyncChanged)
         {
-            window.GLContext?.SwapInterval(vsync ? 1 : 0);
-        }
-        catch
-        {
-            // ignore
+            window.VSync = vsync;
+            try
+            {
+                window.MakeCurrent();
+                window.GLContext?.SwapInterval(vsync ? 1 : 0);
+                appliedVSync = vsync;
+            }
+            catch
+            {
+                appliedVSync = null;
+            }
         }
 
         // FramePacer owns render pacing cleanly via sleep + short spin-wait instead of
@@ -2082,7 +2095,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                 : framePacer.EffectiveFpsCap > 120.5);
         window.UpdatesPerSecond = commandLineOptions.Ups ?? (legacyNeedsUpsCap ? 118.0 : 0.0);
 
-        int? swapInterval = framePacer.QuerySwapInterval(window.GLContext, force: true);
+        int? swapInterval = framePacer.QuerySwapInterval(window.GLContext, force: vsyncChanged);
         if (initializeStats && commandLineOptions.FrameStats)
         {
             frameStats = new FrameStats(Path.Combine(Configuration.BundleDirectory, "frame-stats.log"), DescribePacing());

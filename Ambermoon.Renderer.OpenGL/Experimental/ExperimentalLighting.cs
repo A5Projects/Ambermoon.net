@@ -492,7 +492,7 @@ internal sealed class SceneLightingEngine : IDisposable
                         float cb = 0.12f * (0.5f + 0.5f * em.WarmB);
                         detected = new StaticSceneLight(
                             surf.X, Math.Max(0.18f * wallH, surf.Y + 0.15f * wallH), surf.Z,
-                            3.6f * block, cr, cg, cb, 0.72f, 0.03f, seed, false);
+                            3.6f * block, cr, cg, cb, 0.72f, 0.045f, seed, false);
                     }
                     else if (em.CoolBrightCount >= 14)
                     {
@@ -523,7 +523,7 @@ internal sealed class SceneLightingEngine : IDisposable
                         float cb = 0.26f + 0.14f * em.WarmB;
                         float radius = overhead ? 4.2f * block : 3.5f * block;
                         float intensity = overhead ? 0.56f : 0.62f;
-                        float flicker = overhead ? 0.022f : 0.025f;
+                        float flicker = overhead ? 0.032f : 0.050f;
                         detected = new StaticSceneLight(
                             surf.X, lightY, surf.Z, radius, cr, cg, cb, intensity, flicker, seed, false);
                     }
@@ -606,7 +606,7 @@ internal sealed class SceneLightingEngine : IDisposable
                     detected = new StaticSceneLight(
                         cx, cy, cz, 3.0f * block,
                         0.76f + 0.24f * em.WarmR, 0.50f + 0.22f * em.WarmG, 0.18f + 0.12f * em.WarmB,
-                        0.52f, 0.022f, seed, false);
+                        0.52f, 0.045f, seed, false);
                 }
             }
 

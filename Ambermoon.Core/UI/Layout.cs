@@ -2042,29 +2042,30 @@ namespace Ambermoon.UI
                     config.VSync = false;
                     config.MaxFps = 60;
                 }
-                else if (!config.VSync && config.MaxFps == 60)
-                {
-                    config.MaxFps = 120;
-                }
-                else if (!config.VSync && config.MaxFps == 120)
-                {
-                    config.MaxFps = 144;
-                }
-                else if (!config.VSync && config.MaxFps == 144)
-                {
-                    config.MaxFps = 240;
-                }
-                else if (!config.VSync && config.MaxFps == 240)
-                {
-                    config.MaxFps = -2;
-                }
-                else if (config.MaxFps == -2)
+                else if (config.MaxFps == 60)
                 {
                     config.VSync = false;
-                    config.MaxFps = -1;
+                    config.MaxFps = 120;
                 }
-                else if (config.MaxFps == -1)
+                else if (config.MaxFps == 120)
                 {
+                    config.VSync = false;
+                    config.MaxFps = 144;
+                }
+                else if (config.MaxFps == 144)
+                {
+                    config.VSync = false;
+                    config.MaxFps = 240;
+                }
+                else if (config.MaxFps == 240)
+                {
+                    config.VSync = false;
+                    config.MaxFps = -2;
+                }
+                else if (config.MaxFps == -2 || config.MaxFps == -1)
+                {
+                    // Keep Unlimited (-1) out of the in-game click cycle so users cannot accidentally
+                    // step into uncapped DWM-flooding renders; clicking -1 exits cleanly to VSync.
                     config.VSync = true;
                     config.MaxFps = 0;
                 }

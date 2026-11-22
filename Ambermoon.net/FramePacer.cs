@@ -26,6 +26,7 @@ sealed class FramePacer : IDisposable
     const int BypassTriggerStreak = 8;
     const double SleepThresholdSeconds = 0.0025;
     const double SpinMarginSeconds = 0.0015;
+    const double WindowedUnlimitedSafeCap = 360.0;
 
     readonly bool timerPeriodActive;
     double nextDeadline = double.NaN;
@@ -38,10 +39,11 @@ sealed class FramePacer : IDisposable
     public bool VSyncRequested { get; private set; } = true;
     /// <summary>
     /// &gt; 0: explicit FPS cap. 0: auto (VSync when blocking, or safe 240 fps ceiling when VSync is off).
-    /// -2: 2x display refresh rate. -1: explicitly uncapped (for benchmarking).
+    /// -2: 2x display refresh rate. -1: explicitly uncapped in exclusive fullscreen (DWM-safe cap in Windows windowed/borderless).
     /// </summary>
     public double RequestedMaxFps { get; private set; }
     public int MonitorRefreshRate { get; private set; } = 60;
+    public bool IsExclusiveFullscreen { get; private set; }
     public bool VSyncBypassDetected { get; private set; }
     public double LastWaitMs { get; private set; }
 
@@ -53,7 +55,7 @@ sealed class FramePacer : IDisposable
         get
         {
             if (RequestedMaxFps == -1)
-                return 0;
+                return OperatingSystem.IsWindows() && !IsExclusiveFullscreen ? WindowedUnlimitedSafeCap : 0;
             if (RequestedMaxFps == -2)
                 return Math.Clamp(EffectiveRefreshRate * 2, 60, 360);
             if (RequestedMaxFps > 0)
@@ -95,6 +97,15 @@ sealed class FramePacer : IDisposable
         if (monitorRefreshRate is > 0 && monitorRefreshRate.Value != MonitorRefreshRate)
         {
             MonitorRefreshRate = monitorRefreshRate.Value;
+            OnDisplayModeChanged();
+        }
+    }
+
+    public void SetExclusiveFullscreen(bool exclusiveFullscreen)
+    {
+        if (IsExclusiveFullscreen != exclusiveFullscreen)
+        {
+            IsExclusiveFullscreen = exclusiveFullscreen;
             OnDisplayModeChanged();
         }
     }
@@ -219,7 +230,7 @@ sealed class FramePacer : IDisposable
     {
         double cap = EffectiveFpsCap;
         string mode = RequestedMaxFps == -1
-            ? "uncapped"
+            ? (cap > 0 ? $"uncapped (DWM-safe cap {cap:0.#} fps)" : "uncapped")
             : RequestedMaxFps == -2
                 ? $"cap {cap:0.#} fps (2x refresh)"
                 : cap > 0
