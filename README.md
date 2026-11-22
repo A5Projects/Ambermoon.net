@@ -1,6 +1,6 @@
 # Ambermoon Experimental
 
-**v1.2.0-preview.1** is a Windows x64 prerelease for trying a new 3D renderer and movement timing in Immersive Edition v1.2.0. Playtesting is still limited. Install it into its own folder alongside your regular game. To try it with an existing party, copy your `Saves` folder and select the same game-data edition and language. [Download the preview and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
+**v1.2.0-preview.2** is a Windows x64 prerelease for trying a new 3D renderer and movement timing in Immersive Edition v1.2.0. P3 adds atmospheric lighting and fixes a near-freeze when a Windows windowed or borderless frame limit exceeds the monitor refresh rate. The game now uses VSync in those modes. Exclusive fullscreen uses the selected limit. Install it into its own folder alongside your regular game. To try it with an existing party, copy your `Saves` folder and select the same game-data edition and language. [Download the preview and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.2).
 
 In a 3D area, open **Options → page 5** to switch between **Experimental** and **Classic** while looking at the same scene. Experimental offers three texture modes. **Edge-directed** is the default, **Sharp bilinear** softens pixel edges, and **Crisp** keeps nearby texels sharp. All three filter distant surfaces. **Options → page 4 → Frame limit** lets you compare VSync and frame caps. [Renderer guide and command-line options](docs/experimental-renderer.md).
 
@@ -34,8 +34,8 @@ Following a overview over renderer changes for the user. More indepth under docs
 No more runaway 1,500–3,000+ FPS: Previously, running with VSync off (or when a GPU driver overrode VSync) could let the game spin at thousands of frames per second unnecessarily. A desktop frame pacer now keeps frame delivery steady and caps runaway frame rates automatically.
 Live Frame limit (FPS-Limit) option (Options Page 4, slot 7): You can now change the frame rate cap directly in-game without restarting or editing ambermoon.cfg. Presets:
 VSync — locks to your monitor's refresh rate (default).
-60, 120, 144, 240 — explicit smooth frame caps (disables VSync while active).
-2x — caps at twice your monitor's active refresh rate (for example, 2x (168) on an 84 Hz display).
+60, 120, 144, 240 — explicit frame caps. Windows uses VSync in windowed and borderless modes when a cap exceeds the display refresh rate.
+2x — requests twice the active refresh rate in exclusive fullscreen and uses VSync in Windows windowed or borderless mode (for example, 2x (168) on an 84 Hz display).
 Consistent 3D walking & turning speed across monitors: Modern 3D movement now runs on a fixed-rate simulation timeline (default 60 logical steps/s) with smooth camera interpolation, so walking speed no longer feels too fast on a 240 Hz laptop or changes when switching FPS limits. Mouse-look stays immediate with zero added lag.
 F11 exclusive fullscreen keeps custom/overclocked refresh rates: Switching window modes with F11 (Normal → Fullscreen → Borderless) previously caused exclusive fullscreen to fall back to a lower base refresh rate (e.g. 75 Hz instead of an overclocked 84 Hz desktop mode). Exclusive fullscreen now preserves the monitor's active refresh rate.
 Clean mountain skyline in outdoor fog: Outdoor haze still softens the 3D streets, buildings, and distant objects using sky-derived colours, while leaving the distant mountain backdrop untouched (fixing the solid orange/coloured band that previously appeared over the skyline).
@@ -76,7 +76,7 @@ Transfer saves between builds using the same game-data edition and language. See
 
 Edition | Windows x64 downloads | Release notes
 --- | --- | ---
-**Experimental v1.2.0-preview.1** | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64.zip) | [Preview notes and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1)
+**Experimental v1.2.0-preview.2** | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.2/Ambermoon-Experimental-1.2.0-preview.2-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.2/Ambermoon-Experimental-1.2.0-preview.2-Windows-x64.zip) | [Preview notes and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.2)
 **Immersive Edition v1.2.0** — full exploration view; Original balance or relaxed Advanced | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0)
 **Expanded v1.0.1** — Only slightly enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 

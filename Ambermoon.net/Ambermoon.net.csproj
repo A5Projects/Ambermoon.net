@@ -7,7 +7,7 @@
     <RootNamespace>Ambermoon</RootNamespace>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <!-- Fork version; keep in sync with Ambermoon.Core/EditionInfo.cs. -->
-    <Version>1.2.0-preview.1</Version>
+    <Version>1.2.0-preview.2</Version>
     <Product>Ambermoon Experimental</Product>
     <Copyright>Copyright (C) 2020-2026 by Robert Schneckenhaus</Copyright>
     <Company>Robert Schneckenhaus</Company>

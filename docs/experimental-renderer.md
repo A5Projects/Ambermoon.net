@@ -1,6 +1,6 @@
 # Experimental 3D Renderer & Pacing Changes
 
-Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P1**, **P2**, and **P3**, developed from Immersive Edition v1.2.0 at `5c3cbd00`. [Experimental branch](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) · [Windows preview](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
+Ambermoon Experimental v1.2.0-preview.2 includes renderer milestones **P0**, **P1**, **P2**, and **P3**, developed from Immersive Edition v1.2.0 at `5c3cbd00`. [Experimental branch](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) · [Windows preview](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.2).
 
 - **Target platform:** Windows desktop (`win-x64`, self-contained .NET 9 / Silk.NET OpenGL).
 - **Compatibility:** Savegame format, 2D maps, UI/HUD, dialogs, inventory, combat, graphic filters (`Smooth` / `Blur` / `CRT`), screen effects (`Sepia` / `Grayscale`), and Original/Advanced balance remain fully compatible with Immersive Edition v1.2.0.
@@ -15,8 +15,8 @@ Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P
 - **No more runaway 1,500–3,000+ FPS:** Previously, running with VSync off (or when a GPU driver overrode VSync) could let the game spin at thousands of frames per second unnecessarily. A desktop frame pacer now keeps frame delivery steady and caps runaway frame rates automatically.
 - **Live `Frame limit` (`FPS-Limit`) option (Options Page 4, slot 7):** You can now change the frame rate cap directly in-game without restarting or editing `ambermoon.cfg`. Presets:
   - **`VSync`** — locks to your monitor's refresh rate (default).
-  - **`60`**, **`120`**, **`144`**, **`240`** — explicit smooth frame caps (disables VSync while active).
-  - **`2x`** — caps at twice your monitor's active refresh rate (for example, `2x (168)` on an 84 Hz display).
+  - **`60`**, **`120`**, **`144`**, **`240`** — explicit frame caps, subject to the Windows windowed and borderless VSync rule below.
+  - **`2x`** — requests twice the active refresh rate in exclusive fullscreen (for example, `2x (168)` on an 84 Hz display).
   - **Windows Windowed / Borderless DWM sync:** Because Windows DWM always composites windowed and borderless OpenGL surfaces at the monitor's refresh rate (and submitting un-synced `SwapInterval(0)` frames faster than the display refresh causes severe NVIDIA/DWM 1-FPS contention stalls), any cap above the active monitor's refresh rate automatically uses smooth DWM-synced VSync in Windowed/Borderless modes and switches to the full selected cap (e.g. `144`, `2x (168)`, `240`, or CLI `--fps unlimited`) in **Exclusive Fullscreen**. Caps at or below the monitor's refresh rate (such as `60` on an 84 Hz monitor, or `60`/`120`/`144`/`240` on a 240 Hz display) run at their exact chosen rate in all window modes.
 - **Consistent 3D walking & turning speed across monitors:** Modern 3D movement now runs on a fixed-rate simulation timeline (default `60` logical steps/s) with smooth camera interpolation, so walking speed no longer feels too fast on a 240 Hz laptop or changes when switching FPS limits. Mouse-look stays immediate with zero added lag.
 - **F11 exclusive fullscreen keeps custom/overclocked refresh rates:** Switching window modes with `F11` (`Normal` → `Fullscreen` → `Borderless`) previously caused exclusive fullscreen to fall back to a lower base refresh rate (e.g. `75 Hz` instead of an overclocked `84 Hz` desktop mode). Exclusive fullscreen now preserves the monitor's active refresh rate.

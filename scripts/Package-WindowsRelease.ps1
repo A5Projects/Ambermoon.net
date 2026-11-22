@@ -4,7 +4,7 @@ Build a clean, self-contained Windows x64 ZIP for a fork edition.
 .EXAMPLE
 ./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.2.0 -OutputDirectory ../release-immersive
 .EXAMPLE
-./scripts/Package-WindowsRelease.ps1 -Edition experimental -Tag experimental-v1.2.0-preview.1 -OutputDirectory ../release-experimental
+./scripts/Package-WindowsRelease.ps1 -Edition experimental -Tag experimental-v1.2.0-preview.2 -OutputDirectory ../release-experimental
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
