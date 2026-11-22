@@ -7,7 +7,8 @@
 Branch | Version in this fork
 --- | ---
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game. Now with installer (Win),
-[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
+[`Experimental`](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) | NEW **Experimental** version, based on Immersive Edition v1.2.0, it previews the dramatic desktop renderer and frame pacing changes (no more 3000FPS). With setup, it installs separately. Savegames remain fully interchangeable! https://github.com/A5Projects/Ambermoon.net/blob/Experimental/docs/experimental-renderer.md  Feedback and bug reports welcome. Wip.
+[`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | OLD **Expanded:** version. Onlys slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
 <p float="left">
   <a href="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33"><img src="https://github.com/user-attachments/assets/d8536746-6d6b-443d-9040-31750ad6ef33" width="300" alt="3D town with the action menu" /></a>
