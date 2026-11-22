@@ -10,7 +10,7 @@ In a 3D area, open **Options → page 5** to switch between **Experimental** and
 
 Branch | Version in this fork
 --- | ---
-[`Experimental`](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) | **Experimental** previews the desktop renderer and frame pacing changes.
+[`Experimental`](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) — this  | **Experimental** previews the desktop renderer and frame pacing changes.
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
@@ -23,22 +23,53 @@ Branch | Version in this fork
 <img width="240" alt="Screenshot_04-11-2026 00-43-23" src="https://github.com/user-attachments/assets/18e196d5-c4e5-46f4-b897-c807ccbe02d5" />
 <br>
 
-### note: i have no intention to make a mobile version. The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available. A well as visual enhancements in 3d rendering and movement (much better already, but still wip) and 2d (good). <br>
-crude little showcase video https://youtu.be/JBkPtCe59hE
-### Personal words, Background, motivation, Decisions: The "expanded" Version was the first Version i did, removing the weird gaps in the UI and fixing the awful 3D mode controls. Then i played it for a bit, and decided to go all in, with a more radical visual and control overhaul, while retaining the games looks and art unchanged. Leading to the much more evolved Ambermoon Immersive Edition).
-Heavily inspired (and justified) by Albion, the official successor to Ambermoon, which has the same semi full screen 2D and 3D worlds, so this is what Thalion would have wanted. (but the Amiga 500 struggled with even that small 3d window with the new smooth movement and turning mode(Amiga first). 
-<br> I also decided to reverse all balance changes in the Ambermoon.net Advanced edition, where they did not affect deeper (new) game mechanics. Those and related stats were left alone to not break anything/reduce the scope of the changes. The exception is the maximum carry weight, which was greatly increased.   
-### What was NOT changed was the content. The art, textures, world details...  this is a direct copy of the base game and the changes the amazing Ambermoon.net project did. Only the view size and how it renders, and controls were changed. 
+### note: i have no intention to make a mobile version. 
+The focus is the opposite: modern-ish mouse/Keyboard controls in 3D view, with which i'm happy now. The mouse/key/Arrow stuff remains fully available  as ingame options.
+### Ongoing and expanding renderer changes, while still staying fairly true to the original. All new options are optional, toggle via menu. Additional things via commandline (below).  Parts of this like the fps fix will eventually make it into main. Other, visual changes perhaps. That's the reason for this experimantel version. 
 
-## Finally, ai disclaimer and background: 
-when i say "i" in 2026 i obviously mean i and ai. namely codex and GPT Astra, mostly on Ultra.  This project was done only with my input and my decisions. All changes and choices done (or not) are mine!
-<br>
-<b> Apropos mine: I played Ambermoon when it came out, first on my (the Family) Amiga 500, then A2000 (with harddisk). Later i played it again with WinUAE. But it felt increasingly aged in all but content even though the 3D performance was much better..
-<br> Now, building on the modern Ambermoon.net version, i can fix the things that annoyed me back then (RIP tedious start with more misses than hits and breaking weapons, annoying cary weight limits) and now (ancient controls).
+### Savegames wil remain interchangeable between versions, mine and upstream. That is a fixed guideline, so there is no risk in running it. 
 
+Following a overview over renderer changes for the user. More indepth under docs. 
+### 1. Smoother 3D movement, sane frame rates, and fullscreen refresh fix (P0)
+No more runaway 1,500–3,000+ FPS: Previously, running with VSync off (or when a GPU driver overrode VSync) could let the game spin at thousands of frames per second unnecessarily. A desktop frame pacer now keeps frame delivery steady and caps runaway frame rates automatically.
+Live Frame limit (FPS-Limit) option (Options Page 4, slot 7): You can now change the frame rate cap directly in-game without restarting or editing ambermoon.cfg. Presets:
+VSync — locks to your monitor's refresh rate (default).
+60, 120, 144, 240 — explicit smooth frame caps (disables VSync while active).
+2x — caps at twice your monitor's active refresh rate (for example, 2x (168) on an 84 Hz display).
+Consistent 3D walking & turning speed across monitors: Modern 3D movement now runs on a fixed-rate simulation timeline (default 60 logical steps/s) with smooth camera interpolation, so walking speed no longer feels too fast on a 240 Hz laptop or changes when switching FPS limits. Mouse-look stays immediate with zero added lag.
+F11 exclusive fullscreen keeps custom/overclocked refresh rates: Switching window modes with F11 (Normal → Fullscreen → Borderless) previously caused exclusive fullscreen to fall back to a lower base refresh rate (e.g. 75 Hz instead of an overclocked 84 Hz desktop mode). Exclusive fullscreen now preserves the monitor's active refresh rate.
+Clean mountain skyline in outdoor fog: Outdoor haze still softens the 3D streets, buildings, and distant objects using sky-derived colours, while leaving the distant mountain backdrop untouched (fixing the solid orange/coloured band that previously appeared over the skyline).
+## 2. New Experimental 3D renderer & texture filtering (P1 & P2)
+Instead of rendering 3D worlds directly from 8-bit palette-index atlases with manual multi-tap shader workarounds, the Experimental 3D renderer converts active 3D textures into true colour (RGBA) GPU texture arrays with hardware mipmaps and 16× anisotropic filtering across floors, ceilings, walls, and 3D objects/NPCs.
+
+## Two new live settings appear on Options Page 5 (both take effect immediately without restarting):
+
+3D renderer / 3D-Renderer (Page 5, slot 1):
+Experimental / Experimentell (default) — uses the new 3D renderer pass.
+Classic / Klassisch — switches immediately back to the original Immersive Edition v1.2.0 renderer for instant A/B comparison.
+3D textures / 3D-Texturen (Page 5, slot 2 — applies when Experimental is active):
+Edge-directed / Kantengeführt (default) — pre-upscales 3D pixel art 4× along diagonal contours and slopes before mipmapping. Keeps pixel-art stonework, timber beams, arches, and foliage cohesive while softening harsh stairstep jumps on nearby side walls during movement (especially noticeable on large 60–84 Hz screens).
+Sharp bilinear / Scharf bilinear — keeps native 1× pixel blocks with crisp interiors and subtle sub-pixel edge anti-aliasing up close, plus full hardware mipmaps and 16× anisotropic filtering in the distance.
+Crisp / Pixelgenau — pure razor-sharp original Amiga pixels up close, while still using full hardware mipmaps and 16× anisotropic filtering on receding floors and distant walls so distant shimmer stays gone.
+What improved visually in P2:
+
+### Zero distant floor & wall shimmer across all three texture modes, replacing the old 8-tap manual floor/wall filters in the Experimental pass.
+Cleaner nearby walls in motion with Edge-directed as the default.
+Zero dark fringes or sky-colour bleed around keyed openings (Illien hedges, barred windows, arches, trees, and NPC/monster billboards), and distant hedges/foliage keep their visual density instead of thinning out.
+All classic visual effects still work: day/dusk/night palette transitions, Light spell darkness falloff, scene fades, outdoor/dungeon fog, Smooth/Blur/CRT filters, and Sepia/Grayscale effects.
+## 3. Command-line overrides (per-run, never written to ambermoon.cfg)
+Flag	Values	Effect
+--renderer	classic, experimental	Override the 3D renderer for this session
+--texture-filter	edge, sharp, crisp	Override the Experimental texture filter for this session
+--vsync	on, off	Override VSync for this session
+--fps	<n>, 2x, auto, 0 (uncapped)	Override frame cap for this session
+--timeline-3d	on, off	Override fixed-rate 3D movement timeline
+--move-rate	20–240	Override logical 3D movement rate (steps/s)
+--frame-stats	(flag)	Write frame-stats.log with pacing and mode telemetry on exit
 ## back to offical readme:
-Both branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. “Expanded” names this fork's interface variant and control changes, "expanded" slightly from the Ambermoon.net main UI. (removed gaps around the world view, mouse view); 
-<br> Both branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).<br>
+All branches retain the startup selector for **Original 1.22** and **Ambermoon Advanced 1.33**. Gameplay, apart from the contorl and visual changes is identical.  
+“Expanded” names this fork's initial interface variant and control changes, "expanded" slightly from the Ambermoon.net main UI. (removed gaps around the world view, mouse view) It has the mouse contorls and the main fixes from upstream. Beyond that it will stay as is. and not be updated. It is fairly close to the og ambermoon.net (pre their fullscreen changes).; 
+<br> All branches contain the new mouse view. In combination with QEWASD active, controls resemble modern First Person WASD+mouse controls (except up/down look).<br>
 Transfer saves between builds using the same game-data edition and language. See [save transfer and version details](CARRYWEIGHT.txt).
 
 ## Published downloads
@@ -47,9 +78,11 @@ Edition | Windows x64 downloads | Release notes
 --- | --- | ---
 **Experimental v1.2.0-preview.1** | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64.zip) | [Preview notes and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1)
 **Immersive Edition v1.2.0** — full exploration view; Original balance or relaxed Advanced | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0)
-**Expanded v1.0.1** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
+**Expanded v1.0.1** — Only slightly enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 
 The Immersive installer lets you choose the folder and whether to create a Start menu shortcut. To update a portable copy in place, select its current folder. Later installer runs offer that folder again. Updating in place and uninstalling both preserve your saves, settings, and screenshots.
+The installer is seperate between main and experimental version. It protects (it should, but make sure against installing experimental over main. Savegames are fully compatible between all versions, including upstream. 
+Experimental sits on top of v1.2.0, so below patch notes for main  remain true .
 
 For a portable installation, extract the whole ZIP into a fresh writable folder and run `Ambermoon.net.exe`. Both editions include the .NET runtime and Original/Advanced game data. Fork updates are manual. When switching folders, copy `Saves` and `ambermoon.cfg` to carry over your progress and settings. Use the same game-data edition and language. Characters may be overloaded when moving from Immersive Edition to Expanded. See [save transfer](CARRYWEIGHT.txt).
 
