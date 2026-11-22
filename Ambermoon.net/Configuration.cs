@@ -344,7 +344,8 @@ internal class Configuration : IConfiguration
 #pragma warning restore CS0618
 
     public static readonly string FallbackConfigDirectory =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Ambermoon.net");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            OperatingSystem.IsWindows() ? EditionInfo.Name : "Ambermoon.net");
 
     private static string bundleDirectory = null;
     /// <summary>

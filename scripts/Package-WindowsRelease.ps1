@@ -1,8 +1,10 @@
 <#
 .SYNOPSIS
-Build a clean, self-contained Windows x64 ZIP for either fork branch.
+Build a clean, self-contained Windows x64 ZIP for a fork edition.
 .EXAMPLE
 ./scripts/Package-WindowsRelease.ps1 -Edition immersive -Tag immersive-v1.2.0 -OutputDirectory ../release-immersive
+.EXAMPLE
+./scripts/Package-WindowsRelease.ps1 -Edition experimental -Tag experimental-v1.2.0-preview.1 -OutputDirectory ../release-experimental
 .NOTES
 Run from the branch being released. OutputDirectory must not already exist.
 The script does not change installed games, upload assets, or create Git tags.
@@ -11,7 +13,7 @@ Run any game tests in a separate extracted copy, not in the release payload.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
-    [Parameter(Mandatory = $true)][ValidateSet('immersive', 'expanded')][string]$Edition,
+    [Parameter(Mandatory = $true)][ValidateSet('immersive', 'expanded', 'experimental')][string]$Edition,
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]*$')][string]$Tag,
     [string]$DotnetPath = 'dotnet',
     [switch]$NoRestore
@@ -35,19 +37,28 @@ if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[0-9a-f]{40}$') {
     throw 'Cannot determine the source Git commit.'
 }
 $sourceCommit = $sourceCommit.Trim()
-$editionName = if ($Edition -eq 'immersive') { 'Immersive Edition' } else { 'Expanded UI' }
+$usesImmersiveUI = $Edition -ne 'expanded'
+$editionName = switch ($Edition) {
+    'immersive'     { 'Immersive Edition' }
+    'expanded'      { 'Expanded UI' }
+    'experimental'  { 'Experimental' }
+}
 if ($Tag -notmatch "^$Edition-v([0-9]+\.[0-9]+\.[0-9]+(?:[-.][A-Za-z0-9.-]+)?)$") {
     throw "Tag must use the form $Edition-v1.0.0 (an optional prerelease suffix is allowed)."
 }
 $releaseVersion = $Matches[1]
-$artifactEdition = if ($Edition -eq 'immersive') { 'ImmersiveEdition' } else { 'Expanded' }
-$productName = if ($Edition -eq 'immersive') { 'Ambermoon' } else { 'Ambermoon.net' }
+$artifactEdition = if ($usesImmersiveUI) { $editionName.Replace(' ', '') } else { 'Expanded' }
+$productName = if ($usesImmersiveUI) { 'Ambermoon' } else { 'Ambermoon.net' }
 $folderName = "$productName-$artifactEdition-$releaseVersion-Windows-x64"
 $payload = Join-Path $outputRoot $folderName
 $payloadPrefix = $payload.TrimEnd('\') + '\'
 $project = Join-Path $repoRoot 'Ambermoon.net\Ambermoon.net.csproj'
-if ($Edition -eq 'immersive') {
+if ($usesImmersiveUI) {
     [xml]$projectXml = Get-Content -LiteralPath $project -Raw
+    $productNode = $projectXml.SelectSingleNode('/Project/PropertyGroup/Product')
+    if ($null -eq $productNode -or $productNode.InnerText -ne "$productName $editionName") {
+        throw "The desktop project product does not match the requested $editionName edition."
+    }
     $versionNode = $projectXml.SelectSingleNode('/Project/PropertyGroup/Version')
     if ($null -eq $versionNode) { throw 'The desktop project has no edition Version property.' }
     $projectVersion = $versionNode.InnerText
@@ -58,7 +69,7 @@ if ($Edition -eq 'immersive') {
 
 $branchDocs = @('Controls.md', 'Configuration.md', 'CustomMusic.md', 'CARRYWEIGHT.txt',
     'docs\action_buttons_0.png', 'docs\action_buttons_1.png', 'docs\amount_popup.png')
-if ($Edition -eq 'immersive') {
+if ($usesImmersiveUI) {
     $branchDocs += @('ImmersiveEdition.md', 'ImmersiveUI.md', 'IMMERSIVE-BALANCE.txt', 'docs\immersive-edition-1.1.0.md',
         'docs\outdoor-fog.md', 'docs\distant-floor-filter.md', 'docs\upstream-review-2026-11-15.md', 'docs\3d-movement-timing.md', 'docs\inventory-input-lock.md',
         'tools\CameraTimingProbe\README.md', 'tools\CameraTimingProbe\CameraTimingProbe.csproj',
@@ -66,6 +77,7 @@ if ($Edition -eq 'immersive') {
 } else {
     $branchDocs += @('MOUSELOOK.txt', 'EXPLORATION-CHEATS.txt')
 }
+if ($Edition -eq 'experimental') { $branchDocs += 'docs\experimental-renderer.md' }
 foreach ($relative in (@('LICENSE', 'Ambermoon.net\versions.dat', 'Ambermoon.net\diffs.dat') + $branchDocs)) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $relative) -PathType Leaf)) {
         throw "Missing release input '$relative'. Confirm that Edition matches the checked-out branch."
@@ -104,7 +116,7 @@ foreach ($relative in $branchDocs) {
     New-Item -ItemType Directory -Path (Split-Path -Parent $documentPath) -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $repoRoot $relative) -Destination $documentPath
 }
-if ($Edition -eq 'immersive') {
+if ($usesImmersiveUI) {
     # Code links in the investigation refer to the matching tagged source,
     # while its portable probe and other documentation stay available offline.
     $timingDocument = Join-Path $documentation 'docs\3d-movement-timing.md'
@@ -145,7 +157,18 @@ Copy-Item -LiteralPath (Find-PackageFile 'glfw' $glfwVersion 'docs\LICENSE.md') 
 
 $sourceUrl = "https://github.com/A5Projects/Ambermoon.net/tree/$sourceCommit"
 $releaseUrl = 'https://github.com/A5Projects/Ambermoon.net/releases/tag/' + [Uri]::EscapeDataString($Tag)
-$editionHelp = if ($Edition -eq 'immersive') {
+$editionHelp = if ($Edition -eq 'experimental') {
+@'
+Ambermoon Experimental is a preview based on Immersive Edition v1.2.0.
+In Options on page 5, select Experimental or Classic to compare the 3D renderers.
+The experimental renderer also offers Edge-directed, Sharp bilinear and Crisp
+texture filtering. Page 4 contains the frame limit. See
+Documentation/docs/experimental-renderer.md for the settings and launch flags.
+Use a separate game folder for the preview. Copy a save to try it here.
+Ctrl+S quicksaves during exploration and F7 opens or closes the quest log.
+See Documentation/Controls.md and IMMERSIVE-BALANCE.txt under Documentation.
+'@
+} elseif ($Edition -eq 'immersive') {
 @'
 Ambermoon Immersive Edition fills the area below the portraits in 2D and 3D.
 Esc/Enter/Tab or MENU opens the compact action overlay; Esc closes other windows
@@ -166,12 +189,12 @@ balance. See Documentation/MOUSELOOK.txt and Controls.md for its controls.
 Documentation/EXPLORATION-CHEATS.txt describes the optional session cheats.
 '@
 }
-$movementHelp = if ($Edition -eq 'immersive') {
+$movementHelp = if ($usesImmersiveUI) {
     'On Windows, Caps Lock off walks at 60% by default. Caps Lock on or holding Shift sprints at 85%.'
 } else {
     'Caps Lock switches keyboard movement to/from 60% speed.'
 }
-$upstreamSummary = if ($Edition -eq 'immersive') {
+$upstreamSummary = if ($usesImmersiveUI) {
     'Ambermoon.net base 1.15.1, with selected fixes from 1.15.2 and later upstream commits. See Documentation/docs/immersive-edition-1.1.0.md for changes and credits.'
 } else {
     'Ambermoon.net base 1.15.1.'

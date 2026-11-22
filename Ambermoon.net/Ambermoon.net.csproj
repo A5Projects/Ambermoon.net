@@ -7,8 +7,8 @@
     <RootNamespace>Ambermoon</RootNamespace>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <!-- Fork version; keep in sync with Ambermoon.Core/EditionInfo.cs. -->
-    <Version>1.2.0</Version>
-    <Product>Ambermoon Immersive Edition</Product>
+    <Version>1.2.0-preview.1</Version>
+    <Product>Ambermoon Experimental</Product>
     <Copyright>Copyright (C) 2020-2026 by Robert Schneckenhaus</Copyright>
     <Company>Robert Schneckenhaus</Company>
     <Authors>Robert Schneckenhaus</Authors>
@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/A5Projects/Ambermoon.net</RepositoryUrl>
     <RepositoryType>github</RepositoryType>
     <PackageTags>Ambermoon</PackageTags>
-    <Description>Ambermoon Immersive Edition, based on Ambermoon.net 1.15.1 with selected upstream backports</Description>
+    <Description>Experimental renderer and frame pacing preview for Ambermoon Immersive Edition</Description>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Configurations>Debug;Release;DebugAndroid;ReleaseAndroid;ReleaseNative;DebugES;ReleaseES</Configurations>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>

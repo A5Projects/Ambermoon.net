@@ -1,6 +1,6 @@
 # Experimental 3D Renderer & Pacing Changes
 
-This document summarizes everything changed on the **`experimental`** branch compared to the release **`Immersive Edition v1.2.0`** (`main` at commit `5c3cbd00`), through milestones **P0**, **P1**, and **P2**.
+Ambermoon Experimental v1.2.0-preview.1 includes renderer milestones **P0**, **P1**, and **P2**, developed from Immersive Edition v1.2.0 at `5c3cbd00`. [Experimental branch](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) · [Windows preview](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
 
 - **Target platform:** Windows desktop (`win-x64`, self-contained .NET 9 / Silk.NET OpenGL).
 - **Compatibility:** Savegame format, 2D maps, UI/HUD, dialogs, inventory, combat, graphic filters (`Smooth` / `Blur` / `CRT`), screen effects (`Sepia` / `Grayscale`), and Original/Advanced balance remain fully compatible with Immersive Edition v1.2.0.
@@ -57,7 +57,7 @@ Two new live settings appear on **Options Page 5** (both take effect immediately
 
 ## Part 2 — Developer & Architecture Reference
 
-All changes live on the `experimental` branch (worktree `Ambermoon.net-experimental`, branched from `main` `5c3cbd00`) and are tagged per milestone (`experimental-p0`, `experimental-p1`, `experimental-p2`).
+The following milestone commits record the implementation and the measurements taken during development.
 
 ### Milestone P0 (`experimental-p0`, commit `ed81352f`) — Pacing, Timing, Display & Fog
 

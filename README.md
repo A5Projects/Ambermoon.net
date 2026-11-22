@@ -1,11 +1,16 @@
-# Ambermoon Immersive Edition
+# Ambermoon Experimental
+
+**v1.2.0-preview.1** is a Windows x64 prerelease for trying a new 3D renderer and movement timing in Immersive Edition v1.2.0. Playtesting is still limited. Install it into its own folder alongside your regular game. To try it with an existing party, copy your `Saves` folder and select the same game-data edition and language. [Download the preview and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1).
+
+In a 3D area, open **Options → page 5** to switch between **Experimental** and **Classic** while looking at the same scene. Experimental offers three texture modes. **Edge-directed** is the default, **Sharp bilinear** softens pixel edges, and **Crisp** keeps nearby texels sharp. All three filter distant surfaces. **Options → page 4 → Frame limit** lets you compare VSync and frame caps. [Renderer guide and command-line options](docs/experimental-renderer.md).
 
 [A5Projects/Ambermoon.net](https://github.com/A5Projects/Ambermoon.net) is a fork of [Pyrdacor/Ambermoon.net](https://github.com/Pyrdacor/Ambermoon.net), based on version 1.15.1 with selected fixes backported from 1.15.2 and later upstream commits. Ambermoon.net and its original game rewrite are the work of Pyrdacor and the upstream contributors.
 
-**Ambermoon Immersive Edition v1.2.0** is the current Windows release. [Download and release notes](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0) · [Upstream credits from v1.1.0](docs/immersive-edition-1.1.0.md).
+**Ambermoon Immersive Edition v1.2.0** is the stable Windows release. [Stable downloads and release notes](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0) · [Upstream credits from v1.1.0](docs/immersive-edition-1.1.0.md).
 
 Branch | Version in this fork
 --- | ---
+[`Experimental`](https://github.com/A5Projects/Ambermoon.net/tree/Experimental) | **Experimental** previews the desktop renderer and frame pacing changes.
 [`main`](https://github.com/A5Projects/Ambermoon.net/tree/main) — default | **Immersive Edition:** larger exploration views and compact overlays (Albion inspired). <b>Smooth 2D movement! No flickering and shimmering in 3D anymore. Optional 3D Mouse View (= modern First person wasd+mouse controls) in all versions.</b>       3 New Cheats. Original = original balance; Advanced = relaxed balance esp early game.
 [`expanded`](https://github.com/A5Projects/Ambermoon.net/tree/expanded) | **Expanded:** slightly enlarged 3D view, maximized within the original interface, standard Ambermoon.net balance. Optional Mouse View controls ((= modern wasd+mouse controls) in all versions. New Cheats. It does NOT contain the movement smoothing and other changes. Main is the main!
 ### Immersive Edition (main):
@@ -40,6 +45,7 @@ Transfer saves between builds using the same game-data edition and language. See
 
 Edition | Windows x64 downloads | Release notes
 --- | --- | ---
+**Experimental v1.2.0-preview.1** | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/experimental-v1.2.0-preview.1/Ambermoon-Experimental-1.2.0-preview.1-Windows-x64.zip) | [Preview notes and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/experimental-v1.2.0-preview.1)
 **Immersive Edition v1.2.0** — full exploration view; Original balance or relaxed Advanced | [Installer](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64-Setup.exe) · [Portable ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/immersive-v1.2.0/Ambermoon-ImmersiveEdition-1.2.0-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/immersive-v1.2.0)
 **Expanded v1.0.1** — enlarged 3D view and standard balance | [ZIP](https://github.com/A5Projects/Ambermoon.net/releases/download/expanded-v1.0.1/Ambermoon.net-Expanded-1.0.1-Windows-x64.zip) | [Details and checksums](https://github.com/A5Projects/Ambermoon.net/releases/tag/expanded-v1.0.1)
 
@@ -57,7 +63,7 @@ These fork releases are for Windows x64. The downloads and build badges in the u
 
 Since v1.0.1, selecting Original keeps original balance. Advanced retains the relaxed balance. Earlier Immersive UI v1.0.0 downloads applied the carrying, gold, accuracy, and starter-weapon changes to both selections. Smooth 2D scrolling, 3D movement smoothing, hold-to-sprint, and the persistent action menu are also retained. 3D smoothing keeps mouse-look and keyboard turning immediate and retains the earlier movement cadence. See [configuration](Configuration.md) for the `Smooth3DMovement` switch. Expanded v1.0.1 adds the inventory-lock fixes while retaining its existing movement, appearance and standard balance.
 
-## Immersive Edition
+## Stable Immersive Edition
 
 - Both 2D and 3D exploration fill the area below the party portraits. Dialogs, inventory, shops, and battles keep their original interfaces.
 - 2D movement scrolls between tile positions using the original pixel art, including continuous crossings between neighboring world-map sections. Gameplay remains on the original tile grid; teleports, entering locations and opening interfaces settle immediately.
