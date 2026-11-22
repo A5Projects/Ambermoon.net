@@ -93,39 +93,42 @@ internal abstract class BufferObject<T> : IDisposable where T : unmanaged, IEqua
 
     protected int Add<U>(DataUpdater<U> inserter, U value, int index = -1)
     {
-        bool reused;
-
-        if (index == -1)
-            index = indices.AssignNextFreeIndex(out reused);
-        else
-            reused = indices.AssignIndex(index);
-
-        if (buffer == null)
+        lock (bufferLock)
         {
-            buffer = new T[128];
-            inserter(buffer, 0, value);
-            Size += Dimension;
-            changedSinceLastCreation = true;
-        }
-        else
-        {
-            buffer = EnsureBufferSize(buffer, (index + 1) * Dimension, out bool changed);
+            bool reused;
 
-            if (!reused)
+            if (index == -1)
+                index = indices.AssignNextFreeIndex(out reused);
+            else
+                reused = indices.AssignIndex(index);
+
+            if (buffer == null)
             {
+                buffer = new T[128];
+                inserter(buffer, 0, value);
                 Size += Dimension;
-                changed = true;
-            }
-
-            int bufferIndex = index * Dimension;
-
-            if (inserter(buffer, bufferIndex, value) || changed)
-            {
                 changedSinceLastCreation = true;
             }
-        }
+            else
+            {
+                buffer = EnsureBufferSize(buffer, (index + 1) * Dimension, out bool changed);
 
-        return index;
+                if (!reused)
+                {
+                    Size += Dimension;
+                    changed = true;
+                }
+
+                int bufferIndex = index * Dimension;
+
+                if (inserter(buffer, bufferIndex, value) || changed)
+                {
+                    changedSinceLastCreation = true;
+                }
+            }
+
+            return index;
+        }
     }
 
     public void Update(int index, T value)
@@ -135,16 +138,22 @@ internal abstract class BufferObject<T> : IDisposable where T : unmanaged, IEqua
 
     protected void Update<U>(DataUpdater<U> updater, int index, U value)
     {
-        if (buffer == null)
-            return; // already disposed
+        lock (bufferLock)
+        {
+            if (buffer == null)
+                return; // already disposed
 
-        if (updater(buffer, index * Dimension, value))
-            changedSinceLastCreation = true;
+            if (updater(buffer, index * Dimension, value))
+                changedSinceLastCreation = true;
+        }
     }
 
     public void Remove(int index)
     {
-        indices.UnassignIndex(index);
+        lock (bufferLock)
+        {
+            indices.UnassignIndex(index);
+        }
     }
 
     public void Dispose()
@@ -193,37 +202,33 @@ internal abstract class BufferObject<T> : IDisposable where T : unmanaged, IEqua
 
     void Recreate() // is only called when the buffer is bound (see Bind())
     {
-        if (!changedSinceLastCreation || buffer == null)
-            return;
-
         lock (bufferLock)
         {
+            if (!changedSinceLastCreation || buffer == null)
+                return;
+
             state.Gl.BufferData(BufferTarget, (uint)(Size * Marshal.SizeOf<T>()),
                 new ReadOnlySpan<T>(buffer), usageHint);
+            changedSinceLastCreation = false;
         }
-
-        changedSinceLastCreation = false;
     }
 
     internal bool RecreateUnbound()
     {
-        if (!changedSinceLastCreation || buffer == null)
-            return false;
-
         if (disposed)
             throw new Exception("Tried to recreate a disposed buffer.");
 
-        state.Gl.BindBuffer(BufferTarget, index);
-
         lock (bufferLock)
         {
+            if (!changedSinceLastCreation || buffer == null)
+                return false;
+
+            state.Gl.BindBuffer(BufferTarget, index);
             state.Gl.BufferData(BufferTarget, (uint)(Size * Marshal.SizeOf<T>()),
                 new ReadOnlySpan<T>(buffer), usageHint);
+            changedSinceLastCreation = false;
+            return true;
         }
-
-        changedSinceLastCreation = false;
-
-        return true;
     }
 
     protected static T[] EnsureBufferSize(T[] buffer, int size, out bool changed)

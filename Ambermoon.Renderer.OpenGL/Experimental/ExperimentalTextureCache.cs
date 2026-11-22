@@ -815,6 +815,7 @@ internal sealed class ExperimentalTextureCache : IDisposable
             state.Gl.DeleteFramebuffer(copyReadFbo);
             copyReadFbo = 0;
         }
+        Texture.InvalidateActiveTexture();
     }
 }
 #endif

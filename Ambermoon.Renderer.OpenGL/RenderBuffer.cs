@@ -308,95 +308,125 @@ public class RenderBuffer : IDisposable
         Render.PositionTransformation positionTransformation,
         Render.SizeTransformation sizeTransformation)
     {
-        var position = new FloatPosition(fow.X, fow.Y);
-        var size = new FloatSize(fow.Width, fow.Height);
-        var center = new FloatPosition(fow.Center);
-
-        if (positionTransformation != null)
+        vertexArrayObject.Lock();
+        try
         {
-            position = positionTransformation(position);
-            center = positionTransformation(center);
+            var position = new FloatPosition(fow.X, fow.Y);
+            var size = new FloatSize(fow.Width, fow.Height);
+            var center = new FloatPosition(fow.Center);
+
+            if (positionTransformation != null)
+            {
+                position = positionTransformation(position);
+                center = positionTransformation(center);
+            }
+
+            if (sizeTransformation != null)
+                size = sizeTransformation(size);
+
+            int index = positionBuffer.Add(position.X, position.Y);
+            positionBuffer.Add(position.X + size.Width, position.Y, index + 1);
+            positionBuffer.Add(position.X + size.Width, position.Y + size.Height, index + 2);
+            positionBuffer.Add(position.X, position.Y + size.Height, index + 3);
+
+            indexBuffer.InsertQuad(index / 4);
+            indexOrderChecked = false;
+
+            var baseLineOffsetSize = new FloatSize(0, fow.BaseLineOffset);
+
+            if (sizeTransformation != null)
+                baseLineOffsetSize = sizeTransformation(baseLineOffsetSize);
+
+            ushort baseLine = (ushort)Math.Min(ushort.MaxValue, position.Y + size.Height + Util.Round(baseLineOffsetSize.Height));
+
+            baseLineBuffer.Add(baseLine, index);
+            baseLineBuffer.Add(baseLine, index + 1);
+            baseLineBuffer.Add(baseLine, index + 2);
+            baseLineBuffer.Add(baseLine, index + 3);
+
+            centerBuffer.Add(center.X, center.Y, index);
+            centerBuffer.Add(center.X, center.Y, index + 1);
+            centerBuffer.Add(center.X, center.Y, index + 2);
+            centerBuffer.Add(center.X, center.Y, index + 3);
+
+            radiusBuffer.Add(fow.Radius, index);
+            radiusBuffer.Add(fow.Radius, index + 1);
+            radiusBuffer.Add(fow.Radius, index + 2);
+            radiusBuffer.Add(fow.Radius, index + 3);
+
+            return index;
         }
-
-        if (sizeTransformation != null)
-            size = sizeTransformation(size);
-
-        int index = positionBuffer.Add(position.X, position.Y);
-        positionBuffer.Add(position.X + size.Width, position.Y, index + 1);
-        positionBuffer.Add(position.X + size.Width, position.Y + size.Height, index + 2);
-        positionBuffer.Add(position.X, position.Y + size.Height, index + 3);
-
-        indexBuffer.InsertQuad(index / 4);
-        indexOrderChecked = false;
-
-        var baseLineOffsetSize = new FloatSize(0, fow.BaseLineOffset);
-
-        if (sizeTransformation != null)
-            baseLineOffsetSize = sizeTransformation(baseLineOffsetSize);
-
-        ushort baseLine = (ushort)Math.Min(ushort.MaxValue, position.Y + size.Height + Util.Round(baseLineOffsetSize.Height));
-
-        baseLineBuffer.Add(baseLine, index);
-        baseLineBuffer.Add(baseLine, index + 1);
-        baseLineBuffer.Add(baseLine, index + 2);
-        baseLineBuffer.Add(baseLine, index + 3);
-
-        centerBuffer.Add(center.X, center.Y, index);
-        centerBuffer.Add(center.X, center.Y, index + 1);
-        centerBuffer.Add(center.X, center.Y, index + 2);
-        centerBuffer.Add(center.X, center.Y, index + 3);
-
-        radiusBuffer.Add(fow.Radius, index);
-        radiusBuffer.Add(fow.Radius, index + 1);
-        radiusBuffer.Add(fow.Radius, index + 2);
-        radiusBuffer.Add(fow.Radius, index + 3);
-
-        return index;
+        finally
+        {
+            vertexArrayObject.Unlock();
+        }
     }
 
     public int GetDrawIndex(Render.IColoredRect coloredRect,
         Render.PositionTransformation positionTransformation,
         Render.SizeTransformation sizeTransformation)
     {
-        var position = new FloatPosition(coloredRect.X, coloredRect.Y);
-        var size = new FloatSize(coloredRect.Width, coloredRect.Height);
-
-        if (positionTransformation != null)
-            position = positionTransformation(position);
-
-        if (sizeTransformation != null)
-            size = sizeTransformation(size);
-
-        int index = positionBuffer.Add(position.X, position.Y);
-        positionBuffer.Add(position.X + size.Width, position.Y, index + 1);
-        positionBuffer.Add(position.X + size.Width, position.Y + size.Height, index + 2);
-        positionBuffer.Add(position.X, position.Y + size.Height, index + 3);
-
-        indexBuffer.InsertQuad(index / 4);
-        indexOrderChecked = false;
-
-        if (layerBuffer != null)
+        vertexArrayObject.Lock();
+        try
         {
-            int layerBufferIndex = layerBuffer.Add(coloredRect.DisplayLayer, index);
-            layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 1);
-            layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 2);
-            layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 3);
-        }
+            var position = new FloatPosition(coloredRect.X, coloredRect.Y);
+            var size = new FloatSize(coloredRect.Width, coloredRect.Height);
 
-        if (colorBuffer != null)
+            if (positionTransformation != null)
+                position = positionTransformation(position);
+
+            if (sizeTransformation != null)
+                size = sizeTransformation(size);
+
+            int index = positionBuffer.Add(position.X, position.Y);
+            positionBuffer.Add(position.X + size.Width, position.Y, index + 1);
+            positionBuffer.Add(position.X + size.Width, position.Y + size.Height, index + 2);
+            positionBuffer.Add(position.X, position.Y + size.Height, index + 3);
+
+            indexBuffer.InsertQuad(index / 4);
+            indexOrderChecked = false;
+
+            if (layerBuffer != null)
+            {
+                int layerBufferIndex = layerBuffer.Add(coloredRect.DisplayLayer, index);
+                layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 1);
+                layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 2);
+                layerBuffer.Add(coloredRect.DisplayLayer, layerBufferIndex + 3);
+            }
+
+            if (colorBuffer != null)
+            {
+                var color = coloredRect.Color;
+
+                int colorBufferIndex = colorBuffer.Add(color, index);
+                colorBuffer.Add(color, colorBufferIndex + 1);
+                colorBuffer.Add(color, colorBufferIndex + 2);
+                colorBuffer.Add(color, colorBufferIndex + 3);
+            }
+
+            return index;
+        }
+        finally
         {
-            var color = coloredRect.Color;
-
-            int colorBufferIndex = colorBuffer.Add(color, index);
-            colorBuffer.Add(color, colorBufferIndex + 1);
-            colorBuffer.Add(color, colorBufferIndex + 2);
-            colorBuffer.Add(color, colorBufferIndex + 3);
+            vertexArrayObject.Unlock();
         }
-
-        return index;
     }
 
     public int GetDrawIndex(Render.ISprite sprite, Render.PositionTransformation positionTransformation,
+        Render.SizeTransformation sizeTransformation, byte? textColorIndex = null)
+    {
+        vertexArrayObject.Lock();
+        try
+        {
+            return GetDrawIndexSpriteUnlocked(sprite, positionTransformation, sizeTransformation, textColorIndex);
+        }
+        finally
+        {
+            vertexArrayObject.Unlock();
+        }
+    }
+
+    int GetDrawIndexSpriteUnlocked(Render.ISprite sprite, Render.PositionTransformation positionTransformation,
         Render.SizeTransformation sizeTransformation, byte? textColorIndex = null)
     {
         var position = new FloatPosition(sprite.X, sprite.Y);
@@ -540,6 +570,19 @@ public class RenderBuffer : IDisposable
     }
 
     public int GetDrawIndex(Render.ISurface3D surface)
+    {
+        vertexArrayObject.Lock();
+        try
+        {
+            return GetDrawIndexSurface3DUnlocked(surface);
+        }
+        finally
+        {
+            vertexArrayObject.Unlock();
+        }
+    }
+
+    int GetDrawIndexSurface3DUnlocked(Render.ISurface3D surface)
     {
         int index = surface.Type switch
         {
@@ -1072,6 +1115,19 @@ public class RenderBuffer : IDisposable
 
     public void FreeDrawIndex(int index)
     {
+        vertexArrayObject.Lock();
+        try
+        {
+            FreeDrawIndexUnlocked(index);
+        }
+        finally
+        {
+            vertexArrayObject.Unlock();
+        }
+    }
+
+    void FreeDrawIndexUnlocked(int index)
+    {
         /*int newSize = -1;
 
         if (index == (positionBuffer.Size - 8) / 8)
@@ -1205,20 +1261,24 @@ public class RenderBuffer : IDisposable
         if (disposed)
             return;
 
-        vertexArrayObject.Bind();
-
         unsafe
         {
             vertexArrayObject.Lock();
 
             try
             {
-                if (positionBuffer != null)
-                    state.Gl.DrawElements(PrimitiveType.Triangles, (uint)(positionBuffer.Size / 4) * 3, DrawElementsType.UnsignedInt, (void*)0);
-                else if (vectorBuffer != null)
-                    state.Gl.DrawElements(PrimitiveType.Triangles, (uint)vectorBuffer.Size / 2, DrawElementsType.UnsignedInt, (void*)0);
-                else
-                    throw new AmbermoonException(ExceptionScope.Render, "Neither position nor vector buffer exists.");
+                uint drawCount = positionBuffer != null
+                    ? (uint)(positionBuffer.Size / 4) * 3
+                    : vectorBuffer != null
+                        ? (uint)vectorBuffer.Size / 2
+                        : throw new AmbermoonException(ExceptionScope.Render, "Neither position nor vector buffer exists.");
+
+                if (drawCount == 0 || indexBuffer.Size < drawCount)
+                    return;
+
+                vertexArrayObject.Bind();
+
+                state.Gl.DrawElements(PrimitiveType.Triangles, drawCount, DrawElementsType.UnsignedInt, (void*)0);
             }
             catch
             {
@@ -1233,21 +1293,29 @@ public class RenderBuffer : IDisposable
 
     internal void EnsureCorrectRenderOrder()
     {
-        // Already checked
-        if (indexOrderChecked)
-            return;
+        vertexArrayObject.Lock();
+        try
+        {
+            // Already checked
+            if (indexOrderChecked)
+                return;
 
-        // We need an index buffer
-        if (indexBuffer == null)
-            return;
+            // We need an index buffer
+            if (indexBuffer == null)
+                return;
 
-        // We only support this for layer buffers right now as this is the only use case
-        if (layerBuffer == null)
-            return;
-            
-        indexBuffer.EnsureCorrectRenderOrder(layerBuffer);
+            // We only support this for layer buffers right now as this is the only use case
+            if (layerBuffer == null)
+                return;
 
-        indexOrderChecked = true;
+            indexBuffer.EnsureCorrectRenderOrder(layerBuffer);
+
+            indexOrderChecked = true;
+        }
+        finally
+        {
+            vertexArrayObject.Unlock();
+        }
     }
 
     public void Dispose()

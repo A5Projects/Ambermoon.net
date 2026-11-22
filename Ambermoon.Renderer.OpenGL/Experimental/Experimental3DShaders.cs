@@ -170,15 +170,16 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
                     if (dP < rP)
                     {
                         vec3 Lp = toPlayer / max(dP, 0.0001);
-                        float nP = surfaceKind > 0.5 ? max(0.38, dot(N, Lp) * 0.6 + 0.4) : max(0.28, dot(N, Lp) * 0.72 + 0.28);
+                        float nP = surfaceKind > 0.5 ? max(0.42, dot(N, Lp) * 0.58 + 0.42) : max(0.32, dot(N, Lp) * 0.68 + 0.32);
                         float uP = dP / rP;
                         float qP = max(0.0, 1.0 - uP * uP);
-                        float falloff = (qP * qP) / (1.0 + 0.20 * dP * dP);
+                        float falloff = (qP * qP) / (1.0 + 0.11 * dP * dP);
                         float contrib = playerLightColorIntensity.a * falloff * nP;
                         lit += playerLightColorIntensity.rgb * contrib;
                     }
                 }
 
+                vec3 pointAccum = vec3(0.0);
                 for (int i = 0; i < pointLightCount; ++i)
                 {
                     vec4 pr = pointLightPosRadius[i];
@@ -191,15 +192,16 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
                     if (d < r)
                     {
                         vec3 L = toL / max(d, 0.0001);
-                        float nL = max(0.24, dot(N, L) * 0.72 + 0.28);
+                        float nL = max(0.28, dot(N, L) * 0.68 + 0.32);
                         float u = d / r;
                         float q = max(0.0, 1.0 - u * u);
-                        float falloff = (q * q) / (1.0 + 0.30 * d * d);
+                        float falloff = (q * q) / (1.0 + 0.22 * d * d);
                         float contrib = ci.a * falloff * nL;
-                        lit += ci.rgb * contrib * (0.45 + 0.55 * ao);
+                        pointAccum += ci.rgb * contrib * (0.50 + 0.50 * ao);
                         localGlow += contrib;
                     }
                 }
+                lit += pointAccum / (vec3(1.0) + pointAccum * 0.65);
 
                 vec3 baseColor = texel.rgb * lit;
 
@@ -239,7 +241,7 @@ internal sealed class ExperimentalSurfaceShader : IDisposable
                 {
                     float normD = max(0.0, dist) / max(0.001, fogDist);
                     float rawExp = fogExpScale > 0.5
-                        ? clamp(1.0 - exp(-2.9 * pow(normD, 1.85)) + 0.12 * smoothstep(0.92, 1.18, normD), 0.0, 1.0)
+                        ? clamp(1.0 - exp(-1.95 * pow(normD, 1.75)) + 0.18 * smoothstep(0.88, 1.12, normD), 0.0, 1.0)
                         : (1.0 - exp(-1.55 * pow(normD, 1.25)));
                     fogFactor = fogColor.a * min(fogCap, rawExp);
                     if (fogFadeRange.z > 0.0)
@@ -488,12 +490,13 @@ internal sealed class ExperimentalBillboardShader : IDisposable
                     {
                         float uP = dP / rP;
                         float qP = max(0.0, 1.0 - uP * uP);
-                        float falloff = (qP * qP) / (1.0 + 0.20 * dP * dP);
+                        float falloff = (qP * qP) / (1.0 + 0.11 * dP * dP);
                         float contrib = playerLightColorIntensity.a * falloff * 0.90;
                         lit += playerLightColorIntensity.rgb * contrib;
                     }
                 }
 
+                vec3 pointAccum = vec3(0.0);
                 for (int i = 0; i < pointLightCount; ++i)
                 {
                     vec4 pr = pointLightPosRadius[i];
@@ -506,15 +509,16 @@ internal sealed class ExperimentalBillboardShader : IDisposable
                     if (d < r)
                     {
                         vec3 L = toL / max(d, 0.0001);
-                        float nL = max(0.35, dot(N, L) * 0.65 + 0.35);
+                        float nL = max(0.38, dot(N, L) * 0.62 + 0.38);
                         float u = d / r;
                         float q = max(0.0, 1.0 - u * u);
-                        float falloff = (q * q) / (1.0 + 0.30 * d * d);
+                        float falloff = (q * q) / (1.0 + 0.22 * d * d);
                         float contrib = ci.a * falloff * nL;
-                        lit += ci.rgb * contrib;
+                        pointAccum += ci.rgb * contrib;
                         localGlow += contrib;
                     }
                 }
+                lit += pointAccum / (vec3(1.0) + pointAccum * 0.65);
 
                 vec3 baseColor = straightRgb * lit;
                 if (selfLit)
@@ -556,7 +560,7 @@ internal sealed class ExperimentalBillboardShader : IDisposable
                         : max(0.0, dist);
                     float normD = max(0.0, effDist) / max(0.001, fogDist);
                     float rawExp = fogExpScale > 0.5
-                        ? clamp(1.0 - exp(-2.9 * pow(normD, 1.85)) + 0.12 * smoothstep(0.92, 1.18, normD), 0.0, 1.0)
+                        ? clamp(1.0 - exp(-1.95 * pow(normD, 1.75)) + 0.18 * smoothstep(0.88, 1.12, normD), 0.0, 1.0)
                         : (1.0 - exp(-1.55 * pow(normD, 1.25)));
                     fogFactor = fogColor.a * min(fogCap, rawExp);
                     if (fogFadeRange.z > 0.0)

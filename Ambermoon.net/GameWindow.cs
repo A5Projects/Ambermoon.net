@@ -132,17 +132,32 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
     public WindowMode WindowMode
     {
         get => configuration.WindowMode;
-        set
-        {
-            configuration.WindowMode = value;
-
-            window.TopMost = value != WindowMode.Normal;
-            window.WindowBorder = value != WindowMode.Normal ? WindowBorder.Hidden : WindowBorder.Fixed;
-            window.WindowState = value == WindowMode.Fullscreen ? WindowState.Fullscreen : WindowState.Normal;
-        }
+        set => ChangeFullscreenMode(value);
     }
 
     VideoMode? desktopVideoMode;
+    bool changingWindowMode = false;
+
+    unsafe bool IsExclusiveFullscreen()
+    {
+        if (window == null)
+            return false;
+
+        if (window.Native?.Glfw is { } glfwPtr && glfwPtr != 0)
+        {
+            try
+            {
+                var glfw = Silk.NET.GLFW.Glfw.GetApi();
+                return glfw.GetWindowMonitor((Silk.NET.GLFW.WindowHandle*)glfwPtr) != null;
+            }
+            catch
+            {
+                // Fall back to Silk.NET WindowState below.
+            }
+        }
+
+        return window.WindowState == WindowState.Fullscreen;
+    }
 
     VideoMode GetCurrentMonitorVideoMode()
     {
@@ -154,7 +169,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     int? GetActiveRefreshRate()
     {
-        if (window?.WindowState != WindowState.Fullscreen)
+        if (!IsExclusiveFullscreen())
         {
             var mode = GetCurrentMonitorVideoMode();
             if (mode.RefreshRate is > 0)
@@ -165,14 +180,21 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             ?? window?.VideoMode.RefreshRate;
     }
 
-    unsafe void ApplyGlfwFullscreenVideoMode(WindowDimension resolution, int? refreshRate)
+    unsafe bool TryApplyGlfwWindowMonitor(bool fullscreen, int x, int y, int width, int height, int? refreshRate)
     {
         if (window.Native?.Glfw is not { } glfwPtr || glfwPtr == 0)
-            return;
+            return false;
 
         try
         {
             var glfw = Silk.NET.GLFW.Glfw.GetApi();
+            if (!fullscreen)
+            {
+                glfw.SetWindowMonitor((Silk.NET.GLFW.WindowHandle*)glfwPtr, null,
+                    x, y, width, height, Silk.NET.GLFW.Glfw.DontCare);
+                return true;
+            }
+
             Silk.NET.GLFW.Monitor* monitorPtr = null;
             int monitorIndex = window.Monitor?.Index ?? 0;
             Silk.NET.GLFW.Monitor** monitors = glfw.GetMonitors(out int count);
@@ -181,16 +203,18 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
             if (monitorPtr == null)
                 monitorPtr = glfw.GetPrimaryMonitor();
 
-            if (monitorPtr != null)
-            {
-                int rate = refreshRate is > 0 ? refreshRate.Value : Silk.NET.GLFW.Glfw.DontCare;
-                glfw.SetWindowMonitor((Silk.NET.GLFW.WindowHandle*)glfwPtr, monitorPtr,
-                    0, 0, resolution.X, resolution.Y, rate);
-            }
+            if (monitorPtr == null)
+                return false;
+
+            int rate = refreshRate is > 0 ? refreshRate.Value : Silk.NET.GLFW.Glfw.DontCare;
+            glfw.SetWindowMonitor((Silk.NET.GLFW.WindowHandle*)glfwPtr, monitorPtr,
+                0, 0, width, height, rate);
+            return true;
         }
         catch
         {
-            // Fall back to Silk.NET's default fullscreen video mode if GLFW interop fails.
+            // Fall back to Silk.NET's WindowState transition if GLFW interop fails.
+            return false;
         }
     }
 
@@ -210,13 +234,14 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                     configuration.FullscreenHeight = fullscreenSize.Value.Y;
                 }
 
-                var fullscreenWindowSize = fullscreenSize.Value;
-
-                if (windowMode == WindowMode.FullsizedWindow)
-                    fullscreenWindowSize += new WindowDimension(0, 1); // this avoid automatic exclusive fullscreen
-
-                window.Position = window.Monitor.Bounds.Origin;
-                window.Size = fullscreenWindowSize;
+                // Never push borderless dimensions onto an active exclusive fullscreen window;
+                // ChangeFullscreenMode applies window geometry after releasing fullscreen cleanly.
+                if (!changingWindowMode && !IsExclusiveFullscreen() && windowMode == WindowMode.FullsizedWindow)
+                {
+                    var fullscreenWindowSize = fullscreenSize.Value + new WindowDimension(0, 1); // avoids automatic exclusive fullscreen
+                    window.Position = window.Monitor.Bounds.Origin;
+                    window.Size = fullscreenWindowSize;
+                }
             }
         }
         else
@@ -268,51 +293,122 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void ChangeFullscreenMode(WindowMode windowMode)
     {
-        if (window.WindowState != WindowState.Fullscreen)
+        if (window == null || changingWindowMode)
+            return;
+
+        bool wasExclusive = IsExclusiveFullscreen();
+
+        if (!wasExclusive)
         {
             var currentMode = GetCurrentMonitorVideoMode();
             if (currentMode.Resolution != null)
                 desktopVideoMode = currentMode;
+
+            if (initialized && configuration.WindowMode == WindowMode.Normal)
+            {
+                configuration.WindowX = window.Position.X;
+                configuration.WindowY = window.Position.Y;
+                configuration.MonitorIndex = window.Monitor?.Index ?? 0;
+            }
         }
 
-        if (windowMode == WindowMode.Fullscreen)
+        changingWindowMode = true;
+        try
         {
-            var targetMode = desktopVideoMode ?? GetCurrentMonitorVideoMode();
-            if (window.Monitor != null && targetMode.Resolution is { } resCheck && targetMode.RefreshRate is not > 0)
+            if (windowMode == WindowMode.Fullscreen)
             {
-                var best = window.Monitor.GetAllVideoModes()
-                    .Where(m => m.Resolution == resCheck)
-                    .OrderByDescending(m => m.RefreshRate ?? 0)
-                    .FirstOrDefault();
-                if (best.Resolution != null)
-                    targetMode = best;
+                var targetMode = desktopVideoMode ?? GetCurrentMonitorVideoMode();
+                if (window.Monitor != null && targetMode.Resolution is { } resCheck && targetMode.RefreshRate is not > 0)
+                {
+                    var best = window.Monitor.GetAllVideoModes()
+                        .Where(m => m.Resolution == resCheck)
+                        .OrderByDescending(m => m.RefreshRate ?? 0)
+                        .FirstOrDefault();
+                    if (best.Resolution != null)
+                        targetMode = best;
+                }
+
+                configuration.WindowMode = WindowMode.Fullscreen;
+                window.WindowBorder = WindowBorder.Hidden;
+                window.TopMost = true;
+
+                if (targetMode.Resolution is { } res)
+                {
+                    configuration.FullscreenWidth = res.X;
+                    configuration.FullscreenHeight = res.Y;
+
+                    // Single atomic GLFW fullscreen modeset at the desktop's refresh rate (e.g. 84 Hz),
+                    // avoiding a 75 Hz intermediate modeset.
+                    if (!TryApplyGlfwWindowMonitor(true, 0, 0, res.X, res.Y, targetMode.RefreshRate))
+                    {
+                        window.Size = res;
+                        window.WindowState = WindowState.Fullscreen;
+                    }
+                }
+                else
+                {
+                    window.WindowState = WindowState.Fullscreen;
+                }
             }
-
-            configuration.WindowMode = windowMode;
-            window.TopMost = true;
-            window.WindowBorder = WindowBorder.Hidden;
-
-            if (targetMode.Resolution is { } res)
+            else if (windowMode == WindowMode.FullsizedWindow)
             {
-                configuration.FullscreenWidth = res.X;
-                configuration.FullscreenHeight = res.Y;
-                // Set native fullscreen size before entering WindowState.Fullscreen so GLFW
-                // does not transition through a smaller windowed resolution at 75 Hz first.
-                window.Size = res;
+                var fsRes = desktopVideoMode?.Resolution ?? GetCurrentMonitorVideoMode().Resolution
+                    ?? new WindowDimension(configuration.FullscreenWidth ?? 1920, configuration.FullscreenHeight ?? 1080);
+                var origin = window.Monitor?.Bounds.Origin ?? new WindowDimension(0, 0);
+                var borderlessSize = fsRes + new WindowDimension(0, 1); // avoids automatic exclusive fullscreen
+
+                configuration.WindowMode = WindowMode.FullsizedWindow;
+                configuration.FullscreenWidth = fsRes.X;
+                configuration.FullscreenHeight = fsRes.Y;
+
+                // Release exclusive fullscreen FIRST directly into the +1 px borderless rect before touching styles.
+                if (wasExclusive && !TryApplyGlfwWindowMonitor(false, origin.X, origin.Y, borderlessSize.X, borderlessSize.Y, null))
+                {
+                    window.WindowState = WindowState.Normal;
+                }
+
+                window.WindowBorder = WindowBorder.Hidden;
+                window.TopMost = true;
+                window.Position = origin;
+                window.Size = borderlessSize;
             }
+            else
+            {
+                ChangeResolution(configuration.Width, WindowMode.Normal, false);
+                var size = ((ICoreConfiguration)configuration).GetScreenSize();
+                configuration.Width = Width = size.Width;
+                configuration.Height = Height = size.Height;
 
-            window.WindowState = WindowState.Fullscreen;
-            if (targetMode.Resolution is { } fsRes)
-                ApplyGlfwFullscreenVideoMode(fsRes, targetMode.RefreshRate);
+                var bounds = window.Monitor?.Bounds;
+                int defaultX = bounds != null ? bounds.Value.Origin.X + Math.Max(0, (bounds.Value.Size.X - Width) / 2) : 100;
+                int defaultY = bounds != null ? bounds.Value.Origin.Y + Math.Max(0, (bounds.Value.Size.Y - Height) / 2) : 100;
+                int targetX = configuration.WindowX ?? defaultX;
+                int targetY = configuration.WindowY ?? defaultY;
 
-            UpdateWindow(configuration);
-            ReapplySwapInterval();
-            return;
+                configuration.WindowMode = WindowMode.Normal;
+
+                // Always exit exclusive fullscreen BEFORE changing border/TopMost/size so GLFW
+                // restores the desktop mode cleanly instead of modesetting a bogus windowed size.
+                if (wasExclusive && !TryApplyGlfwWindowMonitor(false, targetX, targetY, Width, Height, null))
+                {
+                    window.WindowState = WindowState.Normal;
+                }
+
+                window.TopMost = false;
+                window.WindowBorder = WindowBorder.Fixed;
+                window.Size = new WindowDimension(Width, Height);
+                window.Position = new WindowDimension(targetX, targetY);
+                EnsureWindowOnMonitor(window.Monitor);
+                configuration.WindowX = window.Position.X;
+                configuration.WindowY = window.Position.Y;
+            }
+        }
+        finally
+        {
+            changingWindowMode = false;
         }
 
-        WindowMode = windowMode;
-        FullscreenChangeRequest(windowMode);
-        UpdateWindow(configuration);
+        renderView?.Resize(window.FramebufferSize.X, window.FramebufferSize.Y, window.Size.X, window.Size.Y);
         ReapplySwapInterval();
     }
 
@@ -1239,150 +1335,6 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
                 bool canContinue = currentSavegame != 0;
                 int? pendingLoadSlot = commandLineOptions.LoadSlot;
-                var cursor = new Render.Cursor(renderView, gameData.CursorHotspots);
-                cursor.UpdatePosition(ConvertMousePosition(mouse.Position), null);
-                cursor.Type = Data.CursorType.None;
-
-                void SetupGameCreator(bool continueGame)
-                {
-                    try
-                    {
-                        var savegameSerializer = new SavegameSerializer();
-
-                        gameCreator = () =>
-                        {
-                            string versionString = EditionInfo.DisplayName;
-                            // Mods can provide defaults for some options. They are stored in an own config file per mod.
-                            IConfiguration gameConfiguration = features.HasFlag(Features.Mod) && activeMod?.Manifest.Options?.Count > 0
-                                ? new ModConfiguration(configuration, Mod.ModOptions.Load(activeMod.Manifest,
-                                    Path.Combine(Configuration.GetSavePath("mods"), "options", activeMod.Manifest.Id + ".json")))
-                                : configuration;
-                            var game = new Game.Game(gameConfiguration, gameLanguage, renderView, graphicInfoProvider,
-                                savegameManager, savegameSerializer, gameData.Dictionary, cursor, audioOutput,
-                                musicManager, FullscreenChangeRequest, ChangeResolution, QueryPressedKeys,
-                                new OutroFactory(renderView, outroData, outroFont, outroFontLarge), features,
-                                Path.GetFileName(savePath), versionString, null, additionalSaveSlotProvider);
-
-                            if (OperatingSystem.IsWindows())
-                                game.CapsLockStateProvider = static () => Console.CapsLock;
-
-                            game.Timeline3DOverride = commandLineOptions.Timeline3D;
-                            game.Movement3DRateOverride = commandLineOptions.MoveRate;
-                            game.Renderer3DOverride = commandLineOptions.Renderer3D;
-                            game.Texture3DFilterOverride = commandLineOptions.Texture3DFilter;
-                            game.Lighting3DOverride = commandLineOptions.Lighting3D;
-                            game.RefreshRenderer3DMode();
-                            game.MonitorRefreshRateProvider = () => framePacer?.MonitorRefreshRate ?? GetActiveRefreshRate();
-                            game.FrameLimitChanged = () =>
-                            {
-                                cliVSyncOverride = null;
-                                cliFpsOverride = null;
-                            };
-
-                            if (features.HasFlag(Features.Mod))
-                                activeMod?.AttachGame(game);
-
-                            game.QuitRequested += window.Close;
-                            game.MouseLookCaptureChanged += SetMouseLookCapture;
-                            game.SetMouseLookFocus(mouseLookWindowFocused);
-                            game.MousePositionChanged += position =>
-                            {
-                                if (mouse != null)
-                                {
-                                    mouse.MouseMove -= Mouse_MouseMove;
-                                    mouse.Position = new MousePosition(position.X, position.Y);
-                                    mouseLookLastPosition = mouse.Position;
-                                    mouseLookIgnoreNextMove = mouseLookCaptured;
-                                    mouse.MouseMove += Mouse_MouseMove;
-                                }
-                            };
-                            game.MouseTrappedChanged += (bool trapped, Position position) =>
-                            {
-                                if (mouseLookCaptured && !trapped)
-                                    return;
-                                try
-                                {
-                                    this.cursor.CursorMode = trapped ? CursorMode.Disabled : CursorMode.Hidden;
-                                    trapMouse = false;
-                                }
-                                catch
-                                {
-                                    // SDL etc needs special logic as CursorMode.Disabled is not available
-                                    trapMouse = trapped;
-                                    trappedMouseOffset = trapped ? new FloatPosition(position) : null;
-                                    trappedMouseLastPosition = trapped ? new FloatPosition(window.Size.X / 2, window.Size.Y / 2) : null;
-                                    this.cursor.CursorMode = CursorMode.Hidden;
-                                }
-                                if (mouse != null)
-                                {
-                                    mouse.MouseMove -= Mouse_MouseMove;
-                                    mouse.Position = !trapped || !trapMouse ? new MousePosition(position.X, position.Y) :
-                                        new MousePosition(window.Size.X / 2, window.Size.Y / 2);
-                                    mouse.MouseMove += Mouse_MouseMove;
-                                }
-                            };
-                            game.ConfigurationChanged += (configuration, windowChange) =>
-                            {
-                                if (windowChange)
-                                {
-                                    ChangeFullscreenMode(configuration.WindowMode);
-                                }
-
-                                if (!renderView.TryUseFrameBuffer())
-                                {
-                                    configuration.GraphicFilter = GraphicFilter.None;
-                                    configuration.GraphicFilterOverlay = GraphicFilterOverlay.None;
-                                }
-
-                                if (configuration.Effects != Effects.None && !renderView.TryUseEffects())
-                                    configuration.Effects = Effects.None;
-
-                                if (configuration.EnableCheats)
-                                    PrintCheatConsoleHeader();
-
-                                if (configuration.EnableCheats && !Console.IsInputRedirected)
-                                {
-                                    while (Console.KeyAvailable)
-                                        Console.ReadKey(true);
-                                }
-                                else if (!configuration.EnableCheats && !Console.IsInputRedirected)
-                                {
-                                    cheatHeaderPrinted = false;
-                                    if (!Console.IsOutputRedirected)
-                                        Console.Clear();
-                                }
-
-                                ApplyFramePacing(initializeStats: false);
-                            };
-                            game.DrugTicked += Drug_Ticked;
-                            mainMenu.GameDataLoaded = true;
-
-                            AdvancedSavegamePatcher advancedSavegamePatcher = null;
-
-                            // Load advanced diffs (is null for non-advanced versions)
-                            if (advancedDiffsReader != null && savegameManager is SavegameManager sgManager)
-                                advancedSavegamePatcher = new AdvancedSavegamePatcher(advancedDiffsReader, sgManager);
-
-                            game.RequestAdvancedSavegamePatching += (gameData, saveSlot, sourceEpisode, targetEpisode, savegame) =>
-                            {
-                                if (advancedSavegamePatcher == null)
-                                    throw new AmbermoonException(ExceptionScope.Data, "No diff information for old Ambermoon Advanced savegame found.");
-
-                                return advancedSavegamePatcher.PatchSavegame(gameData, saveSlot, sourceEpisode, targetEpisode, savegame, savegameSerializer);
-                            };
-
-                            game.Run(continueGame, ConvertMousePosition(mouse.Position), pendingLoadSlot);
-                            pendingLoadSlot = null; // only for the first start
-
-                            return game;
-                        };
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Error while preparing game: " + ex.ToString());
-                        gameCreator = () => throw new AmbermoonException(ExceptionScope.Application, "Game preparation failed.");
-                    }
-                }
 
                 while (logoPyrdacor != null)
                     Thread.Sleep(100);
@@ -1399,69 +1351,218 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                     Thread.Sleep(100);
                 }
 
-                void ShowMainMenu(bool fromIntro)
+                // Marshal Cursor and MainMenu creation onto the OpenGL main thread so render buffers
+                // are never mutated concurrently while Window_Render is drawing.
+                RunOnMainThread(() =>
                 {
-                    // Keep the selected intro preference after the first launch.
-                    // New installations default to the original Thalion/game intro.
-                    this.ShowMainMenu(renderView, cursor, fromIntro, IntroData.GraphicPalettes, introFontLarge,
-                        introData.Texts.Skip(8).Take(4).Select(t => t.Value).ToArray(), canContinue, continueGame =>
-                        {
-                            cursor.Type = Data.CursorType.None;
-                            mainMenu.FadeOutAndDestroy(continueGame, () => RunTask(() => SetupGameCreator(continueGame)));
-                        }, gameLanguage, () =>
-                        {
-                            cursor.Type = Data.CursorType.None;
-                            ShowIntro(byClick => ShowMainMenu(!byClick), introData, introFont, introFontLarge);
-                        });
-                }
+                    var cursor = new Render.Cursor(renderView, gameData.CursorHotspots);
+                    cursor.UpdatePosition(ConvertMousePosition(mouse.Position), null);
+                    cursor.Type = Data.CursorType.None;
 
-                ShowMainMenu(IntroEnabled && !initialIntroEndedByClick);
-
-                if (commandLineOptions.SkipsMainMenu)
-                {
-                    bool continueGame = canContinue || pendingLoadSlot != null;
-
-                    RunOnMainThread(() =>
+                    void SetupGameCreator(bool continueGame)
                     {
+                        try
+                        {
+                            var savegameSerializer = new SavegameSerializer();
+
+                            gameCreator = () =>
+                            {
+                                string versionString = EditionInfo.DisplayName;
+                                // Mods can provide defaults for some options. They are stored in an own config file per mod.
+                                IConfiguration gameConfiguration = features.HasFlag(Features.Mod) && activeMod?.Manifest.Options?.Count > 0
+                                    ? new ModConfiguration(configuration, Mod.ModOptions.Load(activeMod.Manifest,
+                                        Path.Combine(Configuration.GetSavePath("mods"), "options", activeMod.Manifest.Id + ".json")))
+                                    : configuration;
+                                var game = new Game.Game(gameConfiguration, gameLanguage, renderView, graphicInfoProvider,
+                                    savegameManager, savegameSerializer, gameData.Dictionary, cursor, audioOutput,
+                                    musicManager, FullscreenChangeRequest, ChangeResolution, QueryPressedKeys,
+                                    new OutroFactory(renderView, outroData, outroFont, outroFontLarge), features,
+                                    Path.GetFileName(savePath), versionString, null, additionalSaveSlotProvider);
+
+                                if (OperatingSystem.IsWindows())
+                                    game.CapsLockStateProvider = static () => Console.CapsLock;
+
+                                game.Timeline3DOverride = commandLineOptions.Timeline3D;
+                                game.Movement3DRateOverride = commandLineOptions.MoveRate;
+                                game.Renderer3DOverride = commandLineOptions.Renderer3D;
+                                game.Texture3DFilterOverride = commandLineOptions.Texture3DFilter;
+                                game.Lighting3DOverride = commandLineOptions.Lighting3D;
+                                game.RefreshRenderer3DMode();
+                                game.MonitorRefreshRateProvider = () => framePacer?.MonitorRefreshRate ?? GetActiveRefreshRate();
+                                game.FrameLimitChanged = () =>
+                                {
+                                    cliVSyncOverride = null;
+                                    cliFpsOverride = null;
+                                };
+
+                                if (features.HasFlag(Features.Mod))
+                                    activeMod?.AttachGame(game);
+
+                                game.QuitRequested += window.Close;
+                                game.MouseLookCaptureChanged += SetMouseLookCapture;
+                                game.SetMouseLookFocus(mouseLookWindowFocused);
+                                game.MousePositionChanged += position =>
+                                {
+                                    if (mouse != null)
+                                    {
+                                        mouse.MouseMove -= Mouse_MouseMove;
+                                        mouse.Position = new MousePosition(position.X, position.Y);
+                                        mouseLookLastPosition = mouse.Position;
+                                        mouseLookIgnoreNextMove = mouseLookCaptured;
+                                        mouse.MouseMove += Mouse_MouseMove;
+                                    }
+                                };
+                                game.MouseTrappedChanged += (bool trapped, Position position) =>
+                                {
+                                    if (mouseLookCaptured && !trapped)
+                                        return;
+                                    try
+                                    {
+                                        this.cursor.CursorMode = trapped ? CursorMode.Disabled : CursorMode.Hidden;
+                                        trapMouse = false;
+                                    }
+                                    catch
+                                    {
+                                        // SDL etc needs special logic as CursorMode.Disabled is not available
+                                        trapMouse = trapped;
+                                        trappedMouseOffset = trapped ? new FloatPosition(position) : null;
+                                        trappedMouseLastPosition = trapped ? new FloatPosition(window.Size.X / 2, window.Size.Y / 2) : null;
+                                        this.cursor.CursorMode = CursorMode.Hidden;
+                                    }
+                                    if (mouse != null)
+                                    {
+                                        mouse.MouseMove -= Mouse_MouseMove;
+                                        mouse.Position = !trapped || !trapMouse ? new MousePosition(position.X, position.Y) :
+                                            new MousePosition(window.Size.X / 2, window.Size.Y / 2);
+                                        mouse.MouseMove += Mouse_MouseMove;
+                                    }
+                                };
+                                game.ConfigurationChanged += (configuration, windowChange) =>
+                                {
+                                    if (windowChange)
+                                    {
+                                        ChangeFullscreenMode(configuration.WindowMode);
+                                    }
+
+                                    if (!renderView.TryUseFrameBuffer())
+                                    {
+                                        configuration.GraphicFilter = GraphicFilter.None;
+                                        configuration.GraphicFilterOverlay = GraphicFilterOverlay.None;
+                                    }
+
+                                    if (configuration.Effects != Effects.None && !renderView.TryUseEffects())
+                                        configuration.Effects = Effects.None;
+
+                                    if (configuration.EnableCheats)
+                                        PrintCheatConsoleHeader();
+
+                                    if (configuration.EnableCheats && !Console.IsInputRedirected)
+                                    {
+                                        while (Console.KeyAvailable)
+                                            Console.ReadKey(true);
+                                    }
+                                    else if (!configuration.EnableCheats && !Console.IsInputRedirected)
+                                    {
+                                        cheatHeaderPrinted = false;
+                                        if (!Console.IsOutputRedirected)
+                                            Console.Clear();
+                                    }
+
+                                    ApplyFramePacing(initializeStats: false);
+                                };
+                                game.DrugTicked += Drug_Ticked;
+                                mainMenu.GameDataLoaded = true;
+
+                                AdvancedSavegamePatcher advancedSavegamePatcher = null;
+
+                                // Load advanced diffs (is null for non-advanced versions)
+                                if (advancedDiffsReader != null && savegameManager is SavegameManager sgManager)
+                                    advancedSavegamePatcher = new AdvancedSavegamePatcher(advancedDiffsReader, sgManager);
+
+                                game.RequestAdvancedSavegamePatching += (gameData, saveSlot, sourceEpisode, targetEpisode, savegame) =>
+                                {
+                                    if (advancedSavegamePatcher == null)
+                                        throw new AmbermoonException(ExceptionScope.Data, "No diff information for old Ambermoon Advanced savegame found.");
+
+                                    return advancedSavegamePatcher.PatchSavegame(gameData, saveSlot, sourceEpisode, targetEpisode, savegame, savegameSerializer);
+                                };
+
+                                game.Run(continueGame, ConvertMousePosition(mouse.Position), pendingLoadSlot);
+                                pendingLoadSlot = null; // only for the first start
+
+                                return game;
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error while preparing game: " + ex.ToString());
+                            gameCreator = () => throw new AmbermoonException(ExceptionScope.Application, "Game preparation failed.");
+                        }
+                    }
+
+                    void ShowMainMenu(bool fromIntro)
+                    {
+                        // Keep the selected intro preference after the first launch.
+                        // New installations default to the original Thalion/game intro.
+                        this.ShowMainMenu(renderView, cursor, fromIntro, IntroData.GraphicPalettes, introFontLarge,
+                            introData.Texts.Skip(8).Take(4).Select(t => t.Value).ToArray(), canContinue, continueGame =>
+                            {
+                                cursor.Type = Data.CursorType.None;
+                                mainMenu.FadeOutAndDestroy(continueGame, () => RunTask(() => SetupGameCreator(continueGame)));
+                            }, gameLanguage, () =>
+                            {
+                                cursor.Type = Data.CursorType.None;
+                                ShowIntro(byClick => ShowMainMenu(!byClick), introData, introFont, introFontLarge);
+                            });
+                    }
+
+                    ShowMainMenu(IntroEnabled && !initialIntroEndedByClick);
+
+                    if (commandLineOptions.SkipsMainMenu)
+                    {
+                        bool continueGame = canContinue || pendingLoadSlot != null;
                         cursor.Type = Data.CursorType.None;
                         mainMenu.FadeOutAndDestroy(continueGame, () => RunTask(() => SetupGameCreator(continueGame)));
-                    });
-                }
+                    }
+                });
             }
             catch (Exception ex)
             {
                 string error = "Error while loading data: " + ex.Message;
                 Console.WriteLine(error);
 
-                try
+                RunOnMainThread(() =>
                 {
-                    error = @"Error loading data   \(o_o\)";
-                    if (ex is FileNotFoundException fileNotFoundException &&
-                        fileNotFoundException.Source == "Silk.NET.Core")
+                    try
                     {
-                        var missingLibrary = fileNotFoundException?.FileName;
-
-                        if (missingLibrary != null)
+                        string displayError = @"Error loading data   \(o_o\)";
+                        if (ex is FileNotFoundException fileNotFoundException &&
+                            fileNotFoundException.Source == "Silk.NET.Core")
                         {
-                            error = @$"Error: {Path.GetFileName(missingLibrary)} is missing   (/o_o)/";
+                            var missingLibrary = fileNotFoundException?.FileName;
 
-                            if (missingLibrary.ToLower().Contains("openal"))
-                                error += $"^Please install OpenAL manually"; // ^ is new line
+                            if (missingLibrary != null)
+                            {
+                                displayError = @$"Error: {Path.GetFileName(missingLibrary)} is missing   (/o_o)/";
+
+                                if (missingLibrary.ToLower().Contains("openal"))
+                                    displayError += $"^Please install OpenAL manually"; // ^ is new line
+                            }
                         }
-                    }
 
-                    int height = 6 + error.Count(ch => ch == '^') * 7;
-                    var text = renderView.TextProcessor.CreateText(error, '_');
-                    text = renderView.TextProcessor.WrapText(text, new Rect(0, 0, Global.VirtualScreenWidth, height), new Size(Global.GlyphWidth, Global.GlyphLineHeight));
-                    infoText.Text = text;
-                    infoText.Place(new Rect(Math.Max(0, (Global.VirtualScreenWidth - infoText.Width) / 2), infoText.Y, infoText.Text.MaxLineSize * 6, height));
-                    infoText.Visible = true;
-                    initializeErrorTime = DateTime.Now;
-                }
-                catch
-                {
-                    window.Close();
-                }
+                        int height = 6 + displayError.Count(ch => ch == '^') * 7;
+                        var text = renderView.TextProcessor.CreateText(displayError, '_');
+                        text = renderView.TextProcessor.WrapText(text, new Rect(0, 0, Global.VirtualScreenWidth, height), new Size(Global.GlyphWidth, Global.GlyphLineHeight));
+                        infoText.Text = text;
+                        infoText.Place(new Rect(Math.Max(0, (Global.VirtualScreenWidth - infoText.Width) / 2), infoText.Y, infoText.Text.MaxLineSize * 6, height));
+                        infoText.Visible = true;
+                        initializeErrorTime = DateTime.Now;
+                    }
+                    catch
+                    {
+                        window.Close();
+                    }
+                });
             }
         });
     }
@@ -1804,49 +1905,51 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
                     while (checkPatcher || patcher != null || logoPyrdacor != null)
                         Thread.Sleep(100);
 
-                    if (commandLineOptions.Mod != null)
+                    // Marshal VersionSelector creation onto the main thread so OpenGL render buffers
+                    // are never mutated concurrently while Window_Render is executing.
+                    RunOnMainThread(() =>
                     {
-                        string modFolderPrefix = $"mod_{commandLineOptions.Mod}_";
-                        int modVersionIndex = gameVersions.FindIndex(v => v.SavegameFolder == modFolderPrefix + configuration.Language.ToString().ToLower());
-
-                        if (modVersionIndex == -1)
-                            modVersionIndex = gameVersions.FindIndex(v => v.SavegameFolder?.StartsWith(modFolderPrefix, StringComparison.OrdinalIgnoreCase) == true);
-
-                        configuration.GameVersionIndex = modVersionIndex;
-                    }
-
-                    if (commandLineOptions.SkipsVersionSelector)
-                    {
-                        if (configuration.GameVersionIndex < 0 || configuration.GameVersionIndex >= gameVersions.Count)
+                        if (commandLineOptions.Mod != null)
                         {
-                            Console.WriteLine($"Version '{commandLineOptions.Version}' is not available. Showing the version selector.");
+                            string modFolderPrefix = $"mod_{commandLineOptions.Mod}_";
+                            int modVersionIndex = gameVersions.FindIndex(v => v.SavegameFolder == modFolderPrefix + configuration.Language.ToString().ToLower());
+
+                            if (modVersionIndex == -1)
+                                modVersionIndex = gameVersions.FindIndex(v => v.SavegameFolder?.StartsWith(modFolderPrefix, StringComparison.OrdinalIgnoreCase) == true);
+
+                            configuration.GameVersionIndex = modVersionIndex;
                         }
-                        else
+
+                        if (commandLineOptions.SkipsVersionSelector)
                         {
-                            RunOnMainThread(() =>
+                            if (configuration.GameVersionIndex < 0 || configuration.GameVersionIndex >= gameVersions.Count)
+                            {
+                                Console.WriteLine($"Version '{commandLineOptions.Version}' is not available. Showing the version selector.");
+                            }
+                            else
                             {
                                 var selectedVersion = gameVersions[configuration.GameVersionIndex];
                                 bool saveInDataPath = selectedVersion.ExternalData && configuration.SaveOption == SaveOption.DataFolder;
                                 selectHandler?.Invoke(selectedVersion.DataProvider(), saveInDataPath ? dataPath : Configuration.GetSavePath(Configuration.GetVersionSavegameFolder(selectedVersion)),
                                     selectedVersion.Language, selectedVersion.Features);
-                            });
-                            return;
+                                return;
+                            }
                         }
-                    }
 
-                    versionSelector = new VersionSelector(gameVersion, renderView, textureAtlasManager,
-                        gameVersions, cursor, configuration.GameVersionIndex, configuration.SaveOption, configuration);
-                    versionSelector.Closed += (gameVersionIndex, gameDataProvider, saveInDataPath) =>
-                    {
-                        window.DoRender();
+                        versionSelector = new VersionSelector(gameVersion, renderView, textureAtlasManager,
+                            gameVersions, cursor, configuration.GameVersionIndex, configuration.SaveOption, configuration);
+                        versionSelector.Closed += (gameVersionIndex, gameDataProvider, saveInDataPath) =>
+                        {
+                            window.DoRender();
 
-                        var gameData = gameDataProvider?.Invoke();
-                        var gameVersion = gameVersions[gameVersionIndex];
-                        configuration.SaveOption = saveInDataPath ? SaveOption.DataFolder : SaveOption.ProgramFolder;
-                        configuration.GameVersionIndex = gameVersionIndex;
-                        selectHandler?.Invoke(gameData, saveInDataPath ? dataPath : Configuration.GetSavePath(Configuration.GetVersionSavegameFolder(gameVersion)),
-                            gameVersion.Language, gameVersion.Features);
-                    };
+                            var gameData = gameDataProvider?.Invoke();
+                            var gameVersion = gameVersions[gameVersionIndex];
+                            configuration.SaveOption = saveInDataPath ? SaveOption.DataFolder : SaveOption.ProgramFolder;
+                            configuration.GameVersionIndex = gameVersionIndex;
+                            selectHandler?.Invoke(gameData, saveInDataPath ? dataPath : Configuration.GetSavePath(Configuration.GetVersionSavegameFolder(gameVersion)),
+                                gameVersion.Language, gameVersion.Features);
+                        };
+                    });
                 });
             };
         };
@@ -1931,6 +2034,7 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
         window.VSync = vsync;
         try
         {
+            window.MakeCurrent();
             window.GLContext?.SwapInterval(vsync ? 1 : 0);
         }
         catch
@@ -2411,7 +2515,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void Window_Resize(WindowDimension size)
     {
-        if (WindowMode == WindowMode.Normal && (size.X != Width || size.Y != Height))
+        if (changingWindowMode)
+            return;
+
+        if (WindowMode == WindowMode.Normal && !IsExclusiveFullscreen() && (size.X != Width || size.Y != Height))
         {
             // This seems to happen when changing the screen resolution.
             window.Size = new WindowDimension(Width, Height);
@@ -2424,6 +2531,9 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void Window_FramebufferResize(WindowDimension size)
     {
+        if (changingWindowMode)
+            return;
+
         if (renderView != null)
             renderView.Resize(size.X, size.Y);
     }
@@ -2438,12 +2548,18 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void Window_Move(WindowDimension position)
     {
+        if (changingWindowMode)
+            return;
+
         if (initialized)
         {
-            configuration.WindowX = window.Position.X;
-            configuration.WindowY = window.Position.Y;
-            configuration.MonitorIndex = window.Monitor?.Index ?? 0;
-            if (window.WindowState != WindowState.Fullscreen)
+            if (WindowMode == WindowMode.Normal && !IsExclusiveFullscreen())
+            {
+                configuration.WindowX = window.Position.X;
+                configuration.WindowY = window.Position.Y;
+                configuration.MonitorIndex = window.Monitor?.Index ?? 0;
+            }
+            if (!IsExclusiveFullscreen())
             {
                 var movedMode = GetCurrentMonitorVideoMode();
                 if (movedMode.Resolution != null)
@@ -2462,7 +2578,10 @@ partial class GameWindow(string id = "MainWindow") : IContextProvider, IScenario
 
     void UpdateWindow(ICoreConfiguration configuration)
     {
-        if (WindowMode == WindowMode.Normal)
+        if (changingWindowMode)
+            return;
+
+        if (WindowMode == WindowMode.Normal && !IsExclusiveFullscreen())
         {
             var size = configuration.GetScreenSize();
             this.configuration.Width = Width = size.Width;
